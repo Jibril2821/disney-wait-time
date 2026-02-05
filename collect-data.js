@@ -146,7 +146,14 @@ async function collectData() {
 
 function gitCommitAndPush() {
     const now = new Date();
-    const timeStr = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    // 日本時間の年月日・時刻を手動で整形（例: 2026/2/5 17:31）
+    const jst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    const year = jst.getUTCFullYear();
+    const month = jst.getUTCMonth() + 1; // 1-12
+    const day = jst.getUTCDate();
+    const hours = jst.getUTCHours();
+    const minutes = jst.getUTCMinutes().toString().padStart(2, '0');
+    const timeStr = `${year}/${month}/${day} ${hours}:${minutes}`;
     
     console.log(`\n🔄 GitHubにプッシュ中...`);
     

@@ -582,6 +582,92 @@
             border-radius: 3px;
         }
 
+        /* グラフの点クリック時のポップアップ */
+        .point-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            z-index: 9999;
+        }
+
+        .point-popup {
+            position: absolute;
+            min-width: 260px;
+            background: #1e2749;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        .point-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .point-popup-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .point-popup-close {
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .point-popup-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 260px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin-top: 4px;
+        }
+
+        .point-popup-item {
+            width: 100%;
+            text-align: left;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 8px;
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .point-popup-item:hover {
+            background: rgba(78,205,196,0.25);
+        }
+
+        .point-popup-item-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .point-popup-item-name {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .point-popup-item-meta {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.5rem;
@@ -1152,27 +1238,42 @@
                         data: slotData,
                         borderColor: colors[index % colors.length],
                         backgroundColor: colors[index % colors.length] + '20',
-                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false,
+                        rideId: ride.id
                     };
                 });
             } else if (currentPeriod === 'week') {
-                // 週単位: 曜日軸（日曜始まり）
-                labels = ['日', '月', '火', '水', '木', '金', '土'];
-                xAxisTitle = '曜日';
+                // 週単位: 選択した週（必ず日曜始まり）の7日分を X 軸に表示（例: 2/5(木)）
+                const weekStartStr = loadedData?.selectedValue; // その週の日曜日（YYYY-MM-DD）
+                const weekDates = [];
+                if (weekStartStr) {
+                    const weekStart = parseDateStringToLocalDate(weekStartStr);
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(weekStart);
+                        d.setDate(weekStart.getDate() + i);
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        weekDates.push(`${y}-${m}-${day}`);
+                    }
+                }
+                labels = weekDates.map(d => formatWeekDateLabel(d));
+                xAxisTitle = '日付';
 
                 datasets = allRides.map((ride, index) => {
-                    const dayData = new Array(7).fill(null);
-                    const dayWaits = [[], [], [], [], [], [], []];
+                    const dayData = new Array(weekDates.length).fill(null);
+                    const dayWaits = weekDates.map(() => []);
                     
                     for (const td of ride.timeData) {
                         if (td.wait !== null && td.date) {
-                            const date = new Date(td.date);
-                            const dayOfWeek = date.getDay(); // 日曜=0
-                            dayWaits[dayOfWeek].push(td.wait);
+                            const pos = weekDates.indexOf(td.date);
+                            if (pos !== -1) {
+                                dayWaits[pos].push(td.wait);
+                            }
                         }
                     }
                     
-                    for (let i = 0; i < 7; i++) {
+                    for (let i = 0; i < weekDates.length; i++) {
                         if (dayWaits[i].length > 0) {
                             dayData[i] = Math.round(dayWaits[i].reduce((a, b) => a + b, 0) / dayWaits[i].length);
                         }
@@ -1183,7 +1284,8 @@
                         data: dayData,
                         borderColor: colors[index % colors.length],
                         backgroundColor: colors[index % colors.length] + '20',
-                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false,
+                        rideId: ride.id
                     };
                 });
             } else if (currentPeriod === 'month') {
@@ -1222,7 +1324,8 @@
                         data: dayData,
                         borderColor: colors[index % colors.length],
                         backgroundColor: colors[index % colors.length] + '20',
-                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false,
+                        rideId: ride.id
                     };
                 });
             } else {
@@ -1252,7 +1355,8 @@
                         data: monthData,
                         borderColor: colors[index % colors.length],
                         backgroundColor: colors[index % colors.length] + '20',
-                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false,
+                        rideId: ride.id
                     };
                 });
             }
@@ -1286,6 +1390,68 @@
                     interaction: {
                         mode: 'nearest',
                         intersect: true
+                    },
+                    onClick: (event) => {
+                        if (!overviewChart) return;
+
+                        // Chart.js のイベントからネイティブイベントを取得
+                        const nativeEvent = event && event.native ? event.native : event;
+
+                        // クリック位置に最も近いポイント群を取得（Y方向を含む距離で判定）
+                        const nearestPoints = overviewChart.getElementsAtEventForMode(
+                            event,
+                            'nearest',
+                            { intersect: true },
+                            false
+                        );
+                        if (!nearestPoints.length) return;
+
+                        const labels = overviewChart.data.labels;
+                        const datasets = overviewChart.data.datasets;
+
+                        // 「一番近いポイント」の datasetIndex / index をベースに候補を作成
+                        // （Xインデックスで横一列を拾うのではなく、nearest が返したポイントだけを対象にする）
+                        const candidates = [];
+                        const seen = new Set();
+
+                        nearestPoints.forEach(pt => {
+                            const dsIndex = pt.datasetIndex;
+                            const idx = pt.index;
+                            const ds = datasets[dsIndex];
+                            if (!ds) return;
+
+                            const meta = overviewChart.getDatasetMeta(dsIndex);
+                            const value = ds.data[idx];
+                            const rideId = ds.rideId;
+                            if (value == null || meta.hidden) return;
+                            if (typeof rideId !== 'number' || isNaN(rideId)) return;
+
+                            const key = `${rideId}-${idx}`;
+                            if (seen.has(key)) return;
+                            seen.add(key);
+
+                            candidates.push({
+                                rideId,
+                                name: ds.label,
+                                wait: value,
+                                timeLabel: labels[idx]
+                            });
+                        });
+
+                        if (!candidates.length || !nativeEvent) return;
+
+                        if (candidates.length === 1) {
+                            const target = candidates[0];
+                            const rideSelect = document.getElementById('rideSelect');
+                            if (rideSelect) {
+                                rideSelect.value = String(target.rideId);
+                            }
+                            showRideDetail(target.rideId);
+                            return;
+                        }
+
+                        // 複数重なっている場合はポップアップで選択
+                        showPointPopup(candidates, nativeEvent);
                     },
                     plugins: {
                         legend: {
@@ -1523,20 +1689,34 @@
                 }
                 xAxisTitle = '時刻';
             } else if (currentPeriod === 'week') {
-                // 週単位: 曜日ごとの平均（日曜始まり）
-                labels = ['日', '月', '火', '水', '木', '金', '土'];
-                const dayData = Array(7).fill(null).map(() => []);
+                // 週単位: 選択した週（日曜始まり）の7日分を X 軸に表示（例: 2/5(木)）
+                const weekStartStr = loadedData?.selectedValue;
+                const weekDates = [];
+                if (weekStartStr) {
+                    const weekStart = parseDateStringToLocalDate(weekStartStr);
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(weekStart);
+                        d.setDate(weekStart.getDate() + i);
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        weekDates.push(`${y}-${m}-${day}`);
+                    }
+                }
+                labels = weekDates.map(d => formatWeekDateLabel(d));
+                const dayData = weekDates.map(() => []);
                 for (const d of rideData) {
                     if (d.is_open && d.wait_time !== null && d.date) {
-                        const date = new Date(d.date);
-                        const dayOfWeek = date.getDay(); // 日曜=0
-                        dayData[dayOfWeek].push(d.wait_time);
+                        const pos = weekDates.indexOf(d.date);
+                        if (pos !== -1) {
+                            dayData[pos].push(d.wait_time);
+                        }
                     }
                 }
                 chartData = dayData.map(waits => 
                     waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
                 );
-                xAxisTitle = '曜日';
+                xAxisTitle = '日付';
             } else if (currentPeriod === 'month') {
                 // 月単位: 日ごとの平均（その月の全日付を表示）
                 const selectedMonth = loadedData.selectedValue || '';
@@ -1681,6 +1861,123 @@
             return div.innerHTML;
         }
 
+        // グラフの点クリック時ポップアップを表示
+        function showPointPopup(candidates, event) {
+            // 既存のポップアップがあれば削除
+            const existing = document.getElementById('pointPopupOverlay');
+            if (existing) {
+                existing.remove();
+            }
+
+            const overlay = document.createElement('div');
+            overlay.id = 'pointPopupOverlay';
+            overlay.className = 'point-popup-overlay';
+
+            const popup = document.createElement('div');
+            popup.className = 'point-popup';
+
+            const header = document.createElement('div');
+            header.className = 'point-popup-header';
+            const title = document.createElement('div');
+            title.className = 'point-popup-title';
+            title.textContent = 'アトラクションを選択';
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'point-popup-close';
+            closeBtn.type = 'button';
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('click', () => overlay.remove());
+
+            header.appendChild(title);
+            header.appendChild(closeBtn);
+
+            const list = document.createElement('div');
+            list.className = 'point-popup-list';
+
+            candidates.forEach(c => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'point-popup-item';
+
+                const main = document.createElement('div');
+                main.className = 'point-popup-item-main';
+                const name = document.createElement('span');
+                name.className = 'point-popup-item-name';
+                name.textContent = c.name;
+                const wait = document.createElement('span');
+                wait.textContent = `${c.wait}分`;
+
+                const meta = document.createElement('div');
+                meta.className = 'point-popup-item-meta';
+                meta.textContent = c.timeLabel;
+
+                main.appendChild(name);
+                main.appendChild(wait);
+                item.appendChild(main);
+                item.appendChild(meta);
+
+                item.addEventListener('click', () => {
+                    const rideSelect = document.getElementById('rideSelect');
+                    if (rideSelect) {
+                        rideSelect.value = String(c.rideId);
+                    }
+                    showRideDetail(c.rideId);
+                    overlay.remove();
+                });
+
+                list.appendChild(item);
+            });
+
+            popup.appendChild(header);
+            popup.appendChild(list);
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+
+            // アトラクション名が1行に収まるよう、リスト内で最も幅の広い要素に合わせて横幅を調整
+            let maxItemWidth = 0;
+            const mains = list.querySelectorAll('.point-popup-item-main');
+            mains.forEach(el => {
+                const w = el.scrollWidth;
+                if (w > maxItemWidth) maxItemWidth = w;
+            });
+            // 名前＋待ち時間の行に少し余白を持たせつつ、画面幅に収まるようにする
+            const horizontalPadding = 64; // 左右パディング＋余裕
+            const targetWidth = Math.min(maxItemWidth + horizontalPadding, window.innerWidth - 24);
+            if (targetWidth > 0) {
+                popup.style.width = `${targetWidth}px`;
+            }
+
+            // クリック位置がポップアップの中央付近になるよう配置（画面外にはみ出さないよう調整）
+            const clickX = event.clientX ?? 0;
+            const clickY = event.clientY ?? 0;
+            const rect = popup.getBoundingClientRect();
+
+            let left = clickX - rect.width / 2;
+            let top = clickY - rect.height / 2;
+
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            if (left + rect.width > vw - 8) {
+                left = vw - rect.width - 8;
+            }
+            if (top + rect.height > vh - 8) {
+                top = vh - rect.height - 8;
+            }
+
+            if (left < 8) left = 8;
+            if (top < 8) top = 8;
+
+            popup.style.left = `${left}px`;
+            popup.style.top = `${top}px`;
+
+            // オーバーレイ背景クリックで閉じる（ポップアップ内クリックは除外）
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+
         // 期間タブのイベントリスナー
         document.querySelectorAll('.period-tab').forEach(tab => {
             tab.addEventListener('click', async () => {
@@ -1789,6 +2086,20 @@
                 return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
             }
             return dateStr;
+        }
+
+        function formatWeekDateLabel(dateStr) {
+            const date = new Date(dateStr);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const weekday = '日月火水木金土'[date.getDay()];
+            return `${month}/${day}(${weekday})`;
+        }
+
+        function parseDateStringToLocalDate(dateStr) {
+            // "YYYY-MM-DD" をローカルタイムの Date に安全に変換（タイムゾーンずれ防止）
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
         }
 
         function getWeekOptions() {
