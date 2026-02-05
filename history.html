@@ -568,6 +568,38 @@
             max-height: 400px;
         }
 
+        .visit-summary {
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.25);
+            font-size: 0.85rem;
+            color: #ddd;
+        }
+
+        .visit-summary-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #f9ca24;
+        }
+
+        .visit-summary-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+        }
+
+        .visit-summary-item {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .visit-summary-rank {
+            font-weight: 600;
+            color: #ffd86b;
+        }
+
         .chart-legend {
             display: flex;
             flex-wrap: wrap;
@@ -1200,6 +1232,7 @@
 
                 <div class="overview-chart-container">
                     <h2 class="chart-title">📈 待ち時間推移グラフ${!isAllSelected ? ` - ${selectedAreas.map(a => areas[a]?.icon).join(' ')}` : ''}</h2>
+                    <div class="visit-summary" id="visitSummary"></div>
                     <canvas id="overviewChart"></canvas>
                     <div class="chart-legend" id="chartLegend"></div>
                 </div>
@@ -1601,6 +1634,30 @@
                         overviewChart.update();
                     });
                 });
+            }
+
+            // おすすめ来園時間サマリーを描画（週・月・年のとき）
+            const summaryContainer = document.getElementById('visitSummary');
+            if (summaryContainer) {
+                const summary = computeVisitSummary();
+                if (!summary) {
+                    summaryContainer.innerHTML = '';
+                    summaryContainer.style.display = 'none';
+                } else {
+                    summaryContainer.style.display = 'block';
+                    summaryContainer.innerHTML = `
+                        <div class="visit-summary-title">${summary.title}</div>
+                        <div class="visit-summary-items">
+                            ${summary.items.map(item => `
+                                <div class="visit-summary-item">
+                                    <span class="visit-summary-rank">${item.rank}位</span>
+                                    <span>${item.label}</span>
+                                    <span>（平均 ${item.avgMinutes}分）</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -2193,6 +2250,84 @@
             // "YYYY-MM-DD" をローカルタイムの Date に安全に変換（タイムゾーンずれ防止）
             const [y, m, d] = dateStr.split('-').map(Number);
             return new Date(y, m - 1, d);
+        }
+
+        function computeVisitSummary() {
+            if (!loadedData || !loadedData.records || loadedData.records.length === 0) return null;
+
+            const records = loadedData.records;
+            const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+
+            if (currentPeriod === 'week' || currentPeriod === 'month') {
+                // 曜日ごとの平均待ち時間（全アトラクション・全スナップショット）
+                const stats = Array(7).fill(null).map(() => ({ sum: 0, count: 0 }));
+
+                for (const rec of records) {
+                    const date = new Date(rec.date);
+                    const dow = date.getDay(); // 0=日
+                    for (const ride of rec.rides) {
+                        if (ride.is_open && ride.wait_time > 0) {
+                            stats[dow].sum += ride.wait_time;
+                            stats[dow].count += 1;
+                        }
+                    }
+                }
+
+                const averages = stats
+                    .map((s, idx) => (s.count > 0 ? { key: idx, label: `${weekdayLabels[idx]}曜日`, avg: s.sum / s.count } : null))
+                    .filter(Boolean)
+                    .sort((a, b) => a.avg - b.avg)
+                    .slice(0, 3);
+
+                if (!averages.length) return null;
+
+                return {
+                    title: currentPeriod === 'week' ? 'この週のおすすめ曜日（短い順）' : 'この月のおすすめ曜日（短い順）',
+                    items: averages.map((a, i) => ({
+                        rank: i + 1,
+                        label: a.label,
+                        avgMinutes: Math.round(a.avg)
+                    }))
+                };
+            }
+
+            if (currentPeriod === 'year') {
+                // 月ごとの平均待ち時間
+                const monthStats = Array(12).fill(null).map(() => ({ sum: 0, count: 0 }));
+
+                for (const rec of records) {
+                    if (!rec.date) continue;
+                    const [y, m] = rec.date.split('-');
+                    const monthIdx = parseInt(m, 10) - 1;
+                    if (monthIdx < 0 || monthIdx > 11) continue;
+
+                    for (const ride of rec.rides) {
+                        if (ride.is_open && ride.wait_time > 0) {
+                            monthStats[monthIdx].sum += ride.wait_time;
+                            monthStats[monthIdx].count += 1;
+                        }
+                    }
+                }
+
+                const averages = monthStats
+                    .map((s, idx) => (s.count > 0 ? { key: idx, label: `${idx + 1}月`, avg: s.sum / s.count } : null))
+                    .filter(Boolean)
+                    .sort((a, b) => a.avg - b.avg)
+                    .slice(0, 3);
+
+                if (!averages.length) return null;
+
+                return {
+                    title: 'この年のおすすめ月（短い順）',
+                    items: averages.map((a, i) => ({
+                        rank: i + 1,
+                        label: a.label,
+                        avgMinutes: Math.round(a.avg)
+                    }))
+                };
+            }
+
+            return null;
         }
 
         function loadFavoriteRides() {
