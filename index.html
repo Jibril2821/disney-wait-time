@@ -240,6 +240,32 @@
             box-shadow: 0 4px 15px rgba(255,107,107,0.4);
         }
 
+        .fav-toggle-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: #ffdd88;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        .fav-toggle-btn:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .fav-toggle-btn.active {
+            background: linear-gradient(135deg, #f6d365, #fda085);
+            color: #4b2c20;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        }
+
         .sort-select {
             padding: 12px 20px;
             border: none;
@@ -414,6 +440,29 @@
             border-radius: 15px;
             font-size: 0.7rem;
             font-weight: 600;
+        }
+
+        .ride-card-fav-btn {
+            position: absolute;
+            top: 48px;            /* 運営中・休止中バッジの少し下に配置して重なりを回避 */
+            right: 20px;          /* バッジと同じ右端揃え */
+            border: none;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            margin: 0;
+            transition: color 0.2s ease, transform 0.1s ease;
+        }
+
+        .ride-card-fav-btn:hover {
+            color: #ffd86b;
+            transform: scale(1.1);
+        }
+
+        .ride-card-fav-btn.active {
+            color: #ffd86b;
         }
 
         .ride-status.open {
@@ -697,6 +746,7 @@
                 <button class="filter-btn active" data-filter="all">すべて</button>
                 <button class="filter-btn" data-filter="open">運営中のみ</button>
                 <button class="filter-btn" data-filter="closed">休止中のみ</button>
+                <button class="fav-toggle-btn" id="favToggleBtn">★ お気に入りだけ表示</button>
                 <select class="sort-select" id="sortSelect">
                     <option value="name">名前順</option>
                     <option value="wait-asc">待ち時間（短い順）</option>
@@ -732,6 +782,8 @@
         // 空配列 = すべてのエリア選択（history.html と同様の仕様）
         let selectedAreas = [];
         let autoRefreshInterval = null;
+        let favoriteRideIds = new Set(); // history.html と共有するお気に入りID群（文字列）
+        let showFavoritesOnly = false;   // true のときお気に入りのみ表示
 
         function selectPark(park) {
             currentPark = park;
@@ -777,6 +829,11 @@
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.filter === 'all');
             });
+            showFavoritesOnly = false;
+            const favBtn = document.getElementById('favToggleBtn');
+            if (favBtn) {
+                favBtn.classList.remove('active');
+            }
             document.getElementById('sortSelect').value = 'name';
             currentSort = 'name';
         }
@@ -1057,6 +1114,11 @@
             } else if (currentFilter === 'closed') {
                 filtered = filtered.filter(r => !r.is_open);
             }
+
+            // お気に入りフィルタ（有効時＆お気に入りが1件以上ある場合）
+            if (showFavoritesOnly && favoriteRideIds.size > 0) {
+                filtered = filtered.filter(r => favoriteRideIds.has(String(r.id)));
+            }
             
             return filtered;
         }
@@ -1065,12 +1127,16 @@
             const waitClass = ride.is_open ? getWaitClass(ride.wait_time) : '';
             const statusClass = ride.is_open ? 'open' : 'closed';
             const cardClass = ride.is_open ? '' : 'closed';
+            const isFavorite = favoriteRideIds && favoriteRideIds.has(String(ride.id));
             
             return `
                 <div class="ride-card ${cardClass} ${waitClass}" data-ride-id="${ride.id}" style="cursor: pointer;">
                     <span class="ride-status ${statusClass}">
                         ${ride.is_open ? '運営中' : '休止中'}
                     </span>
+                    <button class="ride-card-fav-btn ${isFavorite ? 'active' : ''}" data-ride-id="${ride.id}" title="${isFavorite ? 'お気に入りから外す' : 'お気に入りに追加'}">
+                        ★
+                    </button>
                     <h3 class="ride-name">${escapeHtml(ride.displayName)}</h3>
                     <div class="wait-time-display">
                         <span class="wait-time-number">
@@ -1142,6 +1208,18 @@
             });
 
             container.innerHTML = html || '<div class="no-rides">該当するアトラクションがありません</div>';
+
+            // お気に入りボタン（カード内）のイベントリスナー
+            container.querySelectorAll('.ride-card-fav-btn').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const rideId = btn.dataset.rideId;
+                    if (!rideId) return;
+                    toggleFavoriteRide(rideId);
+                    // 状態反映のため再描画
+                    renderRides();
+                });
+            });
             
             // カードクリックで履歴画面に遷移
             container.querySelectorAll('.ride-card').forEach(card => {
@@ -1158,6 +1236,41 @@
             return div.innerHTML;
         }
 
+        function loadFavoriteRides() {
+            try {
+                const raw = localStorage.getItem('tdr_wait_favorites');
+                if (!raw) return;
+                const arr = JSON.parse(raw);
+                if (Array.isArray(arr)) {
+                    favoriteRideIds = new Set(arr.map(id => String(id)));
+                }
+            } catch (e) {
+                console.warn('Failed to load favorites', e);
+            }
+        }
+
+        function saveFavoriteRides() {
+            try {
+                const arr = Array.from(favoriteRideIds);
+                localStorage.setItem('tdr_wait_favorites', JSON.stringify(arr));
+            } catch (e) {
+                console.warn('Failed to save favorites', e);
+            }
+        }
+
+        function toggleFavoriteRide(rideId) {
+            const key = String(rideId);
+            if (favoriteRideIds.has(key)) {
+                favoriteRideIds.delete(key);
+            } else {
+                favoriteRideIds.add(key);
+            }
+            saveFavoriteRides();
+        }
+
+        // お気に入り情報をローカルストレージから復元
+        loadFavoriteRides();
+
         // イベントリスナー設定
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1172,6 +1285,15 @@
             currentSort = e.target.value;
             renderRides();
         });
+
+        const favToggleBtn = document.getElementById('favToggleBtn');
+        if (favToggleBtn) {
+            favToggleBtn.addEventListener('click', () => {
+                showFavoritesOnly = !showFavoritesOnly;
+                favToggleBtn.classList.toggle('active', showFavoritesOnly);
+                renderRides();
+            });
+        }
 
         document.getElementById('refreshBtn').addEventListener('click', fetchQueueTimes);
 
