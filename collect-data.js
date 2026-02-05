@@ -177,8 +177,26 @@ function gitCommitAndPush() {
     }
 }
 
+// 時間チェック（8時〜22時の間のみ実行）
+function isWithinOperatingHours() {
+    const now = new Date();
+    const hour = parseInt(now.toLocaleString('ja-JP', { 
+        timeZone: 'Asia/Tokyo', 
+        hour: '2-digit', 
+        hour12: false 
+    }));
+    return hour >= 8 && hour < 22;
+}
+
 // 実行
 async function main() {
+    // 8時〜22時の範囲外なら終了
+    if (!isWithinOperatingHours()) {
+        const now = new Date();
+        console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（8:00〜22:00のみ実行）`);
+        return;
+    }
+
     const success = await collectData().catch(err => {
         console.error(err);
         return false;
