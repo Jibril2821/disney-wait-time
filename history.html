@@ -352,6 +352,116 @@
             transform: translateY(-2px);
         }
 
+        /* エリアタブ */
+        .area-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .area-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .area-tab:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .area-tab.active {
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .area-tab .area-icon {
+            font-size: 1.1rem;
+        }
+
+        .area-tab .area-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* TDL エリアカラー */
+        .area-tab.area-worldbazaar.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .area-tab.area-adventureland.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .area-tab.area-westernland.active { background: linear-gradient(135deg, #d35400, #a04000); }
+        .area-tab.area-crittercountry.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+        .area-tab.area-fantasyland.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .area-tab.area-toontown.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .area-tab.area-tomorrowland.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+
+        /* TDS エリアカラー */
+        .area-tab.area-mediterranean.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+        .area-tab.area-americanwaterfront.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .area-tab.area-portdiscovery.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+        .area-tab.area-lostriverdelta.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .area-tab.area-arabiancoast.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .area-tab.area-mermaidlagoon.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .area-tab.area-mysteriousisland.active { background: linear-gradient(135deg, #1abc9c, #16a085); }
+        .area-tab.area-fantasysprings.active { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+        .overview-chart-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .overview-chart-container canvas {
+            max-height: 400px;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .legend-item.hidden {
+            opacity: 0.4;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.5rem;
@@ -375,6 +485,7 @@
             }
         }
     </style>
+    <script src="js/park-data.js"></script>
 </head>
 <body>
     <div class="container">
@@ -406,98 +517,7 @@
     </div>
 
     <script>
-        const PARKS = {
-            land: {
-                name: '東京ディズニーランド',
-                icon: '🏰',
-                filePrefix: 'land'
-            },
-            sea: {
-                name: '東京ディズニーシー',
-                icon: '🚢',
-                filePrefix: 'sea'
-            }
-        };
-
-        // TDL アトラクション日本語名
-        const TDL_RIDE_INFO = {
-            7985: 'オムニバス',
-            8019: 'ペニーアーケード',
-            7987: 'ジャングルクルーズ：ワイルドライフ・エクスペディション',
-            7986: 'カリブの海賊',
-            7989: 'スイスファミリー・ツリーハウス',
-            7990: '魅惑のチキルーム：スティッチ・プレゼンツ "アロハ・エ・コモ・マイ!"',
-            7994: 'ビッグサンダー・マウンテン',
-            7992: 'カントリーベア・シアター',
-            7993: '蒸気船マークトウェイン号',
-            7995: 'トムソーヤ島いかだ',
-            7988: 'ウエスタンリバー鉄道',
-            7991: 'ウエスタンランド・シューティングギャラリー',
-            7997: 'ビーバーブラザーズのカヌー探険',
-            7996: 'スプラッシュ・マウンテン',
-            8006: '"イッツ・ア・スモールワールド" with グルート',
-            8007: 'アリスのティーパーティー',
-            8004: 'キャッスルカルーセル',
-            8000: 'シンデレラのフェアリーテイル・ホール',
-            8003: '空飛ぶダンボ',
-            8255: '美女と野獣 "魔法のものがたり"',
-            8005: 'ホーンテッドマンション',
-            8001: 'ミッキーのフィルハーマジック',
-            7998: 'ピーターパン空の旅',
-            8002: 'ピノキオの冒険旅行',
-            8008: 'プーさんのハニーハント',
-            7999: '白雪姫と七人のこびと',
-            8011: 'チップとデールのツリーハウス',
-            8013: 'ドナルドのボート',
-            8012: 'ガジェットのゴーコースター',
-            8014: 'グーフィーのペイント＆プレイハウス',
-            15401: 'ミッキーの家とミート・ミッキー',
-            8010: 'ミニーの家',
-            8009: 'ロジャーラビットのカートゥーンスピン',
-            8020: 'トゥーンパーク',
-            8018: 'モンスターズ・インク "ライド＆ゴーシーク!"',
-            8015: 'スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー',
-            8021: 'スティッチ・エンカウンター',
-            8254: 'ベイマックスのハッピーライド',
-        };
-
-        // TDS アトラクション日本語名
-        const TDS_RIDE_INFO = {
-            8024: 'ソアリン：ファンタスティック・フライト',
-            8048: 'フォートレス・エクスプロレーション',
-            8049: 'ザ・レオナルドチャレンジ',
-            8034: 'ヴェネツィアン・ゴンドラ',
-            8031: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）',
-            8047: 'タワー・オブ・テラー',
-            8023: 'トイ・ストーリー・マニア！',
-            8050: 'タートル・トーク',
-            8037: 'ビッグシティ・ヴィークル',
-            8036: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）',
-            8032: 'ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント）',
-            8038: 'アクアトピア',
-            8051: 'ニモ＆フレンズ・シーライダー',
-            8035: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）',
-            8027: 'インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮',
-            8046: 'レイジングスピリッツ',
-            8033: 'ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ）',
-            8025: 'ジャスミンのフライングカーペット',
-            8039: 'シンドバッド・ストーリーブック・ヴォヤッジ',
-            8030: 'マジックランプシアター',
-            8040: 'キャラバンカルーセル',
-            8022: 'アリエルのプレイグラウンド',
-            8041: 'フランダーのフライングフィッシュコースター',
-            8044: 'ブローフィッシュ・バルーンレース',
-            8043: 'ジャンピン・ジェリーフィッシュ',
-            8042: 'スカットルのスクーター',
-            8045: 'ワールプール',
-            8026: 'マーメイドラグーンシアター',
-            8029: '海底2万マイル',
-            8028: 'センター・オブ・ジ・アース',
-            13559: 'アナとエルサのフローズンジャーニー',
-            13560: 'ラプンツェルのランタンフェスティバル',
-            13561: 'ピーターパンのネバーランドアドベンチャー',
-            13562: 'フェアリー・ティンカーベルのビジーバギー',
-        };
+        // パーク・エリア・アトラクション情報は js/park-data.js から読み込み
 
         // 環境判定
         const isLocalFile = location.protocol === 'file:';
@@ -508,6 +528,8 @@
         let loadedData = null;
         let availableDates = [];
         let chart = null;
+        let overviewChart = null;
+        let selectedAreas = []; // 空配列 = すべて選択
 
         // URLパラメータからパークを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -520,8 +542,18 @@
         }
 
         function getRideName(rideId, originalName) {
-            const nameMap = currentPark === 'land' ? TDL_RIDE_INFO : TDS_RIDE_INFO;
-            return nameMap[rideId] || originalName;
+            // park-data.js の統一構造 { area, name } から名前を取得
+            const rideInfo = currentPark === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
+            return rideInfo?.name || originalName;
+        }
+
+        function getRideArea(rideId) {
+            const rideInfo = currentPark === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
+            return rideInfo?.area || 'other';
+        }
+
+        function getAreas() {
+            return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
 
         // 初期化
@@ -758,6 +790,7 @@
             const recordCount = loadedData.records.length;
             const firstTime = loadedData.records[0]?.time || '-';
             const lastTime = latestRecord?.time || '-';
+            const areas = getAreas();
 
             // 各アトラクションの統計を計算
             const rideStats = new Map();
@@ -768,7 +801,9 @@
                         rideStats.set(ride.id, {
                             id: ride.id,
                             name: getRideName(ride.id, ride.name),
+                            area: getRideArea(ride.id),
                             waits: [],
+                            timeData: [],
                             lastOpen: false,
                             lastWait: 0
                         });
@@ -777,13 +812,17 @@
                     if (ride.is_open && ride.wait_time > 0) {
                         stat.waits.push(ride.wait_time);
                     }
+                    stat.timeData.push({
+                        time: record.time,
+                        wait: ride.is_open ? ride.wait_time : null
+                    });
                     stat.lastOpen = ride.is_open;
                     stat.lastWait = ride.wait_time;
                 }
             }
 
             // カード用データを生成
-            const rideCards = [...rideStats.values()].map(stat => {
+            let rideCards = [...rideStats.values()].map(stat => {
                 const avgWait = stat.waits.length > 0 
                     ? Math.round(stat.waits.reduce((a, b) => a + b, 0) / stat.waits.length) 
                     : 0;
@@ -798,38 +837,79 @@
                 };
             }).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 
-            const openCount = rideCards.filter(r => r.lastOpen).length;
+            // エリアごとのカウント
+            const areaCounts = {};
+            Object.keys(areas).forEach(key => {
+                areaCounts[key] = rideCards.filter(r => r.area === key).length;
+            });
+
+            // エリアでフィルター（空配列 = すべて選択）
+            const isAllSelected = selectedAreas.length === 0;
+            const filteredCards = isAllSelected 
+                ? rideCards 
+                : rideCards.filter(r => selectedAreas.includes(r.area));
+
+            const openCount = filteredCards.filter(r => r.lastOpen).length;
 
             content.innerHTML = `
-                <div class="data-info">
-                    <h3>📁 ${formatDate(loadedData.date)} のデータ</h3>
-                    <div class="data-info-grid">
-                        <div class="data-info-item">
-                            <div class="data-info-value">${recordCount}</div>
-                            <div class="data-info-label">記録数</div>
-                        </div>
-                        <div class="data-info-item">
-                            <div class="data-info-value">${rideCards.length}</div>
-                            <div class="data-info-label">アトラクション数</div>
-                        </div>
-                        <div class="data-info-item">
-                            <div class="data-info-value">${openCount}</div>
-                            <div class="data-info-label">最新時点で運営中</div>
-                        </div>
-                        <div class="data-info-item">
-                            <div class="data-info-value">${firstTime} 〜 ${lastTime}</div>
-                            <div class="data-info-label">記録時間帯</div>
-                        </div>
-                    </div>
+                <div class="area-tabs" id="areaTabs">
+                    <button class="area-tab ${isAllSelected ? 'active' : ''}" data-area="all">
+                        <span class="area-icon">🎡</span>
+                        <span>すべて</span>
+                        <span class="area-count">${rideCards.length}</span>
+                    </button>
+                    ${Object.entries(areas).map(([key, area]) => 
+                        areaCounts[key] > 0 ? `
+                            <button class="area-tab area-${key} ${selectedAreas.includes(key) ? 'active' : ''}" data-area="${key}">
+                                <span class="area-icon">${area.icon}</span>
+                                <span>${area.name}</span>
+                                <span class="area-count">${areaCounts[key]}</span>
+                            </button>
+                        ` : ''
+                    ).join('')}
                 </div>
+
+                <div class="overview-chart-container">
+                    <h2 class="chart-title">📈 待ち時間推移グラフ${!isAllSelected ? ` - ${selectedAreas.map(a => areas[a]?.icon).join(' ')}` : ''}</h2>
+                    <canvas id="overviewChart"></canvas>
+                    <div class="chart-legend" id="chartLegend"></div>
+                </div>
+
                 <div class="chart-container">
                     <h2 class="chart-title">全アトラクション一覧（最新: ${lastTime}）</h2>
                     <p style="text-align: center; color: #a0a0a0; margin-bottom: 20px;">カードをクリックするとグラフを表示</p>
                     <div class="rides-grid">
-                        ${rideCards.map(ride => renderRideCard(ride)).join('')}
+                        ${filteredCards.map(ride => renderRideCard(ride)).join('')}
                     </div>
                 </div>
             `;
+
+            // 全体グラフを描画
+            renderOverviewChart(filteredCards);
+
+            // エリアタブのイベントリスナー（複数選択対応）
+            content.querySelectorAll('.area-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const area = tab.dataset.area;
+                    
+                    if (area === 'all') {
+                        // 「すべて」をクリック → 全選択（配列を空に）
+                        selectedAreas = [];
+                    } else {
+                        // 個別エリアをクリック → トグル
+                        if (selectedAreas.includes(area)) {
+                            // 選択解除
+                            selectedAreas = selectedAreas.filter(a => a !== area);
+                            // 全部未選択になったら自動的にすべて選択
+                            // （selectedAreas が空 = すべて選択なので何もしなくてOK）
+                        } else {
+                            // 選択追加
+                            selectedAreas.push(area);
+                        }
+                    }
+                    showAllRides();
+                });
+            });
 
             // カードクリックイベント
             content.querySelectorAll('.ride-card').forEach(card => {
@@ -839,6 +919,144 @@
                     showRideDetail(rideId);
                 });
             });
+        }
+
+        function renderOverviewChart(rideCards) {
+            const ctx = document.getElementById('overviewChart');
+            if (!ctx) return;
+
+            if (overviewChart) {
+                overviewChart.destroy();
+            }
+
+            // 0時〜24時のラベルを生成
+            const hourLabels = [];
+            for (let h = 0; h < 24; h++) {
+                hourLabels.push(`${h.toString().padStart(2, '0')}:00`);
+            }
+
+            // 全アトラクション（平均待ち時間が長い順にソート）
+            const allRides = [...rideCards]
+                .filter(r => r.avgWait > 0)
+                .sort((a, b) => b.avgWait - a.avgWait);
+
+            // 拡張カラーパレット（全アトラクション対応）
+            const colors = [
+                '#4ecdc4', '#ff6b6b', '#f9ca24', '#45b7d1', '#e84393',
+                '#00b894', '#fdcb6e', '#6c5ce7', '#fd79a8', '#00cec9',
+                '#e17055', '#74b9ff', '#a29bfe', '#55efc4', '#ffeaa7',
+                '#dfe6e9', '#81ecec', '#fab1a0', '#ff7675', '#636e72',
+                '#b2bec3', '#2d3436', '#d63031', '#e84393', '#0984e3',
+                '#6c5ce7', '#00b894', '#fdcb6e', '#e17055', '#74b9ff',
+                '#a29bfe', '#55efc4', '#ffeaa7', '#dfe6e9', '#81ecec',
+                '#fab1a0', '#ff7675', '#636e72', '#b2bec3', '#2d3436'
+            ];
+
+            // データセットを生成（全アトラクション）
+            const datasets = allRides.map((ride, index) => {
+                // 時間ごとのデータを整理
+                const hourlyData = new Array(24).fill(null);
+                
+                for (const td of ride.timeData) {
+                    if (td.wait !== null) {
+                        const [hours] = td.time.split(':').map(Number);
+                        // 同じ時間帯に複数のデータがある場合は上書き（最新を使用）
+                        hourlyData[hours] = td.wait;
+                    }
+                }
+
+                return {
+                    label: ride.name,
+                    data: hourlyData,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + '20',
+                    fill: false,
+                    tension: 0.3,
+                    spanGaps: true,
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    hidden: false // 全アトラクション表示
+                };
+            });
+
+            overviewChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // カスタムレジェンドを使用
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.raw === null) return null;
+                                    return `${context.dataset.label}: ${context.raw}分`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { 
+                                color: '#a0a0a0',
+                                maxRotation: 0,
+                                callback: function(val, index) {
+                                    // 3時間ごとに表示
+                                    return index % 3 === 0 ? this.getLabelForValue(val) : '';
+                                }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: '時刻',
+                                color: '#a0a0a0'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: '待ち時間（分）',
+                                color: '#a0a0a0'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // カスタムレジェンドを生成
+            const legendContainer = document.getElementById('chartLegend');
+            if (legendContainer) {
+                legendContainer.innerHTML = datasets.map((ds, i) => `
+                    <div class="legend-item ${ds.hidden ? 'hidden' : ''}" data-index="${i}">
+                        <span class="legend-color" style="background: ${ds.borderColor}"></span>
+                        <span>${escapeHtml(ds.label)}</span>
+                    </div>
+                `).join('');
+
+                // レジェンドクリックで表示/非表示切り替え
+                legendContainer.querySelectorAll('.legend-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const index = parseInt(item.dataset.index);
+                        const meta = overviewChart.getDatasetMeta(index);
+                        meta.hidden = !meta.hidden;
+                        item.classList.toggle('hidden', meta.hidden);
+                        overviewChart.update();
+                    });
+                });
+            }
         }
 
         function renderRideCard(ride) {
@@ -1037,6 +1255,7 @@
         document.getElementById('dateSelect').addEventListener('change', async (e) => {
             if (e.target.value) {
                 document.getElementById('rideSelect').value = 'all';
+                selectedAreas = []; // エリア選択をリセット（すべて選択）
                 await loadDateData(e.target.value);
             }
         });
