@@ -24,7 +24,7 @@ set SCRIPT_PATH=%~dp0collect-data.js
 
 echo 登録するタスク:
 echo   - 名前: DisneyWaitTimeCollector
-echo   - 実行間隔: 5分ごと
+echo   - 実行間隔: 15分ごと
 echo   - スクリプト: %SCRIPT_PATH%
 echo.
 
@@ -40,8 +40,8 @@ if %errorlevel% neq 0 (
 :: 既存タスクの削除（存在する場合）
 schtasks /delete /tn "DisneyWaitTimeCollector" /f >nul 2>nul
 
-:: タスクの作成（5分ごとに実行）
-schtasks /create /tn "DisneyWaitTimeCollector" /tr "node \"%SCRIPT_PATH%\"" /sc minute /mo 5 /f
+:: タスクの作成（15分ごとに実行）
+schtasks /create /tn "DisneyWaitTimeCollector" /tr "node \"%SCRIPT_PATH%\"" /sc minute /mo 15 /f
 
 if %errorlevel% equ 0 (
     echo.
@@ -49,7 +49,7 @@ if %errorlevel% equ 0 (
     echo [成功] タスクが登録されました！
     echo ========================================
     echo.
-    echo 5分ごとに自動でデータが収集され、GitHubにプッシュされます。
+    echo 15分ごとに自動でデータが収集され、GitHubにプッシュされます。
     echo データは %~dp0data\ フォルダに保存されます。
     echo.
     echo タスクを削除するには以下のコマンドを実行:
