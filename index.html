@@ -832,15 +832,16 @@
             // 今日のデータファイルを取得
             const today = getTodayDateString();
             const url = `data/${parkFile}_${today}.json`;
+            const fetchOptions = { cache: 'no-store' }; // キャッシュ無効化
             
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, fetchOptions);
                 if (!response.ok) {
                     // 今日のデータがない場合、昨日のデータを試す
                     const yesterday = new Date(Date.now() + (9 * 60 * 60 * 1000) - 86400000)
                         .toISOString().split('T')[0];
                     const yesterdayUrl = `data/${parkFile}_${yesterday}.json`;
-                    const yesterdayResponse = await fetch(yesterdayUrl);
+                    const yesterdayResponse = await fetch(yesterdayUrl, fetchOptions);
                     if (!yesterdayResponse.ok) {
                         throw new Error('データファイルが見つかりません');
                     }
@@ -878,7 +879,7 @@
                     if (isLocalFile) {
                         url = 'https://corsproxy.io/?' + encodeURIComponent(parkInfo.apiUrl);
                     }
-                    const response = await fetch(url);
+                    const response = await fetch(url, { cache: 'no-store' });
                     if (!response.ok) throw new Error('データの取得に失敗しました');
                     const data = await response.json();
                     rides = data.rides || [];
