@@ -406,7 +406,7 @@
         .ride-card {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
-            padding: 25px;
+            padding: 25px 25px 50px; /* 下側に「今がチャンス！」バッジ用のスペースを確保 */
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
@@ -463,6 +463,39 @@
 
         .ride-card-fav-btn.active {
             color: #ffd86b;
+        }
+
+        .chance-badge {
+            position: absolute;
+            right: 20px;
+            bottom: 16px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #0b1021;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            animation: chancePulse 1.2s ease-in-out infinite alternate;
+        }
+
+        .chance-badge span {
+            font-weight: 400;
+            color: #e8f9ff;
+        }
+
+        @keyframes chancePulse {
+            from {
+                transform: translateY(0);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            }
+            to {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+            }
         }
 
         .ride-status.open {
@@ -784,6 +817,7 @@
         let autoRefreshInterval = null;
         let favoriteRideIds = new Set(); // history.html と共有するお気に入りID群（文字列）
         let showFavoritesOnly = false;   // true のときお気に入りのみ表示
+        let chanceHighlights = new Map(); // 「今がチャンス！」対象アトラクション情報
 
         function selectPark(park) {
             currentPark = park;
@@ -964,7 +998,10 @@
                         last_updated: lastUpdated
                     };
                 });
-                
+
+                // 「今がチャンス！」判定用データを計算（ローカル収集データがある場合）
+                await computeChanceHighlights(parkInfo, ridesData, lastUpdated);
+
                 updateStats();
                 renderAreaTabs();
                 renderRides();
@@ -1128,6 +1165,7 @@
             const statusClass = ride.is_open ? 'open' : 'closed';
             const cardClass = ride.is_open ? '' : 'closed';
             const isFavorite = favoriteRideIds && favoriteRideIds.has(String(ride.id));
+            const chance = chanceHighlights && chanceHighlights.get(String(ride.id));
             
             return `
                 <div class="ride-card ${cardClass} ${waitClass}" data-ride-id="${ride.id}" style="cursor: pointer;">
@@ -1147,6 +1185,12 @@
                     ${ride.is_open ? `
                         <div class="wait-time-bar">
                             <div class="wait-time-fill" style="width: ${getWaitPercentage(ride.wait_time)}%"></div>
+                        </div>
+                    ` : ''}
+                    ${chance ? `
+                        <div class="chance-badge">
+                            今がチャンス！
+                            <span>平均より${Math.round(chance.diff)}分短い</span>
                         </div>
                     ` : ''}
                 </div>
@@ -1234,6 +1278,124 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function fetchLocalHistoryData(parkInfo, dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            const folder = parkInfo.folder || parkInfo.dataFile.toUpperCase();
+            const parkFile = parkInfo.dataFile;
+
+            const newUrl = `data/${folder}/${year}/${month}/${parkFile}_${dateStr}.json`;
+            const legacyUrl = `data/${parkFile}_${dateStr}.json`;
+            const fetchOptions = { cache: 'no-store' };
+
+            // 新形式 → 旧形式の順に試す
+            let response = await fetch(newUrl, fetchOptions);
+            if (!response.ok) {
+                response = await fetch(legacyUrl, fetchOptions);
+            }
+            if (!response.ok) {
+                throw new Error('history data not found');
+            }
+            return await response.json();
+        }
+
+        async function computeChanceHighlights(parkInfo, rides, lastUpdated) {
+            // デフォルトでは空にしておく
+            chanceHighlights = new Map();
+
+            // ローカル収集データが使えない場合や更新時刻が不明な場合はスキップ
+            if (!USE_LOCAL_DATA || !lastUpdated) {
+                return;
+            }
+
+            let currentHour = null;
+            try {
+                const d = new Date(lastUpdated);
+                if (!isNaN(d.getTime())) {
+                    currentHour = d.getHours();
+                }
+            } catch (e) {
+                currentHour = null;
+            }
+
+            if (currentHour === null) return;
+
+            const todayStr = getTodayDateString(); // JST基準 YYYY-MM-DD
+            const [tYear, tMonth, tDay] = todayStr.split('-').map(n => parseInt(n, 10));
+            const baseDate = new Date(tYear, tMonth - 1, tDay);
+
+            const aggregates = new Map(); // rideId -> { sum, count }
+            const MAX_DAYS = 7; // 過去7日分を対象
+
+            for (let offset = 1; offset <= MAX_DAYS; offset++) {
+                const target = new Date(baseDate.getTime() - offset * 86400000);
+                const y = target.getFullYear();
+                const m = String(target.getMonth() + 1).padStart(2, '0');
+                const d = String(target.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+
+                try {
+                    const data = await fetchLocalHistoryData(parkInfo, dateStr);
+                    if (!data || !Array.isArray(data.records)) continue;
+
+                    for (const record of data.records) {
+                        const timeStr = record.time || '';
+                        const hourStr = timeStr.split(':')[0];
+                        const hour = parseInt(hourStr, 10);
+                        if (Number.isNaN(hour) || hour !== currentHour) continue;
+
+                        const ridesAtTime = record.rides || [];
+                        for (const r of ridesAtTime) {
+                            if (!r.is_open || !r.wait_time || r.wait_time <= 0) continue;
+                            const key = String(r.id);
+                            const current = aggregates.get(key) || { sum: 0, count: 0 };
+                            current.sum += r.wait_time;
+                            current.count += 1;
+                            aggregates.set(key, current);
+                        }
+                    }
+                } catch (_) {
+                    // その日のデータがない場合はスキップ
+                    continue;
+                }
+            }
+
+            if (aggregates.size === 0) return;
+
+            // ベースライン（同じ時間帯の過去平均）を計算
+            const baselines = new Map(); // rideId -> avgWait
+            aggregates.forEach((agg, key) => {
+                if (agg.count > 0) {
+                    baselines.set(key, agg.sum / agg.count);
+                }
+            });
+
+            if (baselines.size === 0) return;
+
+            // 現在値と比較して「今がチャンス！」か判定
+            const LOWER_RATIO_THRESHOLD = 0.7; // 過去平均より30%以上短い
+            const MIN_DIFF_MINUTES = 5;        // 最低でも5分以上短い
+
+            for (const ride of rides) {
+                if (!ride.is_open || !ride.wait_time || ride.wait_time <= 0) continue;
+                const key = String(ride.id);
+                const baseline = baselines.get(key);
+                if (!baseline || baseline <= 0) continue;
+
+                const currentWait = ride.wait_time;
+                const diff = baseline - currentWait;
+                const ratio = currentWait / baseline;
+
+                if (diff >= MIN_DIFF_MINUTES && ratio <= LOWER_RATIO_THRESHOLD) {
+                    chanceHighlights.set(key, {
+                        baseline,
+                        current: currentWait,
+                        diff,
+                        ratio
+                    });
+                }
+            }
         }
 
         function loadFavoriteRides() {
