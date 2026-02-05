@@ -289,16 +289,101 @@
             color: #a0a0a0;
         }
 
-        .ride-card-range {
-            font-size: 0.8rem;
-            color: #a0a0a0;
-            margin-top: 8px;
+        .ride-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
         }
 
-        .ride-card-wait-value.wait-short { color: #4ecdc4; }
-        .ride-card-wait-value.wait-medium { color: #f9ca24; }
-        .ride-card-wait-value.wait-long { color: #ff6b6b; }
-        .ride-card-wait-value.wait-very-long { color: #e84393; }
+        .ride-card-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ride-card-stat-label {
+            font-size: 1rem;
+            color: #a0a0a0;
+        }
+
+        .ride-card-stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .ride-card-stat-value .unit {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #a0a0a0;
+            margin-left: 2px;
+        }
+
+        .ride-card-stat-value.wait-short { color: #4ecdc4; }
+        .ride-card-stat-value.wait-medium { color: #f9ca24; }
+        .ride-card-stat-value.wait-long { color: #ff6b6b; }
+        .ride-card-stat-value.wait-very-long { color: #e84393; }
+
+        .ride-card-no-data {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* エリアセクション */
+        .area-section {
+            margin-bottom: 40px;
+        }
+
+        .area-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px 25px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .area-header-icon {
+            font-size: 2rem;
+        }
+
+        .area-header-info {
+            flex: 1;
+        }
+
+        .area-header-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .area-header-stats {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        /* TDL エリアカラー（セクション用） */
+        .area-worldbazaar .area-header { border-left: 4px solid #e74c3c; }
+        .area-adventureland .area-header { border-left: 4px solid #27ae60; }
+        .area-westernland .area-header { border-left: 4px solid #d35400; }
+        .area-crittercountry .area-header { border-left: 4px solid #8e44ad; }
+        .area-fantasyland .area-header { border-left: 4px solid #e91e63; }
+        .area-toontown .area-header { border-left: 4px solid #f39c12; }
+        .area-tomorrowland .area-header { border-left: 4px solid #3498db; }
+
+        /* TDS エリアカラー（セクション用） */
+        .area-mediterranean .area-header { border-left: 4px solid #8e44ad; }
+        .area-americanwaterfront .area-header { border-left: 4px solid #e74c3c; }
+        .area-portdiscovery .area-header { border-left: 4px solid #3498db; }
+        .area-lostriverdelta .area-header { border-left: 4px solid #27ae60; }
+        .area-arabiancoast .area-header { border-left: 4px solid #f39c12; }
+        .area-mermaidlagoon .area-header { border-left: 4px solid #e91e63; }
+        .area-mysteriousisland .area-header { border-left: 4px solid #1abc9c; }
+        .area-fantasysprings .area-header { border-left: 4px solid #9b59b6; }
 
         .table-container {
             overflow-x: auto;
@@ -354,26 +439,30 @@
 
         /* エリアタブ */
         .area-tabs {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 10px;
             margin-bottom: 25px;
-            justify-content: center;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .area-tab {
-            padding: 10px 20px;
+            padding: 12px 16px;
             border: none;
-            border-radius: 25px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             transition: all 0.3s ease;
             background: rgba(255,255,255,0.08);
             color: #ccc;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 6px;
+            text-align: center;
         }
 
         .area-tab:hover {
@@ -388,14 +477,14 @@
         }
 
         .area-tab .area-icon {
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .area-tab .area-count {
             background: rgba(255,255,255,0.2);
             padding: 2px 8px;
             border-radius: 10px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         /* TDL エリアカラー */
@@ -480,12 +569,28 @@
                 width: 100%;
             }
 
+            .area-tabs {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .area-tab {
+                padding: 10px 12px;
+                font-size: 0.75rem;
+            }
+
             .rides-grid {
                 grid-template-columns: 1fr;
             }
+
+            .area-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
         }
     </style>
-    <script src="js/park-data.js"></script>
+    <script src="park-data.js"></script>
 </head>
 <body>
     <div class="container">
@@ -876,11 +981,9 @@
                 </div>
 
                 <div class="chart-container">
-                    <h2 class="chart-title">全アトラクション一覧（最新: ${lastTime}）</h2>
+                    <h2 class="chart-title">全アトラクション一覧</h2>
                     <p style="text-align: center; color: #a0a0a0; margin-bottom: 20px;">カードをクリックするとグラフを表示</p>
-                    <div class="rides-grid">
-                        ${filteredCards.map(ride => renderRideCard(ride)).join('')}
-                    </div>
+                    ${renderAreaSections(filteredCards, areas)}
                 </div>
             `;
 
@@ -929,9 +1032,9 @@
                 overviewChart.destroy();
             }
 
-            // 0時〜24時のラベルを生成
+            // 8時〜22時のラベルを生成
             const hourLabels = [];
-            for (let h = 0; h < 24; h++) {
+            for (let h = 8; h <= 22; h++) {
                 hourLabels.push(`${h.toString().padStart(2, '0')}:00`);
             }
 
@@ -954,14 +1057,16 @@
 
             // データセットを生成（全アトラクション）
             const datasets = allRides.map((ride, index) => {
-                // 時間ごとのデータを整理
-                const hourlyData = new Array(24).fill(null);
+                // 時間ごとのデータを整理（8時〜22時 = 15時間分）
+                const hourlyData = new Array(15).fill(null);
                 
                 for (const td of ride.timeData) {
                     if (td.wait !== null) {
                         const [hours] = td.time.split(':').map(Number);
-                        // 同じ時間帯に複数のデータがある場合は上書き（最新を使用）
-                        hourlyData[hours] = td.wait;
+                        // 8時〜22時の範囲のみ
+                        if (hours >= 8 && hours <= 22) {
+                            hourlyData[hours - 8] = td.wait;
+                        }
                     }
                 }
 
@@ -1059,32 +1164,75 @@
             }
         }
 
+        function renderAreaSections(rideCards, areas) {
+            let html = '';
+            
+            Object.entries(areas).forEach(([key, area]) => {
+                const areaRides = rideCards.filter(r => r.area === key);
+                if (areaRides.length === 0) return;
+                
+                // エリア統計
+                const ridesWithData = areaRides.filter(r => r.waits.length > 0);
+                const avgWait = ridesWithData.length > 0
+                    ? Math.round(ridesWithData.reduce((sum, r) => sum + r.avgWait, 0) / ridesWithData.length)
+                    : 0;
+
+                html += `
+                    <div class="area-section area-${key}">
+                        <div class="area-header">
+                            <span class="area-header-icon">${area.icon}</span>
+                            <div class="area-header-info">
+                                <div class="area-header-name">${area.name}</div>
+                                <div class="area-header-stats">
+                                    ${ridesWithData.length}/${areaRides.length} アトラクション | 平均待ち時間: ${avgWait}分
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rides-grid">
+                            ${areaRides.map(ride => renderRideCard(ride)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            return html || '<div class="no-rides">該当するアトラクションがありません</div>';
+        }
+
         function renderRideCard(ride) {
-            const waitClass = ride.lastOpen ? getWaitClass(ride.lastWait) : '';
-            const cardClass = ride.lastOpen ? '' : 'closed';
+            const cardClass = ride.waits.length === 0 ? 'closed' : '';
+            const avgClass = getWaitClass(ride.avgWait);
             
             return `
                 <div class="ride-card ${cardClass}" data-ride-id="${ride.id}">
                     <div class="ride-card-header">
                         <span class="ride-card-name">${escapeHtml(ride.name)}</span>
-                        <span class="ride-card-status ${ride.lastOpen ? 'open' : 'closed'}">
-                            ${ride.lastOpen ? '運営中' : '休止中'}
-                        </span>
-                    </div>
-                    <div class="ride-card-wait">
-                        <span class="ride-card-wait-value ${waitClass}">${ride.lastOpen ? ride.lastWait : '-'}</span>
-                        <span class="ride-card-wait-unit">分</span>
                     </div>
                     ${ride.waits.length > 0 ? `
-                        <div class="ride-card-range">
-                            平均 ${ride.avgWait}分 / 最短 ${ride.minWait}分 / 最長 ${ride.maxWait}分
+                        <div class="ride-card-stats">
+                            <div class="ride-card-stat">
+                                <span class="ride-card-stat-label">平均</span>
+                                <span class="ride-card-stat-value ${avgClass}">${ride.avgWait}<span class="unit">分</span></span>
+                            </div>
+                            <div class="ride-card-stat">
+                                <span class="ride-card-stat-label">最大</span>
+                                <span class="ride-card-stat-value">${ride.maxWait}<span class="unit">分</span></span>
+                            </div>
+                            <div class="ride-card-stat">
+                                <span class="ride-card-stat-label">最小</span>
+                                <span class="ride-card-stat-value">${ride.minWait}<span class="unit">分</span></span>
+                            </div>
                         </div>
-                    ` : ''}
+                    ` : `
+                        <div class="ride-card-no-data">データなし</div>
+                    `}
                 </div>
             `;
         }
 
         function showRideDetail(rideId) {
+            // スクロールを一番上に戻す
+            window.scrollTo(0, 0);
+            
             const content = document.getElementById('content');
             
             const rideData = [];
@@ -1164,8 +1312,22 @@
                 chart.destroy();
             }
 
-            const labels = rideData.map(d => d.time);
-            const data = rideData.map(d => d.is_open ? d.wait_time : null);
+            // 8時〜22時のラベルを生成
+            const labels = [];
+            for (let h = 8; h <= 22; h++) {
+                labels.push(`${h.toString().padStart(2, '0')}:00`);
+            }
+
+            // 時間ごとのデータを整理（8時〜22時）
+            const hourlyData = new Array(15).fill(null);
+            for (const d of rideData) {
+                if (d.is_open && d.wait_time !== null) {
+                    const [hours] = d.time.split(':').map(Number);
+                    if (hours >= 8 && hours <= 22) {
+                        hourlyData[hours - 8] = d.wait_time;
+                    }
+                }
+            }
 
             chart = new Chart(ctx, {
                 type: 'line',
@@ -1173,12 +1335,12 @@
                     labels: labels,
                     datasets: [{
                         label: '待ち時間（分）',
-                        data: data,
+                        data: hourlyData,
                         borderColor: '#4ecdc4',
                         backgroundColor: 'rgba(78, 205, 196, 0.1)',
                         fill: true,
                         tension: 0.3,
-                        spanGaps: false
+                        spanGaps: true
                     }]
                 },
                 options: {
