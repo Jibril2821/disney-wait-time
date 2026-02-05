@@ -12,15 +12,19 @@ const PARKS = {
         icon: '🏰',
         apiUrl: 'https://queue-times.com/parks/274/queue_times.json',
         dataFile: 'land',
-        filePrefix: 'land'
+        filePrefix: 'land',
+        // データ保存用フォルダ名（収集スクリプト・履歴ビュー共通）
+        folder: 'TDL'
     },
     sea: {
         id: 275,
         name: '東京ディズニーシー',
-        icon: '🚢',
+        icon: '🌋',
         apiUrl: 'https://queue-times.com/parks/275/queue_times.json',
         dataFile: 'sea',
-        filePrefix: 'sea'
+        filePrefix: 'sea',
+        // データ保存用フォルダ名（収集スクリプト・履歴ビュー共通）
+        folder: 'TDS'
     }
 };
 

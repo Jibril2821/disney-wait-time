@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>東京ディズニーリゾート 待ち時間</title>
     <style>
         * {
@@ -322,6 +323,7 @@
         .area-tab.active {
             color: #fff;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
         }
 
         .area-tab .area-icon {
@@ -527,52 +529,43 @@
             animation: spin 1s linear infinite;
         }
 
-        /* TDL エリアカラー */
+        /* TDL エリアカラー（セクション用） */
         .area-worldbazaar .area-header { border-left: 4px solid #e74c3c; }
-        .area-worldbazaar .area-tab.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-
         .area-adventureland .area-header { border-left: 4px solid #27ae60; }
-        .area-adventureland .area-tab.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
-
         .area-westernland .area-header { border-left: 4px solid #d35400; }
-        .area-westernland .area-tab.active { background: linear-gradient(135deg, #d35400, #a04000); }
-
         .area-crittercountry .area-header { border-left: 4px solid #8e44ad; }
-        .area-crittercountry .area-tab.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
-
         .area-fantasyland .area-header { border-left: 4px solid #e91e63; }
-        .area-fantasyland .area-tab.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
-
         .area-toontown .area-header { border-left: 4px solid #f39c12; }
-        .area-toontown .area-tab.active { background: linear-gradient(135deg, #f39c12, #d68910); }
-
         .area-tomorrowland .area-header { border-left: 4px solid #3498db; }
-        .area-tomorrowland .area-tab.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+ 
+        /* TDL エリアカラー（タブ用） */
+        .area-tab.area-worldbazaar.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .area-tab.area-adventureland.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .area-tab.area-westernland.active { background: linear-gradient(135deg, #d35400, #a04000); }
+        .area-tab.area-crittercountry.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+        .area-tab.area-fantasyland.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .area-tab.area-toontown.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .area-tab.area-tomorrowland.active { background: linear-gradient(135deg, #3498db, #2874a6); }
 
-        /* TDS エリアカラー */
+        /* TDS エリアカラー（セクション用） */
         .area-mediterranean .area-header { border-left: 4px solid #8e44ad; }
-        .area-mediterranean .area-tab.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
-
         .area-americanwaterfront .area-header { border-left: 4px solid #e74c3c; }
-        .area-americanwaterfront .area-tab.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-
         .area-portdiscovery .area-header { border-left: 4px solid #3498db; }
-        .area-portdiscovery .area-tab.active { background: linear-gradient(135deg, #3498db, #2874a6); }
-
         .area-lostriverdelta .area-header { border-left: 4px solid #27ae60; }
-        .area-lostriverdelta .area-tab.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
-
         .area-arabiancoast .area-header { border-left: 4px solid #f39c12; }
-        .area-arabiancoast .area-tab.active { background: linear-gradient(135deg, #f39c12, #d68910); }
-
         .area-mermaidlagoon .area-header { border-left: 4px solid #e91e63; }
-        .area-mermaidlagoon .area-tab.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
-
         .area-mysteriousisland .area-header { border-left: 4px solid #1abc9c; }
-        .area-mysteriousisland .area-tab.active { background: linear-gradient(135deg, #1abc9c, #16a085); }
-
         .area-fantasysprings .area-header { border-left: 4px solid #9b59b6; }
-        .area-fantasysprings .area-tab.active { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+ 
+        /* TDS エリアカラー（タブ用） */
+        .area-tab.area-mediterranean.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+        .area-tab.area-americanwaterfront.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .area-tab.area-portdiscovery.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+        .area-tab.area-lostriverdelta.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .area-tab.area-arabiancoast.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .area-tab.area-mermaidlagoon.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+        .area-tab.area-mysteriousisland.active { background: linear-gradient(135deg, #1abc9c, #16a085); }
+        .area-tab.area-fantasysprings.active { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
 
         @media (max-width: 768px) {
             .park-select-title {
@@ -655,7 +648,7 @@
             </div>
             
             <div class="park-card sea" onclick="selectPark('sea')">
-                <div class="park-icon">🚢</div>
+                <div class="park-icon">🌋</div>
                 <h2 class="park-name">東京ディズニーシー</h2>
                 <p class="park-description">冒険とイマジネーションの海</p>
             </div>
@@ -736,7 +729,8 @@
         let ridesData = [];
         let currentFilter = 'all';
         let currentSort = 'name';
-        let currentArea = 'all';
+        // 空配列 = すべてのエリア選択（history.html と同様の仕様）
+        let selectedAreas = [];
         let autoRefreshInterval = null;
 
         function selectPark(park) {
@@ -778,7 +772,7 @@
             `;
             
             // フィルターとエリアをリセット
-            currentArea = 'all';
+            selectedAreas = [];
             currentFilter = 'all';
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.filter === 'all');
@@ -828,24 +822,42 @@
             return jst.toISOString().split('T')[0];
         }
 
-        async function fetchLocalData(parkFile) {
+        async function fetchLocalData(parkFile, parkFolder) {
             // 今日のデータファイルを取得
-            const today = getTodayDateString();
-            const url = `data/${parkFile}_${today}.json`;
+            const today = getTodayDateString(); // YYYY-MM-DD
+            const [year, month, day] = today.split('-');
+            const folder = parkFolder || parkFile.toUpperCase();
+
+            // 新形式: data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等
+            const newUrlToday = `data/${folder}/${year}/${month}/${parkFile}_${today}.json`;
+            const legacyUrlToday = `data/${parkFile}_${today}.json`;
+
             const fetchOptions = { cache: 'no-store' }; // キャッシュ無効化
             
             try {
-                const response = await fetch(url, fetchOptions);
+                // 新形式 → 旧形式の順に試す
+                let response = await fetch(newUrlToday, fetchOptions);
+                if (!response.ok) {
+                    response = await fetch(legacyUrlToday, fetchOptions);
+                }
+
                 if (!response.ok) {
                     // 今日のデータがない場合、昨日のデータを試す
                     const yesterday = new Date(Date.now() + (9 * 60 * 60 * 1000) - 86400000)
                         .toISOString().split('T')[0];
-                    const yesterdayUrl = `data/${parkFile}_${yesterday}.json`;
-                    const yesterdayResponse = await fetch(yesterdayUrl, fetchOptions);
-                    if (!yesterdayResponse.ok) {
+                    const [yYear, yMonth, yDay] = yesterday.split('-');
+                    const newUrlYesterday = `data/${folder}/${yYear}/${yMonth}/${parkFile}_${yesterday}.json`;
+                    const legacyUrlYesterday = `data/${parkFile}_${yesterday}.json`;
+
+                    let yRes = await fetch(newUrlYesterday, fetchOptions);
+                    if (!yRes.ok) {
+                        yRes = await fetch(legacyUrlYesterday, fetchOptions);
+                    }
+
+                    if (!yRes.ok) {
                         throw new Error('データファイルが見つかりません');
                     }
-                    return await yesterdayResponse.json();
+                    return await yRes.json();
                 }
                 return await response.json();
             } catch (e) {
@@ -864,7 +876,7 @@
 
                 if (USE_LOCAL_DATA) {
                     // GitHub Actionsで収集したデータを使用
-                    const localData = await fetchLocalData(parkInfo.dataFile);
+                    const localData = await fetchLocalData(parkInfo.dataFile, parkInfo.folder);
                     
                     if (localData.records && localData.records.length > 0) {
                         // 最新のレコードを取得
@@ -956,8 +968,10 @@
                 areaCounts[key] = ridesData.filter(r => r.area === key).length;
             });
 
+            const isAllSelected = selectedAreas.length === 0;
+
             let html = `
-                <button class="area-tab ${currentArea === 'all' ? 'active' : ''}" data-area="all">
+                <button class="area-tab ${isAllSelected ? 'active' : ''}" data-area="all">
                     <span class="area-icon">🎡</span>
                     <span>すべて</span>
                     <span class="area-count">${ridesData.length}</span>
@@ -966,8 +980,9 @@
 
             Object.entries(areas).forEach(([key, area]) => {
                 if (areaCounts[key] > 0) {
+                    const activeClass = selectedAreas.includes(key) ? 'active' : '';
                     html += `
-                        <button class="area-tab area-${key} ${currentArea === key ? 'active' : ''}" data-area="${key}">
+                        <button class="area-tab area-${key} ${activeClass}" data-area="${key}">
                             <span class="area-icon">${area.icon}</span>
                             <span>${area.name}</span>
                             <span class="area-count">${areaCounts[key]}</span>
@@ -978,11 +993,28 @@
 
             tabsContainer.innerHTML = html;
 
+            // エリアタブ複数選択ロジック（history.html と同様の動き）
             tabsContainer.querySelectorAll('.area-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
-                    tabsContainer.querySelectorAll('.area-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentArea = tab.dataset.area;
+                    const area = tab.dataset.area;
+
+                    if (area === 'all') {
+                        // 「すべて」クリック → 全選択（配列を空に）
+                        selectedAreas = [];
+                    } else {
+                        // 個別エリアをトグル
+                        if (selectedAreas.includes(area)) {
+                            // 選択解除
+                            selectedAreas = selectedAreas.filter(a => a !== area);
+                            // 全部未選択になっても、仕様上「空配列 = 全選択」とみなす
+                        } else {
+                            // 選択追加
+                            selectedAreas.push(area);
+                        }
+                    }
+
+                    // タブの見た目と表示内容を更新
+                    renderAreaTabs();
                     renderRides();
                 });
             });
@@ -1059,57 +1091,28 @@
             const container = document.getElementById('ridesContainer');
             const areas = getAreas();
             
-            let filteredByArea = currentArea === 'all' 
-                ? ridesData 
-                : ridesData.filter(r => r.area === currentArea);
+            // ステータスフィルタ（運営中/休止中）
+            let filtered = filterRides(ridesData);
 
-            filteredByArea = filterRides(filteredByArea);
-
-            if (filteredByArea.length === 0) {
-                container.innerHTML = '<div class="no-rides">該当するアトラクションがありません</div>';
-                return;
+            // エリアフィルタ（空配列 = 全エリア）
+            if (selectedAreas.length > 0) {
+                filtered = filtered.filter(r => selectedAreas.includes(r.area));
             }
 
-            if (currentArea !== 'all') {
-                const sortedRides = sortRides(filteredByArea);
-                const area = areas[currentArea];
-                
-                const openCount = sortedRides.filter(r => r.is_open).length;
-                const avgWait = sortedRides.filter(r => r.is_open && r.wait_time > 0);
-                const avg = avgWait.length > 0 
-                    ? Math.round(avgWait.reduce((sum, r) => sum + r.wait_time, 0) / avgWait.length)
-                    : 0;
-
-                container.innerHTML = `
-                    <div class="area-section area-${currentArea}">
-                        <div class="area-header">
-                            <span class="area-header-icon">${area.icon}</span>
-                            <div class="area-header-info">
-                                <div class="area-header-name">${area.name}</div>
-                                <div class="area-header-stats">
-                                    運営中: ${openCount}/${sortedRides.length} | 平均待ち時間: ${avg}分
-                                </div>
-                            </div>
-                        </div>
-                        <div class="rides-grid">
-                            ${sortedRides.map(ride => renderRideCard(ride)).join('')}
-                        </div>
-                    </div>
-                `;
-                // カードクリックで履歴画面に遷移
-                container.querySelectorAll('.ride-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        const rideId = card.dataset.rideId;
-                        window.location.href = `history.html?park=${currentPark}&ride=${rideId}`;
-                    });
-                });
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="no-rides">該当するアトラクションがありません</div>';
                 return;
             }
 
             let html = '';
             
             Object.entries(areas).forEach(([key, area]) => {
-                let areaRides = filteredByArea.filter(r => r.area === key);
+                // 選択されていないエリアはスキップ（selectedAreas が空なら全エリア対象）
+                if (selectedAreas.length > 0 && !selectedAreas.includes(key)) {
+                    return;
+                }
+
+                let areaRides = filtered.filter(r => r.area === key);
                 if (areaRides.length === 0) return;
                 
                 areaRides = sortRides(areaRides);

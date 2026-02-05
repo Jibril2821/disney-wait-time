@@ -74,7 +74,7 @@ if %errorlevel% neq 0 (
 schtasks /delete /tn "DisneyWaitTimeCollector" /f >nul 2>nul
 
 :: タスクの作成（8:00〜22:00の間、指定間隔で実行）
-schtasks /create /tn "DisneyWaitTimeCollector" /tr "node \"%SCRIPT_PATH%\"" /sc daily /st 08:00 /du %DURATION% /ri %INTERVAL% /f
+schtasks /create /tn "DisneyWaitTimeCollector" /tr "\"C:\Program Files\nodejs\node.exe\" \"%SCRIPT_PATH%\"" /sc daily /st 08:00 /du %DURATION% /ri %INTERVAL% /f
 
 if %errorlevel% equ 0 (
     echo.

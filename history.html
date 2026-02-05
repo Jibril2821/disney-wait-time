@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>待ち時間履歴ビューア</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -808,18 +809,42 @@
                 availableDates = [];
                 // 並列でチェック（高速化）
                 const checkPromises = dates.map(async (date) => {
-                    const url = `data/${parkInfo.filePrefix}_${date}.json`;
+                    const [year, month, day] = date.split('-');
+                    // 新形式: data/TDL/YYYY/MM/land_YYYY-MM-DD.json or data/TDS/YYYY/MM/sea_YYYY-MM-DD.json
+                    const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
+                    const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
+                    const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
+
+                    // 新形式を優先して確認し、無ければ旧形式ファイルを探す
                     try {
-                        const response = await fetch(url, { method: 'HEAD' });
-                        if (response.ok) {
-                            return date;
+                        const resNew = await fetch(newUrl, { method: 'HEAD' });
+                        if (resNew.ok) {
+                            return { date, type: 'new' };
                         }
                     } catch (e) {}
+
+                    try {
+                        const resOld = await fetch(legacyUrl, { method: 'HEAD' });
+                        if (resOld.ok) {
+                            return { date, type: 'legacy' };
+                        }
+                    } catch (e) {}
+
                     return null;
                 });
                 
                 const results = await Promise.all(checkPromises);
-                availableDates = results.filter(d => d !== null).sort().reverse();
+                // 利用可能日だけを保持しつつ、どの形式かも一緒に保存
+                const found = results.filter(r => r !== null);
+                availableDates = found
+                    .map(r => r.date)
+                    .sort()
+                    .reverse();
+                // 形式情報をマップで保持
+                window.__dateFileTypeMap = {};
+                for (const r of found) {
+                    window.__dateFileTypeMap[r.date] = r.type;
+                }
 
                 if (availableDates.length === 0) {
                     content.innerHTML = `
@@ -857,8 +882,16 @@
             `;
 
             try {
-                const url = `data/${parkInfo.filePrefix}_${date}.json`;
-                const response = await fetch(url);
+                const [year, month, day] = date.split('-');
+                const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
+                const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
+                const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
+
+                // まず新形式を試し、ダメなら旧形式を読む
+                let response = await fetch(newUrl);
+                if (!response.ok) {
+                    response = await fetch(legacyUrl);
+                }
                 if (!response.ok) throw new Error('データの取得に失敗しました');
                 
                 const data = await response.json();
@@ -1089,26 +1122,34 @@
             let labels, datasets, xAxisTitle;
 
             if (currentPeriod === 'day') {
-                // 日単位: 8時〜22時の時間軸
+                // 日単位: 8:00〜22:00 を30分刻みで表示
                 labels = [];
                 for (let h = 8; h <= 22; h++) {
                     labels.push(`${h.toString().padStart(2, '0')}:00`);
+                    if (h !== 22) {
+                        labels.push(`${h.toString().padStart(2, '0')}:30`);
+                    }
                 }
                 xAxisTitle = '時刻';
 
                 datasets = allRides.map((ride, index) => {
-                    const hourlyData = new Array(15).fill(null);
+                    // 8:00〜22:00 を30分刻み → 29ポイント
+                    const slotData = new Array(labels.length).fill(null);
                     for (const td of ride.timeData) {
                         if (td.wait !== null) {
-                            const [hours] = td.time.split(':').map(Number);
-                            if (hours >= 8 && hours <= 22) {
-                                hourlyData[hours - 8] = td.wait;
+                            const [hours, minutes] = td.time.split(':').map(Number);
+                            if (hours < 8 || hours > 22) continue;
+                            // 8:00 を 0、8:30 を 1 ... 22:00 を 28 にマッピング
+                            const baseIndex = (hours - 8) * 2;
+                            const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
+                            if (index30 >= 0 && index30 < slotData.length) {
+                                slotData[index30] = td.wait;
                             }
                         }
                     }
                     return {
                         label: ride.name,
-                        data: hourlyData,
+                        data: slotData,
                         borderColor: colors[index % colors.length],
                         backgroundColor: colors[index % colors.length] + '20',
                         fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
@@ -1223,8 +1264,9 @@
                 font: { size: 14, weight: 'bold' }
             };
             if (currentPeriod === 'day') {
+                // 30分刻みデータだが、ラベルは1時間ごとに表示
                 xTicksConfig.callback = function(val, index) { 
-                    return index % 3 === 0 ? this.getLabelForValue(val) : ''; 
+                    return index % 2 === 0 ? this.getLabelForValue(val) : ''; 
                 };
             } else if (currentPeriod === 'month' && labels.length > 15) {
                 xTicksConfig.callback = function(val, index) { 
@@ -1460,16 +1502,22 @@
             let xAxisTitle = '';
 
             if (currentPeriod === 'day') {
-                // 日単位: 8時〜22時のラベルを生成
+                // 日単位: 8:00〜22:00 を30分刻みで表示
                 for (let h = 8; h <= 22; h++) {
                     labels.push(`${h.toString().padStart(2, '0')}:00`);
+                    if (h !== 22) {
+                        labels.push(`${h.toString().padStart(2, '0')}:30`);
+                    }
                 }
-                chartData = new Array(15).fill(null);
+                chartData = new Array(labels.length).fill(null);
                 for (const d of rideData) {
                     if (d.is_open && d.wait_time !== null) {
-                        const [hours] = d.time.split(':').map(Number);
-                        if (hours >= 8 && hours <= 22) {
-                            chartData[hours - 8] = d.wait_time;
+                        const [hours, minutes] = d.time.split(':').map(Number);
+                        if (hours < 8 || hours > 22) continue;
+                        const baseIndex = (hours - 8) * 2;
+                        const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
+                        if (index30 >= 0 && index30 < chartData.length) {
+                            chartData[index30] = d.wait_time;
                         }
                     }
                 }
@@ -1528,7 +1576,12 @@
                 maxRotation: currentPeriod === 'month' ? 45 : 0,
                 font: { size: 14, weight: 'bold' }
             };
-            if (currentPeriod === 'month' && labels.length > 15) {
+            if (currentPeriod === 'day') {
+                // 30分刻みデータだが、ラベルは1時間ごとに表示
+                xTicksConfig2.callback = function(val, index) { 
+                    return index % 2 === 0 ? this.getLabelForValue(val) : ''; 
+                };
+            } else if (currentPeriod === 'month' && labels.length > 15) {
                 xTicksConfig2.callback = function(val, index) { 
                     return index % 5 === 0 ? this.getLabelForValue(val) : ''; 
                 };
@@ -1842,10 +1895,16 @@
 
                 // 複数日のデータを読み込んで統合
                 const allRecords = [];
+                const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
                 for (const date of datesToLoad) {
-                    const url = `data/${parkInfo.filePrefix}_${date}.json`;
+                    const [year, month, day] = date.split('-');
+                    const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
+                    const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
                     try {
-                        const response = await fetch(url);
+                        let response = await fetch(newUrl);
+                        if (!response.ok) {
+                            response = await fetch(legacyUrl);
+                        }
                         if (response.ok) {
                             const data = await response.json();
                             for (const record of data.records) {

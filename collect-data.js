@@ -10,11 +10,13 @@ const { execSync } = require('child_process');
 const PARKS = {
     land: {
         name: '東京ディズニーランド',
-        apiUrl: 'https://queue-times.com/parks/274/queue_times.json'
+        apiUrl: 'https://queue-times.com/parks/274/queue_times.json',
+        folder: 'TDL' // data/TDL/YYYY/MM/land_YYYY-MM-DD.json
     },
     sea: {
         name: '東京ディズニーシー',
-        apiUrl: 'https://queue-times.com/parks/275/queue_times.json'
+        apiUrl: 'https://queue-times.com/parks/275/queue_times.json',
+        folder: 'TDS' // data/TDS/YYYY/MM/sea_YYYY-MM-DD.json
     }
 };
 
@@ -87,8 +89,14 @@ async function collectData() {
         if (!data) continue;
 
         // 日付ごとのファイルに保存
+        // 例: data/TDL/2026/02/land_2026-02-05.json, data/TDS/2026/02/sea_2026-02-05.json
+        const [year, month, day] = dateStr.split('-'); // YYYY, MM, DD
+        const parkDir = path.join(DATA_DIR, park.folder || parkId.toUpperCase(), year, month);
+        if (!fs.existsSync(parkDir)) {
+            fs.mkdirSync(parkDir, { recursive: true });
+        }
         const fileName = `${parkId}_${dateStr}.json`;
-        const filePath = path.join(DATA_DIR, fileName);
+        const filePath = path.join(parkDir, fileName);
 
         let dailyData = { date: dateStr, park: park.name, records: [] };
         
