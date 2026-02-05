@@ -600,6 +600,64 @@
             color: #ffd86b;
         }
 
+        /* 比較モード（詳細グラフ） */
+        .compare-toolbar {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            font-size: 0.8rem;
+        }
+
+        .compare-toolbar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .compare-toolbar-title {
+            font-weight: 600;
+            color: #f9ca24;
+        }
+
+        .compare-select {
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 0.8rem;
+            min-width: 200px;
+        }
+
+        .compare-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .compare-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+        }
+
+        .compare-chip button {
+            border: none;
+            background: transparent;
+            color: #ffd86b;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0;
+        }
+
         /* 混雑ヒートマップ */
         .heatmap-container {
             margin-bottom: 24px;
@@ -936,6 +994,8 @@
         let initialRideHandled = false; // URLパラメータのride処理済みフラグ
         let favoriteRideIds = new Set(); // お気に入りアトラクションID群（文字列）
         let showFavoritesOnly = false; // true のときお気に入りのみ表示
+        let compareRideIds = new Set(); // 詳細グラフの比較対象ID群（文字列）
+        let currentDetailRideId = null; // 現在の詳細表示中アトラクションID
 
         // URLパラメータからパークとアトラクションを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -1898,22 +1958,11 @@
             window.scrollTo(0, 0);
             
             const content = document.getElementById('content');
+            currentDetailRideId = rideId;
             
-            const rideData = [];
-            let rideName = '';
-
-            for (const record of loadedData.records) {
-                const ride = record.rides.find(r => r.id === rideId);
-                if (ride) {
-                    rideName = getRideName(ride.id, ride.name);
-                    rideData.push({
-                        time: record.time,
-                        datetime: `${record.date} ${record.time}`,
-                        is_open: ride.is_open,
-                        wait_time: ride.wait_time
-                    });
-                }
-            }
+            const collected = collectRideData(rideId);
+            const rideName = collected.rideName;
+            const rideData = collected.data || [];
 
             const waits = rideData.filter(d => d.is_open && d.wait_time > 0).map(d => d.wait_time);
             const avgWait = waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : 0;
@@ -1943,6 +1992,18 @@
                         </div>
                     </div>
                 </div>
+                <div class="compare-toolbar">
+                    <div class="compare-toolbar-header">
+                        <div class="compare-toolbar-title">📌 比較モード</div>
+                        <div style="font-size: 0.75rem; color: #a0a0a0;">他のアトラクションの平均を重ねて表示できます</div>
+                    </div>
+                    <div>
+                        <select id="compareSelect" class="compare-select">
+                            <option value="">アトラクションを選択して追加...</option>
+                        </select>
+                        <div class="compare-chips" id="compareChips"></div>
+                    </div>
+                </div>
                 <div class="chart-container">
                     <h2 class="chart-title">待ち時間推移グラフ</h2>
                     <canvas id="waitTimeChart"></canvas>
@@ -1964,11 +2025,101 @@
                 </div>
             `;
 
-            renderChart(rideName, rideData);
+            setupCompareControls(rideId, rideName, rideData);
+            renderChart(rideName, rideData, rideId);
             renderTable(rideData);
         }
 
-        function renderChart(rideName, rideData) {
+        function collectRideData(rideId) {
+            const rideData = [];
+            let rideName = '';
+
+            if (!loadedData || !loadedData.records) {
+                return { rideName: '', data: [] };
+            }
+
+            for (const record of loadedData.records) {
+                const ride = record.rides.find(r => r.id === rideId);
+                if (ride) {
+                    rideName = getRideName(ride.id, ride.name);
+                    rideData.push({
+                        date: record.date,
+                        time: record.time,
+                        datetime: `${record.date} ${record.time}`,
+                        is_open: ride.is_open,
+                        wait_time: ride.wait_time
+                    });
+                }
+            }
+
+            return { rideName, data: rideData };
+        }
+
+        function setupCompareControls(primaryRideId, primaryRideName, primaryRideData) {
+            const select = document.getElementById('compareSelect');
+            const chipsContainer = document.getElementById('compareChips');
+            const rideSelect = document.getElementById('rideSelect');
+            if (!select || !chipsContainer || !rideSelect) return;
+
+            // 比較対象候補をセレクトにセット（現在のプライマリと既に追加済みは除外）
+            select.innerHTML = '<option value="">アトラクションを選択して追加...</option>';
+            Array.from(rideSelect.options).forEach(opt => {
+                if (opt.value === 'all') return;
+                if (String(opt.value) === String(primaryRideId)) return;
+                if (compareRideIds.has(String(opt.value))) return;
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.textContent;
+                select.appendChild(option);
+            });
+
+            // 現在の比較対象チップを描画（存在しないIDは除外）
+            const validCompareIds = [];
+            const labelMap = new Map();
+            Array.from(rideSelect.options).forEach(opt => {
+                if (opt.value !== 'all') {
+                    labelMap.set(String(opt.value), opt.textContent);
+                }
+            });
+            compareRideIds.forEach(id => {
+                if (labelMap.has(id) && id !== String(primaryRideId)) {
+                    validCompareIds.push(id);
+                }
+            });
+            // 不正なIDはセットから取り除く
+            compareRideIds = new Set(validCompareIds);
+
+            chipsContainer.innerHTML = validCompareIds.map(id => `
+                <div class="compare-chip" data-ride-id="${id}">
+                    <span>${escapeHtml(labelMap.get(id) || id)}</span>
+                    <button type="button" data-remove-id="${id}">×</button>
+                </div>
+            `).join('');
+
+            // セレクト変更で比較対象追加
+            select.onchange = () => {
+                const value = select.value;
+                if (!value) return;
+                compareRideIds.add(String(value));
+                select.value = '';
+                setupCompareControls(primaryRideId, primaryRideName, primaryRideData);
+                renderChart(primaryRideName, primaryRideData, primaryRideId);
+            };
+
+            // チップの×クリックで削除
+            chipsContainer.querySelectorAll('button[data-remove-id]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-remove-id');
+                    if (!id) return;
+                    compareRideIds.delete(String(id));
+                    setupCompareControls(primaryRideId, primaryRideName, primaryRideData);
+                    renderChart(primaryRideName, primaryRideData, primaryRideId);
+                });
+            });
+        }
+
+        function renderChart(rideName, rideData, primaryRideId) {
             const ctx = document.getElementById('waitTimeChart');
             if (!ctx) return;
 
@@ -1977,8 +2128,10 @@
             }
 
             let labels = [];
-            let chartData = [];
             let xAxisTitle = '';
+
+            // ラベルと、与えられた rideData から集計配列を作るヘルパーを期間ごとに用意
+            let buildSeries;
 
             if (currentPeriod === 'day') {
                 // 日単位: 8:00〜22:00 を30分刻みで表示
@@ -1988,19 +2141,22 @@
                         labels.push(`${h.toString().padStart(2, '0')}:30`);
                     }
                 }
-                chartData = new Array(labels.length).fill(null);
-                for (const d of rideData) {
-                    if (d.is_open && d.wait_time !== null) {
-                        const [hours, minutes] = d.time.split(':').map(Number);
-                        if (hours < 8 || hours > 22) continue;
-                        const baseIndex = (hours - 8) * 2;
-                        const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
-                        if (index30 >= 0 && index30 < chartData.length) {
-                            chartData[index30] = d.wait_time;
+                xAxisTitle = '時刻';
+                buildSeries = (series) => {
+                    const data = new Array(labels.length).fill(null);
+                    for (const d of series) {
+                        if (d.is_open && d.wait_time !== null) {
+                            const [hours, minutes] = d.time.split(':').map(Number);
+                            if (hours < 8 || hours > 22) continue;
+                            const baseIndex = (hours - 8) * 2;
+                            const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
+                            if (index30 >= 0 && index30 < data.length) {
+                                data[index30] = d.wait_time;
+                            }
                         }
                     }
-                }
-                xAxisTitle = '時刻';
+                    return data;
+                };
             } else if (currentPeriod === 'week') {
                 // 週単位: 選択した週（日曜始まり）の7日分を X 軸に表示（例: 2/5(木)）
                 const weekStartStr = loadedData?.selectedValue;
@@ -2017,51 +2173,63 @@
                     }
                 }
                 labels = weekDates.map(d => formatWeekDateLabel(d));
-                const dayData = weekDates.map(() => []);
-                for (const d of rideData) {
-                    if (d.is_open && d.wait_time !== null && d.date) {
-                        const pos = weekDates.indexOf(d.date);
-                        if (pos !== -1) {
-                            dayData[pos].push(d.wait_time);
+                xAxisTitle = '日付';
+                buildSeries = (series) => {
+                    const buckets = weekDates.map(() => []);
+                    for (const d of series) {
+                        if (d.is_open && d.wait_time !== null && d.date) {
+                            const pos = weekDates.indexOf(d.date);
+                            if (pos !== -1) {
+                                buckets[pos].push(d.wait_time);
+                            }
                         }
                     }
-                }
-                chartData = dayData.map(waits => 
-                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
-                );
-                xAxisTitle = '日付';
+                    return buckets.map(waits =>
+                        waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                    );
+                };
             } else if (currentPeriod === 'month') {
                 // 月単位: 日ごとの平均（その月の全日付を表示）
                 const selectedMonth = loadedData.selectedValue || '';
                 const [year, month] = selectedMonth.split('-');
                 const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-                labels = Array.from({length: daysInMonth}, (_, i) => `${i + 1}日`);
-                const dayData = Array(daysInMonth).fill(null).map(() => []);
-                for (const d of rideData) {
-                    if (d.is_open && d.wait_time !== null && d.date) {
-                        const dayNum = parseInt(d.date.split('-')[2]);
-                        dayData[dayNum - 1].push(d.wait_time);
-                    }
-                }
-                chartData = dayData.map(waits => 
-                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
-                );
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}日`);
                 xAxisTitle = '日';
+                buildSeries = (series) => {
+                    const buckets = Array(daysInMonth).fill(null).map(() => []);
+                    for (const d of series) {
+                        if (d.is_open && d.wait_time !== null && d.date) {
+                            const dayNum = parseInt(d.date.split('-')[2], 10);
+                            if (dayNum >= 1 && dayNum <= daysInMonth) {
+                                buckets[dayNum - 1].push(d.wait_time);
+                            }
+                        }
+                    }
+                    return buckets.map(waits =>
+                        waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                    );
+                };
             } else if (currentPeriod === 'year') {
                 // 年単位: 月ごとの平均
                 labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-                const monthData = Array(12).fill(null).map(() => []);
-                for (const d of rideData) {
-                    if (d.is_open && d.wait_time !== null && d.date) {
-                        const monthNum = parseInt(d.date.split('-')[1]) - 1;
-                        monthData[monthNum].push(d.wait_time);
-                    }
-                }
-                chartData = monthData.map(waits => 
-                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
-                );
                 xAxisTitle = '月';
+                buildSeries = (series) => {
+                    const buckets = Array(12).fill(null).map(() => []);
+                    for (const d of series) {
+                        if (d.is_open && d.wait_time !== null && d.date) {
+                            const monthNum = parseInt(d.date.split('-')[1], 10) - 1;
+                            if (monthNum >= 0 && monthNum < 12) {
+                                buckets[monthNum].push(d.wait_time);
+                            }
+                        }
+                    }
+                    return buckets.map(waits =>
+                        waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                    );
+                };
             }
+
+            const primarySeries = buildSeries ? buildSeries(rideData) : [];
 
             // X軸のtick設定を期間に応じて設定
             const xTicksConfig2 = {
@@ -2080,22 +2248,58 @@
                 };
             }
 
+            // データセット（プライマリ＋比較対象）を構築
+            const datasets = [{
+                label: rideName,
+                data: primarySeries,
+                borderColor: '#4ecdc4',
+                backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                fill: true,
+                tension: 0.4,
+                spanGaps: true,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                borderWidth: 4
+            }];
+
+            // 比較対象用カラーパレット
+            const compareColors = [
+                '#ff6b6b',
+                '#f9ca24',
+                '#45b7d1',
+                '#e84393',
+                '#00b894',
+                '#fdcb6e',
+                '#6c5ce7',
+                '#fd79a8'
+            ];
+
+            if (buildSeries && compareRideIds.size > 0 && loadedData && loadedData.records) {
+                const compareIds = Array.from(compareRideIds);
+                compareIds.forEach((id, idx) => {
+                    const { rideName: cmpName, data: cmpRaw } = collectRideData(parseInt(id, 10));
+                    if (!cmpRaw || !cmpRaw.length) return;
+                    const cmpSeries = buildSeries(cmpRaw);
+                    datasets.push({
+                        label: cmpName || `ID ${id}`,
+                        data: cmpSeries,
+                        borderColor: compareColors[idx % compareColors.length],
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0.4,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        borderWidth: 3
+                    });
+                });
+            }
+
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: '待ち時間（分）',
-                        data: chartData,
-                        borderColor: '#4ecdc4',
-                        backgroundColor: 'rgba(78, 205, 196, 0.2)',
-                        fill: true,
-                        tension: 0.4,
-                        spanGaps: true,
-                        pointRadius: 6,
-                        pointHoverRadius: 10,
-                        borderWidth: 4
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
