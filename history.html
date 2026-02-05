@@ -287,6 +287,26 @@
             margin-right: 10px;
         }
 
+        .ride-card-fav-btn {
+            border: none;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            margin-left: 6px;
+            transition: color 0.2s ease, transform 0.1s ease;
+        }
+
+        .ride-card-fav-btn:hover {
+            color: #ffd86b;
+            transform: scale(1.1);
+        }
+
+        .ride-card-fav-btn.active {
+            color: #ffd86b;
+        }
+
         .ride-card-status {
             padding: 4px 10px;
             border-radius: 12px;
@@ -582,6 +602,39 @@
             border-radius: 3px;
         }
 
+        .favorites-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+
+        .fav-toggle-btn {
+            padding: 8px 14px;
+            border-radius: 16px;
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: #ffdd88;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        .fav-toggle-btn:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .fav-toggle-btn.active {
+            background: linear-gradient(135deg, #f6d365, #fda085);
+            color: #4b2c20;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        }
+
         /* グラフの点クリック時のポップアップ */
         .point-popup-overlay {
             position: fixed;
@@ -760,6 +813,8 @@
         let selectedAreas = []; // 空配列 = すべて選択
         let currentPeriod = 'day'; // day, week, month, year
         let initialRideHandled = false; // URLパラメータのride処理済みフラグ
+        let favoriteRideIds = new Set(); // お気に入りアトラクションID群（文字列）
+        let showFavoritesOnly = false; // true のときお気に入りのみ表示
 
         // URLパラメータからパークとアトラクションを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -796,6 +851,9 @@
             document.title = `${parkInfo.name} 待ち時間履歴`;
             
             document.querySelector('.back-btn').href = `index.html?park=${currentPark}`;
+
+            // お気に入りをローカルストレージから復元
+            loadFavoriteRides();
             
             if (isLocalFile) {
                 showLocalFileUI();
@@ -1106,18 +1164,28 @@
 
             // エリアでフィルター（空配列 = すべて選択）
             const isAllSelected = selectedAreas.length === 0;
-            const filteredCards = isAllSelected 
+            let filteredCards = isAllSelected 
                 ? rideCards 
                 : rideCards.filter(r => selectedAreas.includes(r.area));
+
+            // お気に入りフィルタ適用（有効な場合）
+            if (showFavoritesOnly && favoriteRideIds.size > 0) {
+                filteredCards = filteredCards.filter(r => favoriteRideIds.has(String(r.id)));
+            }
 
             const openCount = filteredCards.filter(r => r.lastOpen).length;
 
             content.innerHTML = `
+                <div class="favorites-toolbar">
+                    <button class="fav-toggle-btn ${showFavoritesOnly ? 'active' : ''}" id="favToggleBtn">
+                        ★ お気に入りだけ表示
+                    </button>
+                </div>
                 <div class="area-tabs" id="areaTabs">
                     <button class="area-tab ${isAllSelected ? 'active' : ''}" data-area="all">
                         <span class="area-icon">🎡</span>
                         <span>すべて</span>
-                        <span class="area-count">${rideCards.length}</span>
+                        <span class="area-count">${showFavoritesOnly ? filteredCards.length : rideCards.length}</span>
                     </button>
                     ${Object.entries(areas).map(([key, area]) => 
                         areaCounts[key] > 0 ? `
@@ -1145,6 +1213,15 @@
 
             // 全体グラフを描画
             renderOverviewChart(filteredCards);
+
+            // お気に入りトグルボタンのイベントリスナー
+            const favToggleBtn = document.getElementById('favToggleBtn');
+            if (favToggleBtn) {
+                favToggleBtn.addEventListener('click', () => {
+                    showFavoritesOnly = !showFavoritesOnly;
+                    showAllRides();
+                });
+            }
 
             // エリアタブのイベントリスナー（複数選択対応）
             content.querySelectorAll('.area-tab').forEach(tab => {
@@ -1176,6 +1253,18 @@
                     const rideId = parseInt(card.dataset.rideId);
                     document.getElementById('rideSelect').value = rideId;
                     showRideDetail(rideId);
+                });
+            });
+
+            // お気に入りボタンのイベントリスナー（カードクリックとは独立させる）
+            content.querySelectorAll('.ride-card-fav-btn').forEach(btn => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const rideId = btn.dataset.rideId;
+                    if (!rideId) return;
+                    toggleFavoriteRide(rideId);
+                    // 画面を再描画して状態を反映
+                    showAllRides();
                 });
             });
         }
@@ -1552,11 +1641,15 @@
         function renderRideCard(ride) {
             const cardClass = ride.waits.length === 0 ? 'closed' : '';
             const avgClass = getWaitClass(ride.avgWait);
+            const isFavorite = favoriteRideIds && favoriteRideIds.has(String(ride.id));
             
             return `
                 <div class="ride-card ${cardClass}" data-ride-id="${ride.id}">
                     <div class="ride-card-header">
                         <span class="ride-card-name">${escapeHtml(ride.name)}</span>
+                        <button class="ride-card-fav-btn ${isFavorite ? 'active' : ''}" data-ride-id="${ride.id}" title="${isFavorite ? 'お気に入りから外す' : 'お気に入りに追加'}">
+                            ★
+                        </button>
                     </div>
                     ${ride.waits.length > 0 ? `
                         <div class="ride-card-stats">
@@ -2100,6 +2193,38 @@
             // "YYYY-MM-DD" をローカルタイムの Date に安全に変換（タイムゾーンずれ防止）
             const [y, m, d] = dateStr.split('-').map(Number);
             return new Date(y, m - 1, d);
+        }
+
+        function loadFavoriteRides() {
+            try {
+                const raw = localStorage.getItem('tdr_wait_favorites');
+                if (!raw) return;
+                const arr = JSON.parse(raw);
+                if (Array.isArray(arr)) {
+                    favoriteRideIds = new Set(arr.map(id => String(id)));
+                }
+            } catch (e) {
+                console.warn('Failed to load favorites', e);
+            }
+        }
+
+        function saveFavoriteRides() {
+            try {
+                const arr = Array.from(favoriteRideIds);
+                localStorage.setItem('tdr_wait_favorites', JSON.stringify(arr));
+            } catch (e) {
+                console.warn('Failed to save favorites', e);
+            }
+        }
+
+        function toggleFavoriteRide(rideId) {
+            const key = String(rideId);
+            if (favoriteRideIds.has(key)) {
+                favoriteRideIds.delete(key);
+            } else {
+                favoriteRideIds.add(key);
+            }
+            saveFavoriteRides();
         }
 
         function getWeekOptions() {
