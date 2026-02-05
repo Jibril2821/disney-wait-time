@@ -152,10 +152,13 @@
             position: relative;
         }
 
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+        .header-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .back-btn, .history-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 25px;
@@ -167,10 +170,19 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            text-decoration: none;
         }
 
-        .back-btn:hover {
+        .back-btn:hover, .history-btn:hover {
             background: rgba(255,255,255,0.2);
+        }
+
+        .history-btn {
+            background: linear-gradient(135deg, rgba(78,205,196,0.3), rgba(68,160,141,0.3));
+        }
+
+        .history-btn:hover {
+            background: linear-gradient(135deg, rgba(78,205,196,0.5), rgba(68,160,141,0.5));
         }
 
         h1 {
@@ -576,9 +588,14 @@
                 font-size: 1.6rem;
             }
 
-            .back-btn {
-                position: static;
-                margin-bottom: 20px;
+            .header-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .back-btn, .history-btn {
+                width: 100%;
+                justify-content: center;
             }
 
             .rides-grid {
@@ -643,9 +660,14 @@
     <div class="main-screen" id="mainScreen">
         <div class="container">
             <header>
-                <button class="back-btn" onclick="goBack()">
-                    ← パーク選択に戻る
-                </button>
+                <div class="header-buttons">
+                    <button class="back-btn" onclick="goBack()">
+                        ← パーク選択に戻る
+                    </button>
+                    <a href="#" class="history-btn" id="historyBtn" onclick="goToHistory()">
+                        📊 履歴を見る
+                    </a>
+                </div>
                 <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
                 <p class="subtitle">リアルタイム待ち時間情報</p>
                 <div class="last-updated" id="lastUpdated">読み込み中...</div>
@@ -696,10 +718,11 @@
 
     <script>
         // データ取得方法の自動判定
-        // GitHub Pagesでは収集データ、ローカルでは直接APIを使用
+        // GitHub Pages/localhost では収集データ、file://ではCORSプロキシ経由でAPI
         const isGitHubPages = location.hostname.includes('github.io');
+        const isLocalServer = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         const isLocalFile = location.protocol === 'file:';
-        const USE_LOCAL_DATA = isGitHubPages;
+        const USE_LOCAL_DATA = isGitHubPages || isLocalServer;
         
         const PARKS = {
             land: {
@@ -890,6 +913,12 @@
             
             // 表示をリセット
             resetDisplay();
+        }
+
+        function goToHistory() {
+            if (currentPark) {
+                window.location.href = `history.html?park=${currentPark}`;
+            }
         }
 
         function getRideInfo(rideId) {
@@ -1238,6 +1267,13 @@
         });
 
         document.getElementById('refreshBtn').addEventListener('click', fetchQueueTimes);
+
+        // URLパラメータからパークを自動選択（履歴ページから戻った時用）
+        const urlParams = new URLSearchParams(window.location.search);
+        const parkParam = urlParams.get('park');
+        if (parkParam && PARKS[parkParam]) {
+            selectPark(parkParam);
+        }
     </script>
 </body>
 </html>
