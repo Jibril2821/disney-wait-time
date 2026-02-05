@@ -858,8 +858,6 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            max-height: 260px;
-            overflow-y: auto;
             overflow-x: hidden;
             margin-top: 4px;
         }
@@ -869,7 +867,7 @@
             text-align: left;
             border: none;
             border-radius: 8px;
-            padding: 6px 8px;
+            padding: 6px 14px; /* 左右に少し余裕を持たせる */
             background: rgba(255,255,255,0.04);
             color: #fff;
             font-size: 0.8rem;
@@ -2456,12 +2454,22 @@
                 const w = el.scrollWidth;
                 if (w > maxItemWidth) maxItemWidth = w;
             });
-            // 名前＋待ち時間の行に少し余白を持たせつつ、画面幅に収まるようにする
-            const horizontalPadding = 64; // 左右パディング＋余裕
+            // 名前＋待ち時間の行に十分な余白を持たせつつ、画面幅に収まるようにする
+            const horizontalPadding = 80; // 左右パディング＋余裕を少し大きめに
             const targetWidth = Math.min(maxItemWidth + horizontalPadding, window.innerWidth - 24);
             if (targetWidth > 0) {
                 popup.style.width = `${targetWidth}px`;
             }
+
+            // 高さを全候補がスクロールなしでちょうど収まるように調整
+            // まず自動レイアウトさせてから、実際のコンテンツ高さ(scrollHeight)を採用する
+            popup.style.height = 'auto';
+            list.style.maxHeight = 'none';
+            const headerRect = header.getBoundingClientRect();
+            const listContentHeight = list.scrollHeight; // ボタン同士の余白も含めた実高さ
+            const verticalPadding = 40; // 上下の余裕分（少し多めにして余白を確保）
+            const popupHeight = headerRect.height + listContentHeight + verticalPadding;
+            popup.style.height = `${popupHeight}px`;
 
             // クリック位置がポップアップの中央付近になるよう配置（画面外にはみ出さないよう調整）
             const clickX = event.clientX ?? 0;
@@ -2472,13 +2480,9 @@
             let top = clickY - rect.height / 2;
 
             const vw = window.innerWidth;
-            const vh = window.innerHeight;
 
             if (left + rect.width > vw - 8) {
                 left = vw - rect.width - 8;
-            }
-            if (top + rect.height > vh - 8) {
-                top = vh - rect.height - 8;
             }
 
             if (left < 8) left = 8;
