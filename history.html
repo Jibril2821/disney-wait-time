@@ -130,6 +130,36 @@
             color: #fff;
         }
 
+        /* 期間選択タブ */
+        .period-tabs {
+            display: flex;
+            gap: 5px;
+            background: rgba(255,255,255,0.05);
+            padding: 5px;
+            border-radius: 30px;
+        }
+
+        .period-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: #a0a0a0;
+        }
+
+        .period-tab:hover {
+            color: #fff;
+        }
+
+        .period-tab.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+        }
+
         .chart-container {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
@@ -601,6 +631,12 @@
         </header>
 
         <div class="controls">
+            <div class="period-tabs">
+                <button class="period-tab active" data-period="day">日</button>
+                <button class="period-tab" data-period="week">週</button>
+                <button class="period-tab" data-period="month">月</button>
+                <button class="period-tab" data-period="year">年</button>
+            </div>
             <div class="file-input-wrapper" id="fileInputWrapper" style="display: none;">
                 <button class="btn">📁 JSONファイルを選択</button>
                 <input type="file" id="fileInput" accept=".json" multiple>
@@ -635,6 +671,7 @@
         let chart = null;
         let overviewChart = null;
         let selectedAreas = []; // 空配列 = すべて選択
+        let currentPeriod = 'day'; // day, week, month, year
 
         // URLパラメータからパークを取得
         const urlParams = new URLSearchParams(window.location.search);
@@ -757,8 +794,9 @@
             const content = document.getElementById('content');
             
             try {
+                // 過去365日分を探す
                 const dates = [];
-                for (let i = 0; i < 7; i++) {
+                for (let i = 0; i < 365; i++) {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
                     const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
@@ -766,15 +804,20 @@
                 }
 
                 availableDates = [];
-                for (const date of dates) {
+                // 並列でチェック（高速化）
+                const checkPromises = dates.map(async (date) => {
                     const url = `data/${parkInfo.filePrefix}_${date}.json`;
                     try {
                         const response = await fetch(url, { method: 'HEAD' });
                         if (response.ok) {
-                            availableDates.push(date);
+                            return date;
                         }
                     } catch (e) {}
-                }
+                    return null;
+                });
+                
+                const results = await Promise.all(checkPromises);
+                availableDates = results.filter(d => d !== null).sort().reverse();
 
                 if (availableDates.length === 0) {
                     content.innerHTML = `
@@ -786,17 +829,8 @@
                     return;
                 }
 
-                const dateSelect = document.getElementById('dateSelect');
-                dateSelect.innerHTML = '<option value="">日付を選択...</option>';
-                for (const date of availableDates) {
-                    const option = document.createElement('option');
-                    option.value = date;
-                    option.textContent = formatDate(date);
-                    dateSelect.appendChild(option);
-                }
-
-                dateSelect.value = availableDates[0];
-                await loadDateData(availableDates[0]);
+                // 期間に応じた選択オプションを設定
+                await updateDateSelectOptions();
 
             } catch (error) {
                 console.error('Error:', error);
@@ -918,6 +952,7 @@
                         stat.waits.push(ride.wait_time);
                     }
                     stat.timeData.push({
+                        date: record.date,
                         time: record.time,
                         wait: ride.is_open ? ride.wait_time : null
                     });
@@ -1032,18 +1067,7 @@
                 overviewChart.destroy();
             }
 
-            // 8時〜22時のラベルを生成
-            const hourLabels = [];
-            for (let h = 8; h <= 22; h++) {
-                hourLabels.push(`${h.toString().padStart(2, '0')}:00`);
-            }
-
-            // 全アトラクション（平均待ち時間が長い順にソート）
-            const allRides = [...rideCards]
-                .filter(r => r.avgWait > 0)
-                .sort((a, b) => b.avgWait - a.avgWait);
-
-            // 拡張カラーパレット（全アトラクション対応）
+            // 拡張カラーパレット
             const colors = [
                 '#4ecdc4', '#ff6b6b', '#f9ca24', '#45b7d1', '#e84393',
                 '#00b894', '#fdcb6e', '#6c5ce7', '#fd79a8', '#00cec9',
@@ -1055,47 +1079,168 @@
                 '#fab1a0', '#ff7675', '#636e72', '#b2bec3', '#2d3436'
             ];
 
-            // データセットを生成（全アトラクション）
-            const datasets = allRides.map((ride, index) => {
-                // 時間ごとのデータを整理（8時〜22時 = 15時間分）
-                const hourlyData = new Array(15).fill(null);
-                
-                for (const td of ride.timeData) {
-                    if (td.wait !== null) {
-                        const [hours] = td.time.split(':').map(Number);
-                        // 8時〜22時の範囲のみ
-                        if (hours >= 8 && hours <= 22) {
-                            hourlyData[hours - 8] = td.wait;
+            // 全アトラクション（平均待ち時間が長い順にソート）
+            const allRides = [...rideCards]
+                .filter(r => r.avgWait > 0)
+                .sort((a, b) => b.avgWait - a.avgWait);
+
+            let labels, datasets, xAxisTitle;
+
+            if (currentPeriod === 'day') {
+                // 日単位: 8時〜22時の時間軸
+                labels = [];
+                for (let h = 8; h <= 22; h++) {
+                    labels.push(`${h.toString().padStart(2, '0')}:00`);
+                }
+                xAxisTitle = '時刻';
+
+                datasets = allRides.map((ride, index) => {
+                    const hourlyData = new Array(15).fill(null);
+                    for (const td of ride.timeData) {
+                        if (td.wait !== null) {
+                            const [hours] = td.time.split(':').map(Number);
+                            if (hours >= 8 && hours <= 22) {
+                                hourlyData[hours - 8] = td.wait;
+                            }
                         }
                     }
-                }
+                    return {
+                        label: ride.name,
+                        data: hourlyData,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                    };
+                });
+            } else if (currentPeriod === 'week') {
+                // 週単位: 曜日軸（日曜始まり）
+                labels = ['日', '月', '火', '水', '木', '金', '土'];
+                xAxisTitle = '曜日';
 
-                return {
-                    label: ride.name,
-                    data: hourlyData,
-                    borderColor: colors[index % colors.length],
-                    backgroundColor: colors[index % colors.length] + '20',
-                    fill: false,
-                    tension: 0.3,
-                    spanGaps: true,
-                    pointRadius: 2,
-                    borderWidth: 2,
-                    hidden: false // 全アトラクション表示
+                datasets = allRides.map((ride, index) => {
+                    const dayData = new Array(7).fill(null);
+                    const dayWaits = [[], [], [], [], [], [], []];
+                    
+                    for (const td of ride.timeData) {
+                        if (td.wait !== null && td.date) {
+                            const date = new Date(td.date);
+                            const dayOfWeek = date.getDay(); // 日曜=0
+                            dayWaits[dayOfWeek].push(td.wait);
+                        }
+                    }
+                    
+                    for (let i = 0; i < 7; i++) {
+                        if (dayWaits[i].length > 0) {
+                            dayData[i] = Math.round(dayWaits[i].reduce((a, b) => a + b, 0) / dayWaits[i].length);
+                        }
+                    }
+                    
+                    return {
+                        label: ride.name,
+                        data: dayData,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                    };
+                });
+            } else if (currentPeriod === 'month') {
+                // 月単位: 日付軸（その月の全日付を表示）
+                const selectedMonth = loadedData.selectedValue || '';
+                const [year, month] = selectedMonth.split('-');
+                const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+                
+                // その月の全日付を生成
+                const allDatesInMonth = [];
+                for (let d = 1; d <= daysInMonth; d++) {
+                    allDatesInMonth.push(`${year}-${month}-${d.toString().padStart(2, '0')}`);
+                }
+                
+                labels = allDatesInMonth.map(d => parseInt(d.split('-')[2]) + '日');
+                xAxisTitle = '日付';
+
+                datasets = allRides.map((ride, index) => {
+                    const dateMap = {};
+                    for (const td of ride.timeData) {
+                        if (td.wait !== null && td.date) {
+                            if (!dateMap[td.date]) dateMap[td.date] = [];
+                            dateMap[td.date].push(td.wait);
+                        }
+                    }
+                    
+                    const dayData = allDatesInMonth.map(date => {
+                        if (dateMap[date] && dateMap[date].length > 0) {
+                            return Math.round(dateMap[date].reduce((a, b) => a + b, 0) / dateMap[date].length);
+                        }
+                        return null;
+                    });
+                    
+                    return {
+                        label: ride.name,
+                        data: dayData,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                    };
+                });
+            } else {
+                // 年単位: 月軸
+                labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                xAxisTitle = '月';
+
+                datasets = allRides.map((ride, index) => {
+                    const monthWaits = Array(12).fill(null).map(() => []);
+                    
+                    for (const td of ride.timeData) {
+                        if (td.wait !== null && td.date) {
+                            const month = parseInt(td.date.split('-')[1]) - 1;
+                            monthWaits[month].push(td.wait);
+                        }
+                    }
+                    
+                    const monthData = monthWaits.map(waits => {
+                        if (waits.length > 0) {
+                            return Math.round(waits.reduce((a, b) => a + b, 0) / waits.length);
+                        }
+                        return null;
+                    });
+                    
+                    return {
+                        label: ride.name,
+                        data: monthData,
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length] + '20',
+                        fill: false, tension: 0.4, spanGaps: true, pointRadius: 6, pointHoverRadius: 10, borderWidth: 4, hidden: false
+                    };
+                });
+            }
+
+            // X軸のtick設定を期間に応じて設定
+            const xTicksConfig = {
+                color: '#a0a0a0',
+                maxRotation: currentPeriod === 'month' ? 45 : 0
+            };
+            if (currentPeriod === 'day') {
+                xTicksConfig.callback = function(val, index) { 
+                    return index % 3 === 0 ? this.getLabelForValue(val) : ''; 
                 };
-            });
+            } else if (currentPeriod === 'month' && labels.length > 15) {
+                xTicksConfig.callback = function(val, index) { 
+                    return index % 5 === 0 ? this.getLabelForValue(val) : ''; 
+                };
+            }
 
             overviewChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: hourLabels,
+                    labels: labels,
                     datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     interaction: {
-                        mode: 'index',
-                        intersect: false
+                        mode: 'nearest',
+                        intersect: true
                     },
                     plugins: {
                         legend: {
@@ -1112,18 +1257,11 @@
                     },
                     scales: {
                         x: {
-                            ticks: { 
-                                color: '#a0a0a0',
-                                maxRotation: 0,
-                                callback: function(val, index) {
-                                    // 3時間ごとに表示
-                                    return index % 3 === 0 ? this.getLabelForValue(val) : '';
-                                }
-                            },
+                            ticks: xTicksConfig,
                             grid: { color: 'rgba(255,255,255,0.1)' },
                             title: {
                                 display: true,
-                                text: '時刻',
+                                text: xAxisTitle,
                                 color: '#a0a0a0'
                             }
                         },
@@ -1312,21 +1450,82 @@
                 chart.destroy();
             }
 
-            // 8時〜22時のラベルを生成
-            const labels = [];
-            for (let h = 8; h <= 22; h++) {
-                labels.push(`${h.toString().padStart(2, '0')}:00`);
-            }
+            let labels = [];
+            let chartData = [];
+            let xAxisTitle = '';
 
-            // 時間ごとのデータを整理（8時〜22時）
-            const hourlyData = new Array(15).fill(null);
-            for (const d of rideData) {
-                if (d.is_open && d.wait_time !== null) {
-                    const [hours] = d.time.split(':').map(Number);
-                    if (hours >= 8 && hours <= 22) {
-                        hourlyData[hours - 8] = d.wait_time;
+            if (currentPeriod === 'day') {
+                // 日単位: 8時〜22時のラベルを生成
+                for (let h = 8; h <= 22; h++) {
+                    labels.push(`${h.toString().padStart(2, '0')}:00`);
+                }
+                chartData = new Array(15).fill(null);
+                for (const d of rideData) {
+                    if (d.is_open && d.wait_time !== null) {
+                        const [hours] = d.time.split(':').map(Number);
+                        if (hours >= 8 && hours <= 22) {
+                            chartData[hours - 8] = d.wait_time;
+                        }
                     }
                 }
+                xAxisTitle = '時刻';
+            } else if (currentPeriod === 'week') {
+                // 週単位: 曜日ごとの平均（日曜始まり）
+                labels = ['日', '月', '火', '水', '木', '金', '土'];
+                const dayData = Array(7).fill(null).map(() => []);
+                for (const d of rideData) {
+                    if (d.is_open && d.wait_time !== null && d.date) {
+                        const date = new Date(d.date);
+                        const dayOfWeek = date.getDay(); // 日曜=0
+                        dayData[dayOfWeek].push(d.wait_time);
+                    }
+                }
+                chartData = dayData.map(waits => 
+                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                );
+                xAxisTitle = '曜日';
+            } else if (currentPeriod === 'month') {
+                // 月単位: 日ごとの平均（その月の全日付を表示）
+                const selectedMonth = loadedData.selectedValue || '';
+                const [year, month] = selectedMonth.split('-');
+                const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+                labels = Array.from({length: daysInMonth}, (_, i) => `${i + 1}日`);
+                const dayData = Array(daysInMonth).fill(null).map(() => []);
+                for (const d of rideData) {
+                    if (d.is_open && d.wait_time !== null && d.date) {
+                        const dayNum = parseInt(d.date.split('-')[2]);
+                        dayData[dayNum - 1].push(d.wait_time);
+                    }
+                }
+                chartData = dayData.map(waits => 
+                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                );
+                xAxisTitle = '日';
+            } else if (currentPeriod === 'year') {
+                // 年単位: 月ごとの平均
+                labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                const monthData = Array(12).fill(null).map(() => []);
+                for (const d of rideData) {
+                    if (d.is_open && d.wait_time !== null && d.date) {
+                        const monthNum = parseInt(d.date.split('-')[1]) - 1;
+                        monthData[monthNum].push(d.wait_time);
+                    }
+                }
+                chartData = monthData.map(waits => 
+                    waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : null
+                );
+                xAxisTitle = '月';
+            }
+
+            // X軸のtick設定を期間に応じて設定
+            const xTicksConfig2 = {
+                color: '#a0a0a0',
+                maxRotation: currentPeriod === 'month' ? 45 : 0
+            };
+            if (currentPeriod === 'month' && labels.length > 15) {
+                xTicksConfig2.callback = function(val, index) { 
+                    return index % 5 === 0 ? this.getLabelForValue(val) : ''; 
+                };
             }
 
             chart = new Chart(ctx, {
@@ -1335,12 +1534,15 @@
                     labels: labels,
                     datasets: [{
                         label: '待ち時間（分）',
-                        data: hourlyData,
+                        data: chartData,
                         borderColor: '#4ecdc4',
-                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        backgroundColor: 'rgba(78, 205, 196, 0.2)',
                         fill: true,
-                        tension: 0.3,
-                        spanGaps: true
+                        tension: 0.4,
+                        spanGaps: true,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        borderWidth: 4
                     }]
                 },
                 options: {
@@ -1358,8 +1560,13 @@
                     },
                     scales: {
                         x: {
-                            ticks: { color: '#a0a0a0' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
+                            ticks: xTicksConfig2,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: xAxisTitle,
+                                color: '#a0a0a0'
+                            }
                         },
                         y: {
                             beginAtZero: true,
@@ -1413,12 +1620,24 @@
             return div.innerHTML;
         }
 
-        // イベントリスナー
+        // 期間タブのイベントリスナー
+        document.querySelectorAll('.period-tab').forEach(tab => {
+            tab.addEventListener('click', async () => {
+                document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentPeriod = tab.dataset.period;
+                selectedAreas = [];
+                document.getElementById('rideSelect').value = 'all';
+                await updateDateSelectOptions();
+            });
+        });
+
+        // 日付選択のイベントリスナー
         document.getElementById('dateSelect').addEventListener('change', async (e) => {
             if (e.target.value) {
                 document.getElementById('rideSelect').value = 'all';
                 selectedAreas = []; // エリア選択をリセット（すべて選択）
-                await loadDateData(e.target.value);
+                await loadPeriodData(e.target.value);
             }
         });
 
@@ -1432,6 +1651,228 @@
                 }
             }
         });
+
+        // 期間に応じた日付選択オプションを更新
+        async function updateDateSelectOptions() {
+            const dateSelect = document.getElementById('dateSelect');
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>データを読み込み中...</p>
+                </div>
+            `;
+
+            if (currentPeriod === 'day') {
+                // 日単位: 利用可能な日付リスト
+                dateSelect.innerHTML = '<option value="">日付を選択...</option>';
+                for (const date of availableDates) {
+                    const option = document.createElement('option');
+                    option.value = date;
+                    option.textContent = formatDateForPeriod(date, 'day');
+                    dateSelect.appendChild(option);
+                }
+                if (availableDates.length > 0) {
+                    dateSelect.value = availableDates[0];
+                    await loadPeriodData(availableDates[0]);
+                }
+            } else if (currentPeriod === 'week') {
+                // 週単位: 週の開始日リスト
+                const weeks = getWeekOptions();
+                dateSelect.innerHTML = '<option value="">週を選択...</option>';
+                for (const week of weeks) {
+                    const option = document.createElement('option');
+                    option.value = week.start;
+                    option.textContent = week.label;
+                    dateSelect.appendChild(option);
+                }
+                if (weeks.length > 0) {
+                    dateSelect.value = weeks[0].start;
+                    await loadPeriodData(weeks[0].start);
+                }
+            } else if (currentPeriod === 'month') {
+                // 月単位
+                const months = getMonthOptions();
+                dateSelect.innerHTML = '<option value="">月を選択...</option>';
+                for (const month of months) {
+                    const option = document.createElement('option');
+                    option.value = month.value;
+                    option.textContent = month.label;
+                    dateSelect.appendChild(option);
+                }
+                if (months.length > 0) {
+                    dateSelect.value = months[0].value;
+                    await loadPeriodData(months[0].value);
+                }
+            } else if (currentPeriod === 'year') {
+                // 年単位
+                const years = getYearOptions();
+                dateSelect.innerHTML = '<option value="">年を選択...</option>';
+                for (const year of years) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = `${year}年`;
+                    dateSelect.appendChild(option);
+                }
+                if (years.length > 0) {
+                    dateSelect.value = years[0];
+                    await loadPeriodData(years[0]);
+                }
+            }
+        }
+
+        function formatDateForPeriod(dateStr, period) {
+            const date = new Date(dateStr);
+            if (period === 'day') {
+                return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+            }
+            return dateStr;
+        }
+
+        function getWeekOptions() {
+            const weeks = [];
+            const seenWeeks = new Set();
+            
+            for (const dateStr of availableDates) {
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay(); // 日曜=0
+                const sunday = new Date(date);
+                sunday.setDate(date.getDate() - dayOfWeek); // その週の日曜日
+                const weekStart = sunday.toISOString().split('T')[0];
+                
+                if (!seenWeeks.has(weekStart)) {
+                    seenWeeks.add(weekStart);
+                    const saturday = new Date(sunday);
+                    saturday.setDate(sunday.getDate() + 6);
+                    weeks.push({
+                        start: weekStart,
+                        label: `${sunday.getMonth() + 1}/${sunday.getDate()}(日) 〜 ${saturday.getMonth() + 1}/${saturday.getDate()}(土)`
+                    });
+                }
+            }
+            return weeks;
+        }
+
+        function getMonthOptions() {
+            const months = [];
+            const seenMonths = new Set();
+            
+            for (const dateStr of availableDates) {
+                const [year, month] = dateStr.split('-');
+                const monthKey = `${year}-${month}`;
+                
+                if (!seenMonths.has(monthKey)) {
+                    seenMonths.add(monthKey);
+                    months.push({
+                        value: monthKey,
+                        label: `${year}年${parseInt(month)}月`
+                    });
+                }
+            }
+            return months;
+        }
+
+        function getYearOptions() {
+            const years = new Set();
+            for (const dateStr of availableDates) {
+                years.add(dateStr.split('-')[0]);
+            }
+            return [...years].sort().reverse();
+        }
+
+        // 期間に応じたデータを読み込み
+        async function loadPeriodData(value) {
+            const parkInfo = PARKS[currentPark];
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>データを読み込み中...</p>
+                </div>
+            `;
+
+            try {
+                let datesToLoad = [];
+                
+                if (currentPeriod === 'day') {
+                    datesToLoad = [value];
+                } else if (currentPeriod === 'week') {
+                    // 週の日曜日から土曜日まで
+                    const sunday = new Date(value);
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(sunday);
+                        d.setDate(sunday.getDate() + i);
+                        datesToLoad.push(d.toISOString().split('T')[0]);
+                    }
+                } else if (currentPeriod === 'month') {
+                    // 月の全日
+                    const [year, month] = value.split('-');
+                    const firstDay = new Date(year, parseInt(month) - 1, 1);
+                    const lastDay = new Date(year, parseInt(month), 0);
+                    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+                        datesToLoad.push(d.toISOString().split('T')[0]);
+                    }
+                } else if (currentPeriod === 'year') {
+                    // 年の全日（利用可能な日付のみ）
+                    datesToLoad = availableDates.filter(d => d.startsWith(value));
+                }
+
+                // 利用可能な日付のみフィルタ
+                datesToLoad = datesToLoad.filter(d => availableDates.includes(d));
+
+                if (datesToLoad.length === 0) {
+                    content.innerHTML = `
+                        <div class="no-data">
+                            <h2>データがありません</h2>
+                            <p>選択した期間のデータが見つかりませんでした。</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // 複数日のデータを読み込んで統合
+                const allRecords = [];
+                for (const date of datesToLoad) {
+                    const url = `data/${parkInfo.filePrefix}_${date}.json`;
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const data = await response.json();
+                            for (const record of data.records) {
+                                allRecords.push({
+                                    date: data.date,
+                                    time: record.time,
+                                    timestamp: record.timestamp,
+                                    rides: record.rides
+                                });
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                loadedData = {
+                    park: parkInfo.name,
+                    period: currentPeriod,
+                    selectedValue: value,  // 選択された値（月の場合は"YYYY-MM"）
+                    dateRange: datesToLoad,
+                    records: allRecords
+                };
+
+                populateRideSelect();
+                showAllRides();
+
+            } catch (error) {
+                console.error('Error:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        <h3>データの読み込みに失敗しました</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
     </script>
 </body>
 </html>
