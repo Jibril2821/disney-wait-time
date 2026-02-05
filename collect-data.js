@@ -1,10 +1,11 @@
 /**
  * 東京ディズニーリゾート 待ち時間データ収集スクリプト
- * 30分ごとにタスクスケジューラで実行して履歴を記録
+ * データ取得後、自動でGitHubにコミット＆プッシュ
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const PARKS = {
     land: {
@@ -106,7 +107,61 @@ async function collectData() {
     console.log(`データ収集完了！`);
     console.log(`保存先: ${DATA_DIR}`);
     console.log(`========================================\n`);
+    
+    return true; // 成功
+}
+
+function gitCommitAndPush() {
+    const now = new Date();
+    const timeStr = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    
+    console.log(`\n🔄 GitHubにプッシュ中...`);
+    
+    try {
+        // 作業ディレクトリをスクリプトのディレクトリに変更
+        process.chdir(__dirname);
+        
+        // git add
+        execSync('git add data/', { stdio: 'pipe' });
+        
+        // 変更があるか確認
+        try {
+            execSync('git diff --staged --quiet', { stdio: 'pipe' });
+            console.log(`  ℹ️  変更なし、スキップします\n`);
+            return;
+        } catch (e) {
+            // 変更がある場合はエラーになる（正常）
+        }
+        
+        // git commit
+        const commitMessage = `📊 Update wait time data - ${timeStr}`;
+        execSync(`git commit -m "${commitMessage}"`, { stdio: 'pipe' });
+        console.log(`  ✅ コミット完了`);
+        
+        // git push
+        execSync('git push', { stdio: 'pipe' });
+        console.log(`  ✅ プッシュ完了\n`);
+        
+        console.log(`========================================`);
+        console.log(`GitHubへの同期完了！`);
+        console.log(`========================================\n`);
+        
+    } catch (error) {
+        console.error(`  ❌ Gitエラー:`, error.message);
+        console.error(`  ヒント: git設定やネットワーク接続を確認してください\n`);
+    }
 }
 
 // 実行
-collectData().catch(console.error);
+async function main() {
+    const success = await collectData().catch(err => {
+        console.error(err);
+        return false;
+    });
+    
+    if (success) {
+        gitCommitAndPush();
+    }
+}
+
+main();
