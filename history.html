@@ -21,7 +21,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -111,15 +111,6 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(78,205,196,0.4);
-        }
-
-        .btn.secondary {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .btn.secondary:hover {
-            background: rgba(255,255,255,0.2);
-            box-shadow: none;
         }
 
         select {
@@ -224,6 +215,91 @@
             color: #ff6b6b;
         }
 
+        /* 全アトラクション一覧 */
+        .rides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .ride-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .ride-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(78,205,196,0.5);
+        }
+
+        .ride-card.closed {
+            opacity: 0.5;
+        }
+
+        .ride-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .ride-card-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .ride-card-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .ride-card-status.open {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .ride-card-status.closed {
+            background: rgba(255,255,255,0.2);
+            color: #a0a0a0;
+        }
+
+        .ride-card-wait {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .ride-card-wait-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .ride-card-wait-unit {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .ride-card-range {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            margin-top: 8px;
+        }
+
+        .wait-short .ride-card-wait-value { color: #4ecdc4; }
+        .wait-medium .ride-card-wait-value { color: #f9ca24; }
+        .wait-long .ride-card-wait-value { color: #ff6b6b; }
+        .wait-very-long .ride-card-wait-value { color: #e84393; }
+
         .table-container {
             overflow-x: auto;
             margin-top: 20px;
@@ -255,34 +331,6 @@
         .wait-long { color: #ff6b6b; }
         .wait-very-long { color: #e84393; }
 
-        .date-selector {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .date-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            background: rgba(255,255,255,0.1);
-            color: #ccc;
-        }
-
-        .date-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .date-btn.active {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: #fff;
-        }
-
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.5rem;
@@ -299,6 +347,10 @@
 
             select, .btn {
                 width: 100%;
+            }
+
+            .rides-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -320,7 +372,7 @@
                 <option value="">日付を選択...</option>
             </select>
             <select id="rideSelect" disabled>
-                <option value="">アトラクションを選択...</option>
+                <option value="all">すべてのアトラクション</option>
             </select>
         </div>
 
@@ -346,6 +398,86 @@
             }
         };
 
+        // TDL アトラクション日本語名
+        const TDL_RIDE_INFO = {
+            7985: 'オムニバス',
+            8019: 'ペニーアーケード',
+            7987: 'ジャングルクルーズ：ワイルドライフ・エクスペディション',
+            7986: 'カリブの海賊',
+            7989: 'スイスファミリー・ツリーハウス',
+            7990: '魅惑のチキルーム：スティッチ・プレゼンツ "アロハ・エ・コモ・マイ!"',
+            7994: 'ビッグサンダー・マウンテン',
+            7992: 'カントリーベア・シアター',
+            7993: '蒸気船マークトウェイン号',
+            7995: 'トムソーヤ島いかだ',
+            7988: 'ウエスタンリバー鉄道',
+            7991: 'ウエスタンランド・シューティングギャラリー',
+            7997: 'ビーバーブラザーズのカヌー探険',
+            7996: 'スプラッシュ・マウンテン',
+            8006: '"イッツ・ア・スモールワールド" with グルート',
+            8007: 'アリスのティーパーティー',
+            8004: 'キャッスルカルーセル',
+            8000: 'シンデレラのフェアリーテイル・ホール',
+            8003: '空飛ぶダンボ',
+            8255: '美女と野獣 "魔法のものがたり"',
+            8005: 'ホーンテッドマンション',
+            8001: 'ミッキーのフィルハーマジック',
+            7998: 'ピーターパン空の旅',
+            8002: 'ピノキオの冒険旅行',
+            8008: 'プーさんのハニーハント',
+            7999: '白雪姫と七人のこびと',
+            8011: 'チップとデールのツリーハウス',
+            8013: 'ドナルドのボート',
+            8012: 'ガジェットのゴーコースター',
+            8014: 'グーフィーのペイント＆プレイハウス',
+            15401: 'ミッキーの家とミート・ミッキー',
+            8010: 'ミニーの家',
+            8009: 'ロジャーラビットのカートゥーンスピン',
+            8020: 'トゥーンパーク',
+            8018: 'モンスターズ・インク "ライド＆ゴーシーク!"',
+            8015: 'スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー',
+            8021: 'スティッチ・エンカウンター',
+            8254: 'ベイマックスのハッピーライド',
+        };
+
+        // TDS アトラクション日本語名
+        const TDS_RIDE_INFO = {
+            8024: 'ソアリン：ファンタスティック・フライト',
+            8048: 'フォートレス・エクスプロレーション',
+            8049: 'ザ・レオナルドチャレンジ',
+            8034: 'ヴェネツィアン・ゴンドラ',
+            8031: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）',
+            8047: 'タワー・オブ・テラー',
+            8023: 'トイ・ストーリー・マニア！',
+            8050: 'タートル・トーク',
+            8037: 'ビッグシティ・ヴィークル',
+            8036: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）',
+            8032: 'ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント）',
+            8038: 'アクアトピア',
+            8051: 'ニモ＆フレンズ・シーライダー',
+            8035: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）',
+            8027: 'インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮',
+            8046: 'レイジングスピリッツ',
+            8033: 'ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ）',
+            8025: 'ジャスミンのフライングカーペット',
+            8039: 'シンドバッド・ストーリーブック・ヴォヤッジ',
+            8030: 'マジックランプシアター',
+            8040: 'キャラバンカルーセル',
+            8022: 'アリエルのプレイグラウンド',
+            8041: 'フランダーのフライングフィッシュコースター',
+            8044: 'ブローフィッシュ・バルーンレース',
+            8043: 'ジャンピン・ジェリーフィッシュ',
+            8042: 'スカットルのスクーター',
+            8045: 'ワールプール',
+            8026: 'マーメイドラグーンシアター',
+            8029: '海底2万マイル',
+            8028: 'センター・オブ・ジ・アース',
+            13559: 'アナとエルサのフローズンジャーニー',
+            13560: 'ラプンツェルのランタンフェスティバル',
+            13561: 'ピーターパンのネバーランドアドベンチャー',
+            13562: 'フェアリー・ティンカーベルのビジーバギー',
+        };
+
         // 環境判定
         const isLocalFile = location.protocol === 'file:';
         const isGitHubPages = location.hostname.includes('github.io');
@@ -363,7 +495,12 @@
         if (parkParam && PARKS[parkParam]) {
             currentPark = parkParam;
         } else {
-            currentPark = 'land'; // デフォルト
+            currentPark = 'land';
+        }
+
+        function getRideName(rideId, originalName) {
+            const nameMap = currentPark === 'land' ? TDL_RIDE_INFO : TDS_RIDE_INFO;
+            return nameMap[rideId] || originalName;
         }
 
         // 初期化
@@ -374,14 +511,11 @@
             document.getElementById('parkName').textContent = `${parkInfo.icon} ${parkInfo.name}`;
             document.title = `${parkInfo.name} 待ち時間履歴`;
             
-            // 戻るリンクにパーク情報を追加
             document.querySelector('.back-btn').href = `index.html?park=${currentPark}`;
             
             if (isLocalFile) {
-                // ローカルファイル(file://)の場合はファイル選択UIを表示
                 showLocalFileUI();
             } else {
-                // GitHub Pages または localhost の場合は自動読み込み
                 await loadAvailableDates();
             }
         }
@@ -401,7 +535,6 @@
                 </div>
             `;
 
-            // ファイル選択イベント
             document.getElementById('fileInput').addEventListener('change', handleFileSelect);
         }
 
@@ -419,14 +552,12 @@
 
             const allRecords = [];
             let parkName = '';
-            let dates = new Set();
 
             for (const file of files) {
                 try {
                     const text = await file.text();
                     const data = JSON.parse(text);
                     parkName = data.park || parkName;
-                    dates.add(data.date);
                     
                     for (const record of data.records) {
                         allRecords.push({
@@ -451,18 +582,16 @@
                 return;
             }
 
-            // タイムスタンプでソート
             allRecords.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-            const sortedDates = [...dates].sort().reverse();
             loadedData = {
                 park: parkName,
-                date: sortedDates[0],
+                date: allRecords[0].date,
                 records: allRecords
             };
 
             populateRideSelect();
-            showDataInfo();
+            showAllRides();
         }
 
         async function loadAvailableDates() {
@@ -470,17 +599,14 @@
             const content = document.getElementById('content');
             
             try {
-                // 過去7日分の日付を生成
                 const dates = [];
                 for (let i = 0; i < 7; i++) {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
-                    // 日本時間で日付を取得
                     const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
                     dates.push(jstDate.toISOString().split('T')[0]);
                 }
 
-                // 存在するファイルをチェック
                 availableDates = [];
                 for (const date of dates) {
                     const url = `data/${parkInfo.filePrefix}_${date}.json`;
@@ -489,9 +615,7 @@
                         if (response.ok) {
                             availableDates.push(date);
                         }
-                    } catch (e) {
-                        // ファイルが存在しない
-                    }
+                    } catch (e) {}
                 }
 
                 if (availableDates.length === 0) {
@@ -499,13 +623,11 @@
                         <div class="no-data">
                             <h2>データがありません</h2>
                             <p>まだ履歴データが収集されていません。</p>
-                            <p style="margin-top: 15px;">データ収集を開始してください。</p>
                         </div>
                     `;
                     return;
                 }
 
-                // 日付セレクターを更新
                 const dateSelect = document.getElementById('dateSelect');
                 dateSelect.innerHTML = '<option value="">日付を選択...</option>';
                 for (const date of availableDates) {
@@ -515,7 +637,6 @@
                     dateSelect.appendChild(option);
                 }
 
-                // 最新日付を自動選択
                 dateSelect.value = availableDates[0];
                 await loadDateData(availableDates[0]);
 
@@ -560,7 +681,7 @@
                 };
 
                 populateRideSelect();
-                showDataInfo();
+                showAllRides();
 
             } catch (error) {
                 console.error('Error:', error);
@@ -581,7 +702,7 @@
 
         function populateRideSelect() {
             const select = document.getElementById('rideSelect');
-            select.innerHTML = '<option value="">アトラクションを選択...</option>';
+            select.innerHTML = '<option value="all">すべてのアトラクション</option>';
             
             if (!loadedData || loadedData.records.length === 0) return;
 
@@ -589,7 +710,7 @@
             for (const record of loadedData.records) {
                 for (const ride of record.rides) {
                     if (!ridesMap.has(ride.id)) {
-                        ridesMap.set(ride.id, ride.name);
+                        ridesMap.set(ride.id, getRideName(ride.id, ride.name));
                     }
                 }
             }
@@ -604,16 +725,59 @@
             }
 
             select.disabled = false;
+            select.value = 'all';
         }
 
-        function showDataInfo() {
+        function showAllRides() {
             const content = document.getElementById('content');
             
+            if (!loadedData || loadedData.records.length === 0) return;
+
+            const latestRecord = loadedData.records[loadedData.records.length - 1];
             const recordCount = loadedData.records.length;
-            const rideCount = loadedData.records[0]?.rides?.length || 0;
-            
             const firstTime = loadedData.records[0]?.time || '-';
-            const lastTime = loadedData.records[loadedData.records.length - 1]?.time || '-';
+            const lastTime = latestRecord?.time || '-';
+
+            // 各アトラクションの統計を計算
+            const rideStats = new Map();
+            
+            for (const record of loadedData.records) {
+                for (const ride of record.rides) {
+                    if (!rideStats.has(ride.id)) {
+                        rideStats.set(ride.id, {
+                            id: ride.id,
+                            name: getRideName(ride.id, ride.name),
+                            waits: [],
+                            lastOpen: false,
+                            lastWait: 0
+                        });
+                    }
+                    const stat = rideStats.get(ride.id);
+                    if (ride.is_open && ride.wait_time > 0) {
+                        stat.waits.push(ride.wait_time);
+                    }
+                    stat.lastOpen = ride.is_open;
+                    stat.lastWait = ride.wait_time;
+                }
+            }
+
+            // カード用データを生成
+            const rideCards = [...rideStats.values()].map(stat => {
+                const avgWait = stat.waits.length > 0 
+                    ? Math.round(stat.waits.reduce((a, b) => a + b, 0) / stat.waits.length) 
+                    : 0;
+                const maxWait = stat.waits.length > 0 ? Math.max(...stat.waits) : 0;
+                const minWait = stat.waits.length > 0 ? Math.min(...stat.waits) : 0;
+                
+                return {
+                    ...stat,
+                    avgWait,
+                    maxWait,
+                    minWait
+                };
+            }).sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+            const openCount = rideCards.filter(r => r.lastOpen).length;
 
             content.innerHTML = `
                 <div class="data-info">
@@ -624,8 +788,12 @@
                             <div class="data-info-label">記録数</div>
                         </div>
                         <div class="data-info-item">
-                            <div class="data-info-value">${rideCount}</div>
+                            <div class="data-info-value">${rideCards.length}</div>
                             <div class="data-info-label">アトラクション数</div>
+                        </div>
+                        <div class="data-info-item">
+                            <div class="data-info-value">${openCount}</div>
+                            <div class="data-info-label">最新時点で運営中</div>
                         </div>
                         <div class="data-info-item">
                             <div class="data-info-value">${firstTime} 〜 ${lastTime}</div>
@@ -634,10 +802,100 @@
                     </div>
                 </div>
                 <div class="chart-container">
-                    <h2 class="chart-title">アトラクションを選択してグラフを表示</h2>
+                    <h2 class="chart-title">全アトラクション一覧（最新: ${lastTime}）</h2>
+                    <p style="text-align: center; color: #a0a0a0; margin-bottom: 20px;">カードをクリックするとグラフを表示</p>
+                    <div class="rides-grid">
+                        ${rideCards.map(ride => renderRideCard(ride)).join('')}
+                    </div>
+                </div>
+            `;
+
+            // カードクリックイベント
+            content.querySelectorAll('.ride-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const rideId = parseInt(card.dataset.rideId);
+                    document.getElementById('rideSelect').value = rideId;
+                    showRideDetail(rideId);
+                });
+            });
+        }
+
+        function renderRideCard(ride) {
+            const waitClass = getWaitClass(ride.lastWait);
+            const cardClass = ride.lastOpen ? waitClass : 'closed';
+            
+            return `
+                <div class="ride-card ${cardClass}" data-ride-id="${ride.id}">
+                    <div class="ride-card-header">
+                        <span class="ride-card-name">${escapeHtml(ride.name)}</span>
+                        <span class="ride-card-status ${ride.lastOpen ? 'open' : 'closed'}">
+                            ${ride.lastOpen ? '運営中' : '休止中'}
+                        </span>
+                    </div>
+                    <div class="ride-card-wait">
+                        <span class="ride-card-wait-value">${ride.lastOpen ? ride.lastWait : '-'}</span>
+                        <span class="ride-card-wait-unit">分</span>
+                    </div>
+                    ${ride.waits.length > 0 ? `
+                        <div class="ride-card-range">
+                            平均 ${ride.avgWait}分 / 最短 ${ride.minWait}分 / 最長 ${ride.maxWait}分
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function showRideDetail(rideId) {
+            const content = document.getElementById('content');
+            
+            const rideData = [];
+            let rideName = '';
+
+            for (const record of loadedData.records) {
+                const ride = record.rides.find(r => r.id === rideId);
+                if (ride) {
+                    rideName = getRideName(ride.id, ride.name);
+                    rideData.push({
+                        time: record.time,
+                        datetime: `${record.date} ${record.time}`,
+                        is_open: ride.is_open,
+                        wait_time: ride.wait_time
+                    });
+                }
+            }
+
+            const waits = rideData.filter(d => d.is_open && d.wait_time > 0).map(d => d.wait_time);
+            const avgWait = waits.length > 0 ? Math.round(waits.reduce((a, b) => a + b, 0) / waits.length) : 0;
+            const maxWait = waits.length > 0 ? Math.max(...waits) : 0;
+            const minWait = waits.length > 0 ? Math.min(...waits) : 0;
+
+            content.innerHTML = `
+                <div class="data-info">
+                    <h3>📊 ${rideName}</h3>
+                    <div class="data-info-grid">
+                        <div class="data-info-item">
+                            <div class="data-info-value">${avgWait}分</div>
+                            <div class="data-info-label">平均待ち時間</div>
+                        </div>
+                        <div class="data-info-item">
+                            <div class="data-info-value">${minWait}分</div>
+                            <div class="data-info-label">最短</div>
+                        </div>
+                        <div class="data-info-item">
+                            <div class="data-info-value">${maxWait}分</div>
+                            <div class="data-info-label">最長</div>
+                        </div>
+                        <div class="data-info-item">
+                            <div class="data-info-value">${rideData.length}</div>
+                            <div class="data-info-label">記録数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h2 class="chart-title">待ち時間推移グラフ</h2>
                     <canvas id="waitTimeChart"></canvas>
                 </div>
-                <div class="chart-container" id="tableContainer" style="display: none;">
+                <div class="chart-container">
                     <h2 class="chart-title">詳細データ</h2>
                     <div class="table-container">
                         <table id="dataTable">
@@ -653,39 +911,10 @@
                     </div>
                 </div>
             `;
-        }
-
-        // イベントリスナー
-        document.getElementById('dateSelect').addEventListener('change', async (e) => {
-            if (e.target.value) {
-                document.getElementById('rideSelect').value = '';
-                await loadDateData(e.target.value);
-            }
-        });
-
-        document.getElementById('rideSelect').addEventListener('change', (e) => {
-            const rideId = parseInt(e.target.value);
-            if (!rideId || !loadedData) return;
-
-            const rideData = [];
-            let rideName = '';
-
-            for (const record of loadedData.records) {
-                const ride = record.rides.find(r => r.id === rideId);
-                if (ride) {
-                    rideName = ride.name;
-                    rideData.push({
-                        time: record.time,
-                        datetime: `${record.date} ${record.time}`,
-                        is_open: ride.is_open,
-                        wait_time: ride.wait_time
-                    });
-                }
-            }
 
             renderChart(rideName, rideData);
             renderTable(rideData);
-        });
+        }
 
         function renderChart(rideName, rideData) {
             const ctx = document.getElementById('waitTimeChart');
@@ -743,19 +972,13 @@
                     }
                 }
             });
-
-            document.querySelector('.chart-container .chart-title').textContent = '待ち時間推移グラフ';
         }
 
         function renderTable(rideData) {
-            const tableContainer = document.getElementById('tableContainer');
             const tbody = document.querySelector('#dataTable tbody');
+            if (!tbody) return;
             
-            if (!tableContainer || !tbody) return;
-            
-            tableContainer.style.display = 'block';
             tbody.innerHTML = '';
-
             const reversedData = [...rideData].reverse();
 
             for (const d of reversedData) {
@@ -776,6 +999,31 @@
             if (waitTime <= 70) return 'wait-long';
             return 'wait-very-long';
         }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // イベントリスナー
+        document.getElementById('dateSelect').addEventListener('change', async (e) => {
+            if (e.target.value) {
+                document.getElementById('rideSelect').value = 'all';
+                await loadDateData(e.target.value);
+            }
+        });
+
+        document.getElementById('rideSelect').addEventListener('change', (e) => {
+            if (e.target.value === 'all') {
+                showAllRides();
+            } else {
+                const rideId = parseInt(e.target.value);
+                if (rideId && loadedData) {
+                    showRideDetail(rideId);
+                }
+            }
+        });
     </script>
 </body>
 </html>
