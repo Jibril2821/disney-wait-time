@@ -1034,7 +1034,7 @@
             const cardClass = ride.is_open ? '' : 'closed';
             
             return `
-                <div class="ride-card ${cardClass} ${waitClass}">
+                <div class="ride-card ${cardClass} ${waitClass}" data-ride-id="${ride.id}" style="cursor: pointer;">
                     <span class="ride-status ${statusClass}">
                         ${ride.is_open ? '運営中' : '休止中'}
                     </span>
@@ -1095,6 +1095,13 @@
                         </div>
                     </div>
                 `;
+                // カードクリックで履歴画面に遷移
+                container.querySelectorAll('.ride-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const rideId = card.dataset.rideId;
+                        window.location.href = `history.html?park=${currentPark}&ride=${rideId}`;
+                    });
+                });
                 return;
             }
 
@@ -1131,6 +1138,14 @@
             });
 
             container.innerHTML = html || '<div class="no-rides">該当するアトラクションがありません</div>';
+            
+            // カードクリックで履歴画面に遷移
+            container.querySelectorAll('.ride-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const rideId = card.dataset.rideId;
+                    window.location.href = `history.html?park=${currentPark}&ride=${rideId}`;
+                });
+            });
         }
 
         function escapeHtml(text) {

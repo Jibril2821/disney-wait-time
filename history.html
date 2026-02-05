@@ -672,10 +672,12 @@
         let overviewChart = null;
         let selectedAreas = []; // 空配列 = すべて選択
         let currentPeriod = 'day'; // day, week, month, year
+        let initialRideHandled = false; // URLパラメータのride処理済みフラグ
 
-        // URLパラメータからパークを取得
+        // URLパラメータからパークとアトラクションを取得
         const urlParams = new URLSearchParams(window.location.search);
         const parkParam = urlParams.get('park');
+        const rideParam = urlParams.get('ride');
 
         if (parkParam && PARKS[parkParam]) {
             currentPark = parkParam;
@@ -1217,7 +1219,8 @@
             // X軸のtick設定を期間に応じて設定
             const xTicksConfig = {
                 color: '#a0a0a0',
-                maxRotation: currentPeriod === 'month' ? 45 : 0
+                maxRotation: currentPeriod === 'month' ? 45 : 0,
+                font: { size: 14, weight: 'bold' }
             };
             if (currentPeriod === 'day') {
                 xTicksConfig.callback = function(val, index) { 
@@ -1262,17 +1265,19 @@
                             title: {
                                 display: true,
                                 text: xAxisTitle,
-                                color: '#a0a0a0'
+                                color: '#a0a0a0',
+                                font: { size: 16, weight: 'bold' }
                             }
                         },
                         y: {
                             beginAtZero: true,
-                            ticks: { color: '#a0a0a0' },
+                            ticks: { color: '#a0a0a0', font: { size: 14, weight: 'bold' } },
                             grid: { color: 'rgba(255,255,255,0.1)' },
                             title: {
                                 display: true,
                                 text: '待ち時間（分）',
-                                color: '#a0a0a0'
+                                color: '#a0a0a0',
+                                font: { size: 16, weight: 'bold' }
                             }
                         }
                     }
@@ -1520,7 +1525,8 @@
             // X軸のtick設定を期間に応じて設定
             const xTicksConfig2 = {
                 color: '#a0a0a0',
-                maxRotation: currentPeriod === 'month' ? 45 : 0
+                maxRotation: currentPeriod === 'month' ? 45 : 0,
+                font: { size: 14, weight: 'bold' }
             };
             if (currentPeriod === 'month' && labels.length > 15) {
                 xTicksConfig2.callback = function(val, index) { 
@@ -1565,17 +1571,19 @@
                             title: {
                                 display: true,
                                 text: xAxisTitle,
-                                color: '#a0a0a0'
+                                color: '#a0a0a0',
+                                font: { size: 16, weight: 'bold' }
                             }
                         },
                         y: {
                             beginAtZero: true,
-                            ticks: { color: '#a0a0a0' },
+                            ticks: { color: '#a0a0a0', font: { size: 14, weight: 'bold' } },
                             grid: { color: 'rgba(255,255,255,0.1)' },
                             title: {
                                 display: true,
                                 text: '待ち時間（分）',
-                                color: '#a0a0a0'
+                                color: '#a0a0a0',
+                                font: { size: 16, weight: 'bold' }
                             }
                         }
                     }
@@ -1862,6 +1870,16 @@
 
                 populateRideSelect();
                 showAllRides();
+
+                // URLパラメータでrideが指定されていれば詳細表示（初回のみ）
+                if (!initialRideHandled && rideParam) {
+                    initialRideHandled = true;
+                    const rideId = parseInt(rideParam);
+                    if (rideId) {
+                        document.getElementById('rideSelect').value = rideId;
+                        showRideDetail(rideId);
+                    }
+                }
 
             } catch (error) {
                 console.error('Error:', error);
