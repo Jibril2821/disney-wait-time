@@ -600,6 +600,95 @@
             color: #ffd86b;
         }
 
+        /* 混雑ヒートマップ */
+        .heatmap-container {
+            margin-bottom: 24px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 16px 18px;
+        }
+
+        .heatmap-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .heatmap-note {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        .heatmap-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .heatmap-table th,
+        .heatmap-table td {
+            padding: 4px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-right: 1px solid rgba(255,255,255,0.04);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .heatmap-table th:first-child,
+        .heatmap-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1;
+            text-align: left;
+        }
+
+        .heatmap-header {
+            background: rgba(255,255,255,0.04);
+            font-size: 0.7rem;
+            color: #cccccc;
+        }
+
+        .heatmap-ride-name {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .heatmap-cell {
+            min-width: 30px;
+            font-size: 0.7rem;
+        }
+
+        .heat-none {
+            background: rgba(0,0,0,0.1);
+            color: #666;
+        }
+
+        .heat-low {
+            background: rgba(46, 213, 115, 0.28);
+            color: #e9ffef;
+        }
+
+        .heat-medium {
+            background: rgba(241, 196, 15, 0.32);
+            color: #fff8e1;
+        }
+
+        .heat-high {
+            background: rgba(230, 126, 34, 0.42);
+            color: #fff4e5;
+        }
+
+        .heat-very-high {
+            background: rgba(231, 76, 60, 0.55);
+            color: #ffecec;
+        }
+
         .chart-legend {
             display: flex;
             flex-wrap: wrap;
@@ -1237,6 +1326,8 @@
                     <div class="chart-legend" id="chartLegend"></div>
                 </div>
 
+                ${currentPeriod === 'day' ? renderHeatmapSection(filteredCards) : ''}
+
                 <div class="chart-container">
                     <h2 class="chart-title">全アトラクション一覧</h2>
                     <p style="text-align: center; color: #a0a0a0; margin-bottom: 20px;">カードをクリックするとグラフを表示</p>
@@ -1659,6 +1750,78 @@
                     `;
                 }
             }
+        }
+
+        function renderHeatmapSection(rideCards) {
+            if (!rideCards || rideCards.length === 0 || !loadedData || !loadedData.records.length) {
+                return '';
+            }
+
+            // 8:00〜22:00 を30分刻みでスロット化
+            const slots = [];
+            for (let h = 8; h <= 22; h++) {
+                const hh = h.toString().padStart(2, '0');
+                slots.push(`${hh}:00`);
+                if (h !== 22) slots.push(`${hh}:30`);
+            }
+
+            const rowsHtml = rideCards.map(ride => {
+                const sums = new Array(slots.length).fill(0);
+                const counts = new Array(slots.length).fill(0);
+
+                for (const td of ride.timeData) {
+                    if (td.wait == null || !td.time) continue;
+                    const [hours, minutes] = td.time.split(':').map(Number);
+                    if (hours < 8 || hours > 22) continue;
+                    const base = (hours - 8) * 2;
+                    const idx = minutes >= 30 ? base + 1 : base;
+                    if (idx < 0 || idx >= slots.length) continue;
+                    sums[idx] += td.wait;
+                    counts[idx] += 1;
+                }
+
+                const cells = sums.map((sum, i) => {
+                    if (!counts[i]) {
+                        return '<td class="heatmap-cell heat-none"></td>';
+                    }
+                    const avg = Math.round(sum / counts[i]);
+                    let level = 'low';
+                    if (avg <= 15) level = 'low';
+                    else if (avg <= 40) level = 'medium';
+                    else if (avg <= 70) level = 'high';
+                    else level = 'very-high';
+                    return `<td class="heatmap-cell heat-${level}">${avg}</td>`;
+                }).join('');
+
+                return `
+                    <tr>
+                        <td class="heatmap-ride-name">${escapeHtml(ride.name)}</td>
+                        ${cells}
+                    </tr>
+                `;
+            }).join('');
+
+            const headerCells = slots.map(t => `<th class="heatmap-header">${t}</th>`).join('');
+
+            return `
+                <div class="heatmap-container">
+                    <h3 class="heatmap-title">⏱ 混雑ヒートマップ（8:00〜22:00）</h3>
+                    <div class="heatmap-note">色が濃いほど平均待ち時間が長い時間帯です。</div>
+                    <div class="heatmap-table-wrapper">
+                        <table class="heatmap-table">
+                            <thead>
+                                <tr>
+                                    <th class="heatmap-header">アトラクション</th>
+                                    ${headerCells}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
         function renderAreaSections(rideCards, areas) {
