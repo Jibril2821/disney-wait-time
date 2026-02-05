@@ -47,80 +47,95 @@ const TDS_AREAS = {
     fantasysprings: { name: 'ファンタジースプリングス', icon: '✨' }
 };
 
-// TDL アトラクション情報
+// TDL アトラクション情報（エリア順）
 const TDL_RIDE_INFO = {
+    // ワールドバザール
     7985: { area: 'worldbazaar', name: 'オムニバス' },
     8019: { area: 'worldbazaar', name: 'ペニーアーケード' },
-    7987: { area: 'adventureland', name: 'ジャングルクルーズ：ワイルドライフ・エクスペディション' },
+    // アドベンチャーランド
     7986: { area: 'adventureland', name: 'カリブの海賊' },
+    7987: { area: 'adventureland', name: 'ジャングルクルーズ：ワイルドライフ・エクスペディション' },
+    7988: { area: 'adventureland', name: 'ウエスタンリバー鉄道' },
     7989: { area: 'adventureland', name: 'スイスファミリー・ツリーハウス' },
     7990: { area: 'adventureland', name: '魅惑のチキルーム：スティッチ・プレゼンツ "アロハ・エ・コモ・マイ!"' },
-    7994: { area: 'westernland', name: 'ビッグサンダー・マウンテン' },
+    // ウエスタンランド
+    7991: { area: 'westernland', name: 'ウエスタンランド・シューティングギャラリー' },
     7992: { area: 'westernland', name: 'カントリーベア・シアター' },
     7993: { area: 'westernland', name: '蒸気船マークトウェイン号' },
+    7994: { area: 'westernland', name: 'ビッグサンダー・マウンテン' },
     7995: { area: 'westernland', name: 'トムソーヤ島いかだ' },
-    7988: { area: 'westernland', name: 'ウエスタンリバー鉄道' },
-    7991: { area: 'westernland', name: 'ウエスタンランド・シューティングギャラリー' },
-    7997: { area: 'crittercountry', name: 'ビーバーブラザーズのカヌー探険' },
+    // クリッターカントリー
     7996: { area: 'crittercountry', name: 'スプラッシュ・マウンテン' },
+    7997: { area: 'crittercountry', name: 'ビーバーブラザーズのカヌー探険' },
+    // ファンタジーランド
+    7998: { area: 'fantasyland', name: 'ピーターパン空の旅' },
+    7999: { area: 'fantasyland', name: '白雪姫と七人のこびと' },
+    8000: { area: 'fantasyland', name: 'シンデレラのフェアリーテイル・ホール' },
+    8001: { area: 'fantasyland', name: 'ミッキーのフィルハーマジック' },
+    8002: { area: 'fantasyland', name: 'ピノキオの冒険旅行' },
+    8003: { area: 'fantasyland', name: '空飛ぶダンボ' },
+    8004: { area: 'fantasyland', name: 'キャッスルカルーセル' },
+    8005: { area: 'fantasyland', name: 'ホーンテッドマンション' },
     8006: { area: 'fantasyland', name: '"イッツ・ア・スモールワールド" with グルート' },
     8007: { area: 'fantasyland', name: 'アリスのティーパーティー' },
-    8004: { area: 'fantasyland', name: 'キャッスルカルーセル' },
-    8000: { area: 'fantasyland', name: 'シンデレラのフェアリーテイル・ホール' },
-    8003: { area: 'fantasyland', name: '空飛ぶダンボ' },
-    8255: { area: 'fantasyland', name: '美女と野獣 "魔法のものがたり"' },
-    8005: { area: 'fantasyland', name: 'ホーンテッドマンション' },
-    8001: { area: 'fantasyland', name: 'ミッキーのフィルハーマジック' },
-    7998: { area: 'fantasyland', name: 'ピーターパン空の旅' },
-    8002: { area: 'fantasyland', name: 'ピノキオの冒険旅行' },
     8008: { area: 'fantasyland', name: 'プーさんのハニーハント' },
-    7999: { area: 'fantasyland', name: '白雪姫と七人のこびと' },
-    8011: { area: 'toontown', name: 'チップとデールのツリーハウス' },
-    8013: { area: 'toontown', name: 'ドナルドのボート' },
-    8012: { area: 'toontown', name: 'ガジェットのゴーコースター' },
-    8014: { area: 'toontown', name: 'グーフィーのペイント＆プレイハウス' },
-    15401: { area: 'toontown', name: 'ミッキーの家とミート・ミッキー' },
-    8010: { area: 'toontown', name: 'ミニーの家' },
+    8255: { area: 'fantasyland', name: '美女と野獣 "魔法のものがたり"' },
+    // トゥーンタウン
     8009: { area: 'toontown', name: 'ロジャーラビットのカートゥーンスピン' },
+    8010: { area: 'toontown', name: 'ミニーの家' },
+    8011: { area: 'toontown', name: 'チップとデールのツリーハウス' },
+    8012: { area: 'toontown', name: 'ガジェットのゴーコースター' },
+    8013: { area: 'toontown', name: 'ドナルドのボート' },
+    8014: { area: 'toontown', name: 'グーフィーのペイント＆プレイハウス' },
     8020: { area: 'toontown', name: 'トゥーンパーク' },
-    8018: { area: 'tomorrowland', name: 'モンスターズ・インク "ライド＆ゴーシーク!"' },
+    15401: { area: 'toontown', name: 'ミッキーの家とミート・ミッキー' },
+    // トゥモローランド
     8015: { area: 'tomorrowland', name: 'スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー' },
+    8018: { area: 'tomorrowland', name: 'モンスターズ・インク "ライド＆ゴーシーク!"' },
     8021: { area: 'tomorrowland', name: 'スティッチ・エンカウンター' },
     8254: { area: 'tomorrowland', name: 'ベイマックスのハッピーライド' },
 };
 
-// TDS アトラクション情報
+// TDS アトラクション情報（エリア順）
 const TDS_RIDE_INFO = {
+    // メディテレーニアンハーバー
     8024: { area: 'mediterranean', name: 'ソアリン：ファンタスティック・フライト' },
+    8031: { area: 'mediterranean', name: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）' },
+    8034: { area: 'mediterranean', name: 'ヴェネツィアン・ゴンドラ' },
     8048: { area: 'mediterranean', name: 'フォートレス・エクスプロレーション' },
     8049: { area: 'mediterranean', name: 'ザ・レオナルドチャレンジ' },
-    8034: { area: 'mediterranean', name: 'ヴェネツィアン・ゴンドラ' },
-    8031: { area: 'mediterranean', name: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）' },
-    8047: { area: 'americanwaterfront', name: 'タワー・オブ・テラー' },
+    // アメリカンウォーターフロント
     8023: { area: 'americanwaterfront', name: 'トイ・ストーリー・マニア！' },
-    8050: { area: 'americanwaterfront', name: 'タートル・トーク' },
-    8037: { area: 'americanwaterfront', name: 'ビッグシティ・ヴィークル' },
-    8036: { area: 'americanwaterfront', name: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）' },
     8032: { area: 'americanwaterfront', name: 'ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント）' },
+    8036: { area: 'americanwaterfront', name: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）' },
+    8037: { area: 'americanwaterfront', name: 'ビッグシティ・ヴィークル' },
+    8047: { area: 'americanwaterfront', name: 'タワー・オブ・テラー' },
+    8050: { area: 'americanwaterfront', name: 'タートル・トーク' },
+    // ポートディスカバリー
+    8035: { area: 'portdiscovery', name: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）' },
     8038: { area: 'portdiscovery', name: 'アクアトピア' },
     8051: { area: 'portdiscovery', name: 'ニモ＆フレンズ・シーライダー' },
-    8035: { area: 'portdiscovery', name: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）' },
+    // ロストリバーデルタ
     8027: { area: 'lostriverdelta', name: 'インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮' },
-    8046: { area: 'lostriverdelta', name: 'レイジングスピリッツ' },
     8033: { area: 'lostriverdelta', name: 'ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ）' },
+    8046: { area: 'lostriverdelta', name: 'レイジングスピリッツ' },
+    // アラビアンコースト
     8025: { area: 'arabiancoast', name: 'ジャスミンのフライングカーペット' },
-    8039: { area: 'arabiancoast', name: 'シンドバッド・ストーリーブック・ヴォヤッジ' },
     8030: { area: 'arabiancoast', name: 'マジックランプシアター' },
+    8039: { area: 'arabiancoast', name: 'シンドバッド・ストーリーブック・ヴォヤッジ' },
     8040: { area: 'arabiancoast', name: 'キャラバンカルーセル' },
+    // マーメイドラグーン
     8022: { area: 'mermaidlagoon', name: 'アリエルのプレイグラウンド' },
-    8041: { area: 'mermaidlagoon', name: 'フランダーのフライングフィッシュコースター' },
-    8044: { area: 'mermaidlagoon', name: 'ブローフィッシュ・バルーンレース' },
-    8043: { area: 'mermaidlagoon', name: 'ジャンピン・ジェリーフィッシュ' },
-    8042: { area: 'mermaidlagoon', name: 'スカットルのスクーター' },
-    8045: { area: 'mermaidlagoon', name: 'ワールプール' },
     8026: { area: 'mermaidlagoon', name: 'マーメイドラグーンシアター' },
-    8029: { area: 'mysteriousisland', name: '海底2万マイル' },
+    8041: { area: 'mermaidlagoon', name: 'フランダーのフライングフィッシュコースター' },
+    8042: { area: 'mermaidlagoon', name: 'スカットルのスクーター' },
+    8043: { area: 'mermaidlagoon', name: 'ジャンピン・ジェリーフィッシュ' },
+    8044: { area: 'mermaidlagoon', name: 'ブローフィッシュ・バルーンレース' },
+    8045: { area: 'mermaidlagoon', name: 'ワールプール' },
+    // ミステリアスアイランド
     8028: { area: 'mysteriousisland', name: 'センター・オブ・ジ・アース' },
+    8029: { area: 'mysteriousisland', name: '海底2万マイル' },
+    // ファンタジースプリングス
     13559: { area: 'fantasysprings', name: 'アナとエルサのフローズンジャーニー' },
     13560: { area: 'fantasysprings', name: 'ラプンツェルのランタンフェスティバル' },
     13561: { area: 'fantasysprings', name: 'ピーターパンのネバーランドアドベンチャー' },
