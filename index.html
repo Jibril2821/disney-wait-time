@@ -695,7 +695,13 @@
     <button class="refresh-btn" id="refreshBtn" title="更新">↻</button>
 
     <script>
-        const CORS_PROXY = 'https://corsproxy.io/?';
+        // 複数のCORSプロキシ（フォールバック用）
+        const CORS_PROXIES = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.org/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        let currentProxyIndex = 0;
         
         const PARKS = {
             land: {
@@ -871,16 +877,32 @@
             return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
 
+        async function fetchWithProxy(url) {
+            // 複数のプロキシを順番に試す
+            for (let i = 0; i < CORS_PROXIES.length; i++) {
+                const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
+                const proxy = CORS_PROXIES[proxyIndex];
+                try {
+                    const response = await fetch(proxy + encodeURIComponent(url));
+                    if (response.ok) {
+                        currentProxyIndex = proxyIndex; // 成功したプロキシを記憶
+                        return await response.json();
+                    }
+                } catch (e) {
+                    console.log(`Proxy ${proxyIndex} failed, trying next...`);
+                }
+            }
+            throw new Error('すべてのプロキシで取得に失敗しました');
+        }
+
         async function fetchQueueTimes() {
             const refreshBtn = document.getElementById('refreshBtn');
             refreshBtn.classList.add('loading');
 
             try {
                 const parkInfo = PARKS[currentPark];
-                const response = await fetch(CORS_PROXY + encodeURIComponent(parkInfo.apiUrl));
-                if (!response.ok) throw new Error('データの取得に失敗しました');
+                const data = await fetchWithProxy(parkInfo.apiUrl);
                 
-                const data = await response.json();
                 ridesData = (data.rides || []).map(ride => {
                     const info = getRideInfo(ride.id);
                     return {
