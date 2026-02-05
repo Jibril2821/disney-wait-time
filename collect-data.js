@@ -38,18 +38,43 @@ async function fetchParkData(park) {
     }
 }
 
-function getDateString(date) {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+function getJapanDate(date) {
+    // 日本時間でのDate部分を取得
+    return date.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // YYYY-MM-DD
 }
 
-function getTimeString(date) {
-    return date.toTimeString().split(' ')[0].slice(0, 5); // HH:MM
+function getJapanTime(date) {
+    // 日本時間でのHH:MMを取得
+    return date.toLocaleTimeString('ja-JP', { 
+        timeZone: 'Asia/Tokyo', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+    }); // HH:MM
+}
+
+function getJapanTimestamp(date) {
+    // 日本時間でのISO形式タイムスタンプを取得
+    const options = {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    const parts = date.toLocaleString('ja-JP', options).split(/[\/\s:]/);
+    // parts: [YYYY, MM, DD, HH, mm, ss]
+    return `${parts[0]}-${parts[1]}-${parts[2]}T${parts[3]}:${parts[4]}:${parts[5]}+09:00`;
 }
 
 async function collectData() {
     const now = new Date();
-    const dateStr = getDateString(now);
-    const timeStr = getTimeString(now);
+    const dateStr = getJapanDate(now);
+    const timeStr = getJapanTime(now);
+    const timestampStr = getJapanTimestamp(now);
     
     console.log(`\n========================================`);
     console.log(`[${now.toLocaleString('ja-JP')}] データ収集開始`);
@@ -79,7 +104,7 @@ async function collectData() {
         // 新しいレコードを追加
         const record = {
             time: timeStr,
-            timestamp: now.toISOString(),
+            timestamp: timestampStr,
             rides: data.rides.map(ride => ({
                 id: ride.id,
                 name: ride.name,

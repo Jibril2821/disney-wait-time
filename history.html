@@ -295,10 +295,10 @@
             margin-top: 8px;
         }
 
-        .wait-short .ride-card-wait-value { color: #4ecdc4; }
-        .wait-medium .ride-card-wait-value { color: #f9ca24; }
-        .wait-long .ride-card-wait-value { color: #ff6b6b; }
-        .wait-very-long .ride-card-wait-value { color: #e84393; }
+        .ride-card-wait-value.wait-short { color: #4ecdc4; }
+        .ride-card-wait-value.wait-medium { color: #f9ca24; }
+        .ride-card-wait-value.wait-long { color: #ff6b6b; }
+        .ride-card-wait-value.wait-very-long { color: #e84393; }
 
         .table-container {
             overflow-x: auto;
@@ -330,6 +330,27 @@
         .wait-medium { color: #f9ca24; }
         .wait-long { color: #ff6b6b; }
         .wait-very-long { color: #e84393; }
+
+        .back-to-list-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-to-list-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
 
         @media (max-width: 768px) {
             h1 {
@@ -821,8 +842,8 @@
         }
 
         function renderRideCard(ride) {
-            const waitClass = getWaitClass(ride.lastWait);
-            const cardClass = ride.lastOpen ? waitClass : 'closed';
+            const waitClass = ride.lastOpen ? getWaitClass(ride.lastWait) : '';
+            const cardClass = ride.lastOpen ? '' : 'closed';
             
             return `
                 <div class="ride-card ${cardClass}" data-ride-id="${ride.id}">
@@ -833,7 +854,7 @@
                         </span>
                     </div>
                     <div class="ride-card-wait">
-                        <span class="ride-card-wait-value">${ride.lastOpen ? ride.lastWait : '-'}</span>
+                        <span class="ride-card-wait-value ${waitClass}">${ride.lastOpen ? ride.lastWait : '-'}</span>
                         <span class="ride-card-wait-unit">分</span>
                     </div>
                     ${ride.waits.length > 0 ? `
@@ -870,6 +891,7 @@
             const minWait = waits.length > 0 ? Math.min(...waits) : 0;
 
             content.innerHTML = `
+                <button class="back-to-list-btn" onclick="backToList()">← 一覧に戻る</button>
                 <div class="data-info">
                     <h3>📊 ${rideName}</h3>
                     <div class="data-info-grid">
@@ -998,6 +1020,11 @@
             if (waitTime <= 40) return 'wait-medium';
             if (waitTime <= 70) return 'wait-long';
             return 'wait-very-long';
+        }
+
+        function backToList() {
+            document.getElementById('rideSelect').value = 'all';
+            showAllRides();
         }
 
         function escapeHtml(text) {
