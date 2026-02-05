@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東京ディズニーリゾート 待ち時間</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* パーク選択画面 */
+        .park-select-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .park-select-title {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .park-select-subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+        }
+
+        .park-cards {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .park-card {
+            width: 320px;
+            padding: 40px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-align: center;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .park-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.1;
+            transition: opacity 0.3s ease;
+        }
+
+        .park-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .park-card:hover::before {
+            opacity: 0.2;
+        }
+
+        .park-card.land {
+            background: linear-gradient(135deg, rgba(233,30,99,0.2) 0%, rgba(156,39,176,0.2) 100%);
+            border-color: rgba(233,30,99,0.3);
+        }
+
+        .park-card.land:hover {
+            border-color: #e91e63;
+            box-shadow: 0 20px 60px rgba(233,30,99,0.3);
+        }
+
+        .park-card.land::before {
+            background: linear-gradient(135deg, #e91e63, #9c27b0);
+        }
+
+        .park-card.sea {
+            background: linear-gradient(135deg, rgba(33,150,243,0.2) 0%, rgba(0,188,212,0.2) 100%);
+            border-color: rgba(33,150,243,0.3);
+        }
+
+        .park-card.sea:hover {
+            border-color: #2196f3;
+            box-shadow: 0 20px 60px rgba(33,150,243,0.3);
+        }
+
+        .park-card.sea::before {
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+        }
+
+        .park-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .park-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .park-description {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        /* メイン画面 */
+        .main-screen {
+            display: none;
+        }
+
+        .main-screen.active {
+            display: block;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(78,205,196,0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1rem;
+        }
+
+        .last-updated {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        .sort-select {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .sort-select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: #4ecdc4; }
+        .stat-card:nth-child(2) .stat-value { color: #ff6b6b; }
+        .stat-card:nth-child(3) .stat-value { color: #45b7d1; }
+        .stat-card:nth-child(4) .stat-value { color: #f9ca24; }
+
+        /* エリアタブ */
+        .area-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .area-tab {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .area-tab:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .area-tab.active {
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .area-tab .area-icon {
+            font-size: 1.1rem;
+        }
+
+        .area-tab .area-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        /* エリアセクション */
+        .area-section {
+            margin-bottom: 40px;
+        }
+
+        .area-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px 25px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .area-header-icon {
+            font-size: 2rem;
+        }
+
+        .area-header-info {
+            flex: 1;
+        }
+
+        .area-header-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .area-header-stats {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .rides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .ride-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ride-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .ride-card.closed {
+            opacity: 0.6;
+        }
+
+        .ride-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-right: 70px;
+            line-height: 1.4;
+        }
+
+        .ride-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .ride-status.open {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+        }
+
+        .ride-status.closed {
+            background: rgba(255,255,255,0.2);
+            color: #a0a0a0;
+        }
+
+        .wait-time-display {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .wait-time-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .wait-time-unit {
+            font-size: 1rem;
+            color: #a0a0a0;
+        }
+
+        .wait-time-bar {
+            height: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .wait-time-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .wait-short .wait-time-number { color: #4ecdc4; }
+        .wait-short .wait-time-fill { background: linear-gradient(90deg, #4ecdc4, #44a08d); }
+
+        .wait-medium .wait-time-number { color: #f9ca24; }
+        .wait-medium .wait-time-fill { background: linear-gradient(90deg, #f9ca24, #f0932b); }
+
+        .wait-long .wait-time-number { color: #ff6b6b; }
+        .wait-long .wait-time-fill { background: linear-gradient(90deg, #ff6b6b, #ee5a5a); }
+
+        .wait-very-long .wait-time-number { color: #e84393; }
+        .wait-very-long .wait-time-fill { background: linear-gradient(90deg, #e84393, #d63031); }
+
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px 20px;
+            background: rgba(255,107,107,0.1);
+            border-radius: 20px;
+            color: #ff6b6b;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(78,205,196,0.4);
+            transition: all 0.3s ease;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .refresh-btn.visible {
+            display: flex;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(78,205,196,0.6);
+        }
+
+        .refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        /* TDL エリアカラー */
+        .area-worldbazaar .area-header { border-left: 4px solid #e74c3c; }
+        .area-worldbazaar .area-tab.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        .area-adventureland .area-header { border-left: 4px solid #27ae60; }
+        .area-adventureland .area-tab.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+
+        .area-westernland .area-header { border-left: 4px solid #d35400; }
+        .area-westernland .area-tab.active { background: linear-gradient(135deg, #d35400, #a04000); }
+
+        .area-crittercountry .area-header { border-left: 4px solid #8e44ad; }
+        .area-crittercountry .area-tab.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+
+        .area-fantasyland .area-header { border-left: 4px solid #e91e63; }
+        .area-fantasyland .area-tab.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+
+        .area-toontown .area-header { border-left: 4px solid #f39c12; }
+        .area-toontown .area-tab.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+
+        .area-tomorrowland .area-header { border-left: 4px solid #3498db; }
+        .area-tomorrowland .area-tab.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+
+        /* TDS エリアカラー */
+        .area-mediterranean .area-header { border-left: 4px solid #8e44ad; }
+        .area-mediterranean .area-tab.active { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+
+        .area-americanwaterfront .area-header { border-left: 4px solid #e74c3c; }
+        .area-americanwaterfront .area-tab.active { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        .area-portdiscovery .area-header { border-left: 4px solid #3498db; }
+        .area-portdiscovery .area-tab.active { background: linear-gradient(135deg, #3498db, #2874a6); }
+
+        .area-lostriverdelta .area-header { border-left: 4px solid #27ae60; }
+        .area-lostriverdelta .area-tab.active { background: linear-gradient(135deg, #27ae60, #1e8449); }
+
+        .area-arabiancoast .area-header { border-left: 4px solid #f39c12; }
+        .area-arabiancoast .area-tab.active { background: linear-gradient(135deg, #f39c12, #d68910); }
+
+        .area-mermaidlagoon .area-header { border-left: 4px solid #e91e63; }
+        .area-mermaidlagoon .area-tab.active { background: linear-gradient(135deg, #e91e63, #c2185b); }
+
+        .area-mysteriousisland .area-header { border-left: 4px solid #1abc9c; }
+        .area-mysteriousisland .area-tab.active { background: linear-gradient(135deg, #1abc9c, #16a085); }
+
+        .area-fantasysprings .area-header { border-left: 4px solid #9b59b6; }
+        .area-fantasysprings .area-tab.active { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+        @media (max-width: 768px) {
+            .park-select-title {
+                font-size: 1.8rem;
+            }
+
+            .park-cards {
+                flex-direction: column;
+            }
+
+            .park-card {
+                width: 100%;
+                max-width: 320px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .back-btn {
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .rides-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .filter-btn, .sort-select {
+                width: 100%;
+                text-align: center;
+            }
+
+            .area-tabs {
+                gap: 8px;
+            }
+
+            .area-tab {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+
+            .area-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+
+        .no-rides {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <!-- パーク選択画面 -->
+    <div class="park-select-screen" id="parkSelectScreen">
+        <h1 class="park-select-title">🎢 東京ディズニーリゾート</h1>
+        <p class="park-select-subtitle">待ち時間を確認するパークを選択してください</p>
+        
+        <div class="park-cards">
+            <div class="park-card land" onclick="selectPark('land')">
+                <div class="park-icon">🏰</div>
+                <h2 class="park-name">東京ディズニーランド</h2>
+                <p class="park-description">夢と魔法の王国</p>
+            </div>
+            
+            <div class="park-card sea" onclick="selectPark('sea')">
+                <div class="park-icon">🚢</div>
+                <h2 class="park-name">東京ディズニーシー</h2>
+                <p class="park-description">冒険とイマジネーションの海</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メイン画面 -->
+    <div class="main-screen" id="mainScreen">
+        <div class="container">
+            <header>
+                <button class="back-btn" onclick="goBack()">
+                    ← パーク選択に戻る
+                </button>
+                <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
+                <p class="subtitle">リアルタイム待ち時間情報</p>
+                <div class="last-updated" id="lastUpdated">読み込み中...</div>
+            </header>
+
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalRides">-</div>
+                    <div class="stat-label">総アトラクション数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="openRides">-</div>
+                    <div class="stat-label">運営中</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgWait">-</div>
+                    <div class="stat-label">平均待ち時間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="maxWait">-</div>
+                    <div class="stat-label">最長待ち時間</div>
+                </div>
+            </div>
+
+            <div class="area-tabs" id="areaTabs"></div>
+
+            <div class="controls">
+                <button class="filter-btn active" data-filter="all">すべて</button>
+                <button class="filter-btn" data-filter="open">運営中のみ</button>
+                <button class="filter-btn" data-filter="closed">休止中のみ</button>
+                <select class="sort-select" id="sortSelect">
+                    <option value="name">名前順</option>
+                    <option value="wait-asc">待ち時間（短い順）</option>
+                    <option value="wait-desc">待ち時間（長い順）</option>
+                </select>
+            </div>
+
+            <div id="ridesContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>待ち時間を取得中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" id="refreshBtn" title="更新">↻</button>
+
+    <script>
+        const CORS_PROXY = 'https://corsproxy.io/?';
+        
+        const PARKS = {
+            land: {
+                id: 274,
+                name: '東京ディズニーランド',
+                icon: '🏰',
+                apiUrl: 'https://queue-times.com/parks/274/queue_times.json'
+            },
+            sea: {
+                id: 275,
+                name: '東京ディズニーシー',
+                icon: '🚢',
+                apiUrl: 'https://queue-times.com/parks/275/queue_times.json'
+            }
+        };
+
+        // TDL エリア定義
+        const TDL_AREAS = {
+            worldbazaar: { name: 'ワールドバザール', icon: '🏛️' },
+            adventureland: { name: 'アドベンチャーランド', icon: '🌴' },
+            westernland: { name: 'ウエスタンランド', icon: '🤠' },
+            crittercountry: { name: 'クリッターカントリー', icon: '🦫' },
+            fantasyland: { name: 'ファンタジーランド', icon: '🏰' },
+            toontown: { name: 'トゥーンタウン', icon: '🎨' },
+            tomorrowland: { name: 'トゥモローランド', icon: '🚀' }
+        };
+
+        // TDS エリア定義
+        const TDS_AREAS = {
+            mediterranean: { name: 'メディテレーニアンハーバー', icon: '⛵' },
+            americanwaterfront: { name: 'アメリカンウォーターフロント', icon: '🗽' },
+            portdiscovery: { name: 'ポートディスカバリー', icon: '🔬' },
+            lostriverdelta: { name: 'ロストリバーデルタ', icon: '🏛️' },
+            arabiancoast: { name: 'アラビアンコースト', icon: '🕌' },
+            mermaidlagoon: { name: 'マーメイドラグーン', icon: '🧜‍♀️' },
+            mysteriousisland: { name: 'ミステリアスアイランド', icon: '🌋' },
+            fantasysprings: { name: 'ファンタジースプリングス', icon: '✨' }
+        };
+
+        // TDL アトラクション情報
+        const TDL_RIDE_INFO = {
+            7985: { area: 'worldbazaar', name: 'オムニバス' },
+            8019: { area: 'worldbazaar', name: 'ペニーアーケード' },
+            7987: { area: 'adventureland', name: 'ジャングルクルーズ：ワイルドライフ・エクスペディション' },
+            7986: { area: 'adventureland', name: 'カリブの海賊' },
+            7989: { area: 'adventureland', name: 'スイスファミリー・ツリーハウス' },
+            7990: { area: 'adventureland', name: '魅惑のチキルーム：スティッチ・プレゼンツ "アロハ・エ・コモ・マイ!"' },
+            7994: { area: 'westernland', name: 'ビッグサンダー・マウンテン' },
+            7992: { area: 'westernland', name: 'カントリーベア・シアター' },
+            7993: { area: 'westernland', name: '蒸気船マークトウェイン号' },
+            7995: { area: 'westernland', name: 'トムソーヤ島いかだ' },
+            7988: { area: 'westernland', name: 'ウエスタンリバー鉄道' },
+            7991: { area: 'westernland', name: 'ウエスタンランド・シューティングギャラリー' },
+            7997: { area: 'crittercountry', name: 'ビーバーブラザーズのカヌー探険' },
+            7996: { area: 'crittercountry', name: 'スプラッシュ・マウンテン' },
+            8006: { area: 'fantasyland', name: '"イッツ・ア・スモールワールド" with グルート' },
+            8007: { area: 'fantasyland', name: 'アリスのティーパーティー' },
+            8004: { area: 'fantasyland', name: 'キャッスルカルーセル' },
+            8000: { area: 'fantasyland', name: 'シンデレラのフェアリーテイル・ホール' },
+            8003: { area: 'fantasyland', name: '空飛ぶダンボ' },
+            8255: { area: 'fantasyland', name: '美女と野獣 "魔法のものがたり"' },
+            8005: { area: 'fantasyland', name: 'ホーンテッドマンション' },
+            8001: { area: 'fantasyland', name: 'ミッキーのフィルハーマジック' },
+            7998: { area: 'fantasyland', name: 'ピーターパン空の旅' },
+            8002: { area: 'fantasyland', name: 'ピノキオの冒険旅行' },
+            8008: { area: 'fantasyland', name: 'プーさんのハニーハント' },
+            7999: { area: 'fantasyland', name: '白雪姫と七人のこびと' },
+            8011: { area: 'toontown', name: 'チップとデールのツリーハウス' },
+            8013: { area: 'toontown', name: 'ドナルドのボート' },
+            8012: { area: 'toontown', name: 'ガジェットのゴーコースター' },
+            8014: { area: 'toontown', name: 'グーフィーのペイント＆プレイハウス' },
+            15401: { area: 'toontown', name: 'ミッキーの家とミート・ミッキー' },
+            8010: { area: 'toontown', name: 'ミニーの家' },
+            8009: { area: 'toontown', name: 'ロジャーラビットのカートゥーンスピン' },
+            8020: { area: 'toontown', name: 'トゥーンパーク' },
+            8018: { area: 'tomorrowland', name: 'モンスターズ・インク "ライド＆ゴーシーク!"' },
+            8015: { area: 'tomorrowland', name: 'スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー' },
+            8021: { area: 'tomorrowland', name: 'スティッチ・エンカウンター' },
+            8254: { area: 'tomorrowland', name: 'ベイマックスのハッピーライド' },
+        };
+
+        // TDS アトラクション情報
+        const TDS_RIDE_INFO = {
+            8024: { area: 'mediterranean', name: 'ソアリン：ファンタスティック・フライト' },
+            8048: { area: 'mediterranean', name: 'フォートレス・エクスプロレーション' },
+            8049: { area: 'mediterranean', name: 'ザ・レオナルドチャレンジ' },
+            8034: { area: 'mediterranean', name: 'ヴェネツィアン・ゴンドラ' },
+            8031: { area: 'mediterranean', name: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）' },
+            8047: { area: 'americanwaterfront', name: 'タワー・オブ・テラー' },
+            8023: { area: 'americanwaterfront', name: 'トイ・ストーリー・マニア！' },
+            8050: { area: 'americanwaterfront', name: 'タートル・トーク' },
+            8037: { area: 'americanwaterfront', name: 'ビッグシティ・ヴィークル' },
+            8036: { area: 'americanwaterfront', name: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）' },
+            8032: { area: 'americanwaterfront', name: 'ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント）' },
+            8038: { area: 'portdiscovery', name: 'アクアトピア' },
+            8051: { area: 'portdiscovery', name: 'ニモ＆フレンズ・シーライダー' },
+            8035: { area: 'portdiscovery', name: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）' },
+            8027: { area: 'lostriverdelta', name: 'インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮' },
+            8046: { area: 'lostriverdelta', name: 'レイジングスピリッツ' },
+            8033: { area: 'lostriverdelta', name: 'ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ）' },
+            8025: { area: 'arabiancoast', name: 'ジャスミンのフライングカーペット' },
+            8039: { area: 'arabiancoast', name: 'シンドバッド・ストーリーブック・ヴォヤッジ' },
+            8030: { area: 'arabiancoast', name: 'マジックランプシアター' },
+            8040: { area: 'arabiancoast', name: 'キャラバンカルーセル' },
+            8022: { area: 'mermaidlagoon', name: 'アリエルのプレイグラウンド' },
+            8041: { area: 'mermaidlagoon', name: 'フランダーのフライングフィッシュコースター' },
+            8044: { area: 'mermaidlagoon', name: 'ブローフィッシュ・バルーンレース' },
+            8043: { area: 'mermaidlagoon', name: 'ジャンピン・ジェリーフィッシュ' },
+            8042: { area: 'mermaidlagoon', name: 'スカットルのスクーター' },
+            8045: { area: 'mermaidlagoon', name: 'ワールプール' },
+            8026: { area: 'mermaidlagoon', name: 'マーメイドラグーンシアター' },
+            8029: { area: 'mysteriousisland', name: '海底2万マイル' },
+            8028: { area: 'mysteriousisland', name: 'センター・オブ・ジ・アース' },
+            13559: { area: 'fantasysprings', name: 'アナとエルサのフローズンジャーニー' },
+            13560: { area: 'fantasysprings', name: 'ラプンツェルのランタンフェスティバル' },
+            13561: { area: 'fantasysprings', name: 'ピーターパンのネバーランドアドベンチャー' },
+            13562: { area: 'fantasysprings', name: 'フェアリー・ティンカーベルのビジーバギー' },
+        };
+
+        let currentPark = null;
+        let ridesData = [];
+        let currentFilter = 'all';
+        let currentSort = 'name';
+        let currentArea = 'all';
+        let autoRefreshInterval = null;
+
+        function selectPark(park) {
+            currentPark = park;
+            document.getElementById('parkSelectScreen').style.display = 'none';
+            document.getElementById('mainScreen').classList.add('active');
+            document.getElementById('refreshBtn').classList.add('visible');
+            
+            const parkInfo = PARKS[park];
+            document.getElementById('parkTitle').textContent = `${parkInfo.icon} ${parkInfo.name}`;
+            
+            fetchQueueTimes();
+            
+            // 自動更新設定
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(fetchQueueTimes, 5 * 60 * 1000);
+        }
+
+        function goBack() {
+            document.getElementById('parkSelectScreen').style.display = 'flex';
+            document.getElementById('mainScreen').classList.remove('active');
+            document.getElementById('refreshBtn').classList.remove('visible');
+            
+            currentPark = null;
+            currentArea = 'all';
+            currentFilter = 'all';
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            // フィルターボタンをリセット
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === 'all');
+            });
+            document.getElementById('sortSelect').value = 'name';
+        }
+
+        function getRideInfo(rideId) {
+            if (currentPark === 'land') {
+                return TDL_RIDE_INFO[rideId];
+            } else {
+                return TDS_RIDE_INFO[rideId];
+            }
+        }
+
+        function getAreas() {
+            return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
+        }
+
+        async function fetchQueueTimes() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.classList.add('loading');
+
+            try {
+                const parkInfo = PARKS[currentPark];
+                const response = await fetch(CORS_PROXY + encodeURIComponent(parkInfo.apiUrl));
+                if (!response.ok) throw new Error('データの取得に失敗しました');
+                
+                const data = await response.json();
+                ridesData = (data.rides || []).map(ride => {
+                    const info = getRideInfo(ride.id);
+                    return {
+                        ...ride,
+                        area: info?.area || 'other',
+                        displayName: info?.name || ride.name
+                    };
+                });
+                
+                updateStats();
+                renderAreaTabs();
+                renderRides();
+                updateLastUpdated();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('ridesContainer').innerHTML = `
+                    <div class="error">
+                        <h3>エラーが発生しました</h3>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">しばらく待ってから再度お試しください</p>
+                    </div>
+                `;
+            } finally {
+                refreshBtn.classList.remove('loading');
+            }
+        }
+
+        function updateStats() {
+            const total = ridesData.length;
+            const open = ridesData.filter(r => r.is_open).length;
+            const openRides = ridesData.filter(r => r.is_open && r.wait_time > 0);
+            const avgWait = openRides.length > 0 
+                ? Math.round(openRides.reduce((sum, r) => sum + r.wait_time, 0) / openRides.length)
+                : 0;
+            const maxWait = openRides.length > 0
+                ? Math.max(...openRides.map(r => r.wait_time))
+                : 0;
+
+            document.getElementById('totalRides').textContent = total;
+            document.getElementById('openRides').textContent = open;
+            document.getElementById('avgWait').textContent = avgWait + '分';
+            document.getElementById('maxWait').textContent = maxWait + '分';
+        }
+
+        function updateLastUpdated() {
+            if (ridesData.length > 0 && ridesData[0].last_updated) {
+                const date = new Date(ridesData[0].last_updated);
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'Asia/Tokyo'
+                };
+                document.getElementById('lastUpdated').textContent = 
+                    `最終更新: ${date.toLocaleString('ja-JP', options)}`;
+            }
+        }
+
+        function renderAreaTabs() {
+            const tabsContainer = document.getElementById('areaTabs');
+            const areas = getAreas();
+            
+            const areaCounts = {};
+            Object.keys(areas).forEach(key => {
+                areaCounts[key] = ridesData.filter(r => r.area === key).length;
+            });
+
+            let html = `
+                <button class="area-tab ${currentArea === 'all' ? 'active' : ''}" data-area="all">
+                    <span class="area-icon">🎡</span>
+                    <span>すべて</span>
+                    <span class="area-count">${ridesData.length}</span>
+                </button>
+            `;
+
+            Object.entries(areas).forEach(([key, area]) => {
+                if (areaCounts[key] > 0) {
+                    html += `
+                        <button class="area-tab area-${key} ${currentArea === key ? 'active' : ''}" data-area="${key}">
+                            <span class="area-icon">${area.icon}</span>
+                            <span>${area.name}</span>
+                            <span class="area-count">${areaCounts[key]}</span>
+                        </button>
+                    `;
+                }
+            });
+
+            tabsContainer.innerHTML = html;
+
+            tabsContainer.querySelectorAll('.area-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabsContainer.querySelectorAll('.area-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentArea = tab.dataset.area;
+                    renderRides();
+                });
+            });
+        }
+
+        function getWaitClass(waitTime) {
+            if (waitTime <= 15) return 'wait-short';
+            if (waitTime <= 40) return 'wait-medium';
+            if (waitTime <= 70) return 'wait-long';
+            return 'wait-very-long';
+        }
+
+        function getWaitPercentage(waitTime) {
+            const maxWait = 120;
+            return Math.min((waitTime / maxWait) * 100, 100);
+        }
+
+        function sortRides(rides) {
+            return [...rides].sort((a, b) => {
+                switch (currentSort) {
+                    case 'wait-asc':
+                        if (!a.is_open) return 1;
+                        if (!b.is_open) return -1;
+                        return a.wait_time - b.wait_time;
+                    case 'wait-desc':
+                        if (!a.is_open) return 1;
+                        if (!b.is_open) return -1;
+                        return b.wait_time - a.wait_time;
+                    default:
+                        return a.displayName.localeCompare(b.displayName, 'ja');
+                }
+            });
+        }
+
+        function filterRides(rides) {
+            let filtered = [...rides];
+            
+            if (currentFilter === 'open') {
+                filtered = filtered.filter(r => r.is_open);
+            } else if (currentFilter === 'closed') {
+                filtered = filtered.filter(r => !r.is_open);
+            }
+            
+            return filtered;
+        }
+
+        function renderRideCard(ride) {
+            const waitClass = ride.is_open ? getWaitClass(ride.wait_time) : '';
+            const statusClass = ride.is_open ? 'open' : 'closed';
+            const cardClass = ride.is_open ? '' : 'closed';
+            
+            return `
+                <div class="ride-card ${cardClass} ${waitClass}">
+                    <span class="ride-status ${statusClass}">
+                        ${ride.is_open ? '運営中' : '休止中'}
+                    </span>
+                    <h3 class="ride-name">${escapeHtml(ride.displayName)}</h3>
+                    <div class="wait-time-display">
+                        <span class="wait-time-number">
+                            ${ride.is_open ? ride.wait_time : '-'}
+                        </span>
+                        <span class="wait-time-unit">分</span>
+                    </div>
+                    ${ride.is_open ? `
+                        <div class="wait-time-bar">
+                            <div class="wait-time-fill" style="width: ${getWaitPercentage(ride.wait_time)}%"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderRides() {
+            const container = document.getElementById('ridesContainer');
+            const areas = getAreas();
+            
+            let filteredByArea = currentArea === 'all' 
+                ? ridesData 
+                : ridesData.filter(r => r.area === currentArea);
+
+            filteredByArea = filterRides(filteredByArea);
+
+            if (filteredByArea.length === 0) {
+                container.innerHTML = '<div class="no-rides">該当するアトラクションがありません</div>';
+                return;
+            }
+
+            if (currentArea !== 'all') {
+                const sortedRides = sortRides(filteredByArea);
+                const area = areas[currentArea];
+                
+                const openCount = sortedRides.filter(r => r.is_open).length;
+                const avgWait = sortedRides.filter(r => r.is_open && r.wait_time > 0);
+                const avg = avgWait.length > 0 
+                    ? Math.round(avgWait.reduce((sum, r) => sum + r.wait_time, 0) / avgWait.length)
+                    : 0;
+
+                container.innerHTML = `
+                    <div class="area-section area-${currentArea}">
+                        <div class="area-header">
+                            <span class="area-header-icon">${area.icon}</span>
+                            <div class="area-header-info">
+                                <div class="area-header-name">${area.name}</div>
+                                <div class="area-header-stats">
+                                    運営中: ${openCount}/${sortedRides.length} | 平均待ち時間: ${avg}分
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rides-grid">
+                            ${sortedRides.map(ride => renderRideCard(ride)).join('')}
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            
+            Object.entries(areas).forEach(([key, area]) => {
+                let areaRides = filteredByArea.filter(r => r.area === key);
+                if (areaRides.length === 0) return;
+                
+                areaRides = sortRides(areaRides);
+                
+                const openCount = areaRides.filter(r => r.is_open).length;
+                const avgWait = areaRides.filter(r => r.is_open && r.wait_time > 0);
+                const avg = avgWait.length > 0 
+                    ? Math.round(avgWait.reduce((sum, r) => sum + r.wait_time, 0) / avgWait.length)
+                    : 0;
+
+                html += `
+                    <div class="area-section area-${key}">
+                        <div class="area-header">
+                            <span class="area-header-icon">${area.icon}</span>
+                            <div class="area-header-info">
+                                <div class="area-header-name">${area.name}</div>
+                                <div class="area-header-stats">
+                                    運営中: ${openCount}/${areaRides.length} | 平均待ち時間: ${avg}分
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rides-grid">
+                            ${areaRides.map(ride => renderRideCard(ride)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<div class="no-rides">該当するアトラクションがありません</div>';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // イベントリスナー設定
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderRides();
+            });
+        });
+
+        document.getElementById('sortSelect').addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            renderRides();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', fetchQueueTimes);
+    </script>
+</body>
+</html>
