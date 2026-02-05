@@ -161,3 +161,18 @@ function getRideInfoByPark(rideId, park) {
 function getAreasByPark(park) {
     return park === 'land' ? TDL_AREAS : TDS_AREAS;
 }
+
+// ユーティリティ関数：待ち時間から共通の色分けクラスを取得
+// 両画面（index.html / history.html）で同じしきい値を使うための共通関数
+function getWaitClassGlobal(waitTime) {
+    if (waitTime == null || isNaN(waitTime)) return '';
+    const v = Number(waitTime);
+    // 0〜30 / 30〜60 / 60〜90 / 90〜120 / 120〜180 / 180+ の6段階
+    if (v <= 30)  return 'wait-short';
+    if (v <= 60)  return 'wait-medium';
+    if (v <= 90)  return 'wait-long';
+    if (v <= 120) return 'wait-very-long';
+    if (v <= 180) return 'wait-extreme-long';
+    // 180分を超える場合は最も混雑した色
+    return 'wait-insane-long';
+}

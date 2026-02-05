@@ -375,6 +375,8 @@
         .ride-card-stat-value.wait-medium { color: #f9ca24; }
         .ride-card-stat-value.wait-long { color: #ff6b6b; }
         .ride-card-stat-value.wait-very-long { color: #e84393; }
+        .ride-card-stat-value.wait-extreme-long { color: #ff4757; }
+        .ride-card-stat-value.wait-insane-long { color: #ff6b6b; }
 
         .ride-card-no-data {
             color: #a0a0a0;
@@ -466,6 +468,8 @@
         .wait-medium { color: #f9ca24; }
         .wait-long { color: #ff6b6b; }
         .wait-very-long { color: #e84393; }
+        .wait-extreme-long { color: #ff4757; }
+        .wait-insane-long { color: #ff6b6b; }
 
         .back-to-list-btn {
             padding: 12px 24px;
@@ -727,24 +731,177 @@
             color: #666;
         }
 
-        .heat-low {
+        /* 混雑ヒートマップ用の色（待ち時間クラスをそのまま利用） */
+        .heatmap-cell.wait-short {
             background: rgba(46, 213, 115, 0.28);
             color: #e9ffef;
         }
 
-        .heat-medium {
+        .heatmap-cell.wait-medium {
             background: rgba(241, 196, 15, 0.32);
             color: #fff8e1;
         }
 
-        .heat-high {
+        .heatmap-cell.wait-long {
             background: rgba(230, 126, 34, 0.42);
             color: #fff4e5;
         }
 
-        .heat-very-high {
+        .heatmap-cell.wait-very-long {
             background: rgba(231, 76, 60, 0.55);
             color: #ffecec;
+        }
+
+        .heatmap-cell.wait-extreme-long {
+            background: rgba(192, 57, 43, 0.65);
+            color: #ffecec;
+        }
+
+        .heatmap-cell.wait-insane-long {
+            background: rgba(139, 0, 0, 0.75);
+            color: #ffecec;
+        }
+
+        /* 混雑カレンダー（月ビュー用） */
+        .calendar-container {
+            margin-bottom: 24px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 16px 18px;
+        }
+
+        .calendar-title {
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        .calendar-note {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            margin-bottom: 10px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            font-size: 0.8rem;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            color: #a0a0a0;
+            padding: 4px 0;
+        }
+
+        .calendar-day {
+            min-height: 46px;
+            border-radius: 10px;
+            padding: 4px 6px;
+            background: rgba(15,23,42,0.85);
+            border: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .calendar-day:hover:not(.disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            opacity: 0.9;
+        }
+
+        .calendar-day.disabled {
+            cursor: default;
+            opacity: 0.3;
+            background: rgba(15,23,42,0.6);
+        }
+
+        .calendar-day.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            background: rgba(15,23,42,0.6);
+        }
+
+        .calendar-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .calendar-day-date {
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .calendar-day-weekday {
+            font-size: 0.7rem;
+            color: #a0a0a0;
+        }
+
+        .calendar-day-value {
+            font-size: 0.8rem;
+        }
+
+        /* カレンダーセルの背景色（待ち時間クラスに応じて） */
+        .calendar-day.wait-short {
+            background: rgba(46, 213, 115, 0.28);
+            border-color: rgba(46, 213, 115, 0.6);
+            color: #e9ffef;
+        }
+
+        .calendar-day.wait-medium {
+            background: rgba(241, 196, 15, 0.32);
+            border-color: rgba(241, 196, 15, 0.6);
+            color: #fff8e1;
+        }
+
+        .calendar-day.wait-long {
+            background: rgba(230, 126, 34, 0.42);
+            border-color: rgba(230, 126, 34, 0.6);
+            color: #fff4e5;
+        }
+
+        .calendar-day.wait-very-long {
+            background: rgba(231, 76, 60, 0.55);
+            border-color: rgba(231, 76, 60, 0.7);
+            color: #ffecec;
+        }
+
+        .calendar-day.wait-extreme-long {
+            background: rgba(192, 57, 43, 0.65);
+            border-color: rgba(192, 57, 43, 0.8);
+            color: #ffecec;
+        }
+
+        .calendar-day.wait-insane-long {
+            background: rgba(139, 0, 0, 0.75);
+            border-color: rgba(139, 0, 0, 0.9);
+            color: #ffecec;
+        }
+
+        /* 年ビュー用のカレンダーラッパー */
+        .year-calendars-wrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .year-calendar-month {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .year-calendar-month-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #a0a0a0;
         }
 
         .chart-legend {
@@ -1384,6 +1541,8 @@
                     <div class="chart-legend" id="chartLegend"></div>
                 </div>
 
+                ${currentPeriod === 'month' ? renderMonthlyCalendar() : ''}
+                ${currentPeriod === 'year' ? renderYearlyCalendar() : ''}
                 ${currentPeriod === 'day' ? renderHeatmapSection(filteredCards) : ''}
 
                 <div class="chart-container">
@@ -1843,12 +2002,8 @@
                         return '<td class="heatmap-cell heat-none"></td>';
                     }
                     const avg = Math.round(sum / counts[i]);
-                    let level = 'low';
-                    if (avg <= 15) level = 'low';
-                    else if (avg <= 40) level = 'medium';
-                    else if (avg <= 70) level = 'high';
-                    else level = 'very-high';
-                    return `<td class="heatmap-cell heat-${level}">${avg}</td>`;
+                    const waitClass = getWaitClass(avg) || '';
+                    return `<td class="heatmap-cell ${waitClass || 'heat-none'}">${avg}</td>`;
                 }).join('');
 
                 return `
@@ -1877,6 +2032,196 @@
                                 ${rowsHtml}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMonthlyCalendar() {
+            if (!loadedData || loadedData.period !== 'month') return '';
+
+            const value = loadedData.selectedValue; // "YYYY-MM"
+            if (!value) return '';
+
+            const [yearStr, monthStr] = value.split('-');
+            const year = parseInt(yearStr, 10);
+            const month = parseInt(monthStr, 10);
+            if (!year || !month) return '';
+
+            // 日ごとの平均待ち時間を集計
+            const dailyStats = new Map(); // date(YYYY-MM-DD) -> { sum, count }
+            for (const rec of loadedData.records) {
+                if (!rec.date) continue;
+                if (!dailyStats.has(rec.date)) {
+                    dailyStats.set(rec.date, { sum: 0, count: 0 });
+                }
+                const stat = dailyStats.get(rec.date);
+                for (const ride of rec.rides) {
+                    if (ride.is_open && ride.wait_time > 0) {
+                        stat.sum += ride.wait_time;
+                        stat.count += 1;
+                    }
+                }
+            }
+
+            const dateToAvg = new Map(); // date -> avgMinutes
+            dailyStats.forEach((stat, date) => {
+                if (stat.count > 0) {
+                    dateToAvg.set(date, stat.sum / stat.count);
+                }
+            });
+
+            // カレンダーの枠組み（その月の1日〜末日）
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            const firstWeekday = firstDay.getDay(); // 0=日
+            const totalDays = lastDay.getDate();
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+            const cells = [];
+
+            // 曜日ヘッダ
+            const headerRow = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
+
+            // 空白セル（1日が始まる前まで）
+            for (let i = 0; i < firstWeekday; i++) {
+                cells.push('<div></div>');
+            }
+
+            // 各日付セル
+            for (let day = 1; day <= totalDays; day++) {
+                const d = String(day).padStart(2, '0');
+                const monthPadded = String(month).padStart(2, '0');
+                const dateStr = `${year}-${monthPadded}-${d}`;
+
+                const avg = dateToAvg.has(dateStr) ? dateToAvg.get(dateStr) : null;
+                const hasData = avg != null;
+                const weekday = new Date(year, month - 1, day).getDay();
+
+                const waitClass = hasData ? getWaitClass(avg) : '';
+                const disabledClass = loadedData.dateRange.includes(dateStr) && hasData ? '' : 'disabled';
+                const label = hasData ? `${Math.round(avg)}分` : '-';
+
+                const cellHtml = `
+                    <div class="calendar-day ${waitClass || ''} ${disabledClass}" ${hasData ? `onclick="jumpToDay('${dateStr}')"` : ''}>
+                        <div class="calendar-day-header">
+                            <span class="calendar-day-date">${day}</span>
+                            <span class="calendar-day-weekday">${weekdays[weekday]}</span>
+                        </div>
+                        <div class="calendar-day-value">${label}</div>
+                    </div>
+                `;
+                cells.push(cellHtml);
+            }
+
+            return `
+                <div class="calendar-container">
+                    <h3 class="calendar-title">📅 混雑カレンダー</h3>
+                    <div class="calendar-note">その日の平均待ち時間で色分けしています。クリックすると日別詳細に移動します。</div>
+                    <div class="calendar-grid">
+                        ${headerRow}
+                        ${cells.join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderYearlyCalendar() {
+            if (!loadedData || loadedData.period !== 'year') return '';
+
+            const value = loadedData.selectedValue; // "YYYY"
+            if (!value) return '';
+
+            const year = parseInt(value, 10);
+            if (!year) return '';
+
+            // 日ごとの平均待ち時間を集計
+            const dailyStats = new Map(); // date(YYYY-MM-DD) -> { sum, count }
+            for (const rec of loadedData.records) {
+                if (!rec.date) continue;
+                if (!dailyStats.has(rec.date)) {
+                    dailyStats.set(rec.date, { sum: 0, count: 0 });
+                }
+                const stat = dailyStats.get(rec.date);
+                for (const ride of rec.rides) {
+                    if (ride.is_open && ride.wait_time > 0) {
+                        stat.sum += ride.wait_time;
+                        stat.count += 1;
+                    }
+                }
+            }
+
+            const dateToAvg = new Map(); // date -> avgMinutes
+            dailyStats.forEach((stat, date) => {
+                if (stat.count > 0) {
+                    dateToAvg.set(date, stat.sum / stat.count);
+                }
+            });
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const headerRow = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
+
+            let calendarsHtml = '';
+
+            // 12ヶ月分のカレンダーを生成
+            for (let month = 1; month <= 12; month++) {
+                const firstDay = new Date(year, month - 1, 1);
+                const lastDay = new Date(year, month, 0);
+                const firstWeekday = firstDay.getDay();
+                const totalDays = lastDay.getDate();
+
+                const cells = [];
+
+                // 空白セル（1日が始まる前まで）
+                for (let i = 0; i < firstWeekday; i++) {
+                    cells.push('<div></div>');
+                }
+
+                // 各日付セル
+                for (let day = 1; day <= totalDays; day++) {
+                    const d = String(day).padStart(2, '0');
+                    const monthPadded = String(month).padStart(2, '0');
+                    const dateStr = `${year}-${monthPadded}-${d}`;
+
+                    const avg = dateToAvg.has(dateStr) ? dateToAvg.get(dateStr) : null;
+                    const hasData = avg != null;
+                    const weekday = new Date(year, month - 1, day).getDay();
+
+                    const waitClass = hasData ? getWaitClass(avg) : '';
+                    const disabledClass = loadedData.dateRange.includes(dateStr) && hasData ? '' : 'disabled';
+                    const label = hasData ? `${Math.round(avg)}分` : '-';
+
+                    const cellHtml = `
+                        <div class="calendar-day ${waitClass || ''} ${disabledClass}" ${hasData ? `onclick="jumpToDay('${dateStr}')"` : ''}>
+                            <div class="calendar-day-header">
+                                <span class="calendar-day-date">${day}</span>
+                                <span class="calendar-day-weekday">${weekdays[weekday]}</span>
+                            </div>
+                            <div class="calendar-day-value">${label}</div>
+                        </div>
+                    `;
+                    cells.push(cellHtml);
+                }
+
+                calendarsHtml += `
+                    <div class="year-calendar-month">
+                        <h4 class="year-calendar-month-title">${year}年${monthNames[month - 1]}</h4>
+                        <div class="calendar-grid">
+                            ${headerRow}
+                            ${cells.join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="calendar-container">
+                    <h3 class="calendar-title">📅 混雑カレンダー（${year}年）</h3>
+                    <div class="calendar-note">その日の平均待ち時間で色分けしています。クリックすると日別詳細に移動します。</div>
+                    <div class="year-calendars-wrapper">
+                        ${calendarsHtml}
                     </div>
                 </div>
             `;
@@ -2359,10 +2704,8 @@
         }
 
         function getWaitClass(waitTime) {
-            if (waitTime <= 15) return 'wait-short';
-            if (waitTime <= 40) return 'wait-medium';
-            if (waitTime <= 70) return 'wait-long';
-            return 'wait-very-long';
+            // park-data.js で定義した共通ロジックを利用
+            return getWaitClassGlobal(waitTime);
         }
 
         function backToList() {
@@ -2530,6 +2873,32 @@
                 }
             }
         });
+
+        async function jumpToDay(dateStr) {
+            // 「日」タブをアクティブにする
+            document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+            const dayTab = document.querySelector('.period-tab[data-period="day"]');
+            if (dayTab) {
+                dayTab.classList.add('active');
+            }
+
+            currentPeriod = 'day';
+            selectedAreas = [];
+            const rideSelect = document.getElementById('rideSelect');
+            if (rideSelect) {
+                rideSelect.value = 'all';
+            }
+
+            const dateSelect = document.getElementById('dateSelect');
+
+            // 日付セレクトに目的の日付がなければ、日ビュー用に再構築
+            if (!Array.from(dateSelect.options).some(opt => opt.value === dateStr)) {
+                await updateDateSelectOptions();
+            }
+
+            dateSelect.value = dateStr;
+            await loadPeriodData(dateStr);
+        }
 
         // 期間に応じた日付選択オプションを更新
         async function updateDateSelectOptions() {

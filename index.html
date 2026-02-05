@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>東京ディズニーリゾート 待ち時間</title>
+    <!-- 以下の内容は git show から復元された index.html 全文です -->
+*** End Patch*/} ***!
+```}**
+*** End Patch
+```E```**} } ]]`*** End Patch** */
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="TDR.jpg">
+    <title>東京ディズニーリゾート 待ち時間</title>
     <style>
         * {
             margin: 0;
@@ -550,6 +562,12 @@
 
         .wait-very-long .wait-time-number { color: #e84393; }
         .wait-very-long .wait-time-fill { background: linear-gradient(90deg, #e84393, #d63031); }
+
+        .wait-extreme-long .wait-time-number { color: #ff4757; }
+        .wait-extreme-long .wait-time-fill { background: linear-gradient(90deg, #ff4757, #c23616); }
+
+        .wait-insane-long .wait-time-number { color: #ff6b6b; }
+        .wait-insane-long .wait-time-fill { background: linear-gradient(90deg, #c23616, #8b0000); }
 
         .loading {
             text-align: center;
@@ -1115,10 +1133,8 @@
         }
 
         function getWaitClass(waitTime) {
-            if (waitTime <= 15) return 'wait-short';
-            if (waitTime <= 40) return 'wait-medium';
-            if (waitTime <= 70) return 'wait-long';
-            return 'wait-very-long';
+            // park-data.js で定義した共通ロジックを利用
+            return getWaitClassGlobal(waitTime);
         }
 
         function getWaitPercentage(waitTime) {
