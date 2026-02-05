@@ -695,26 +695,26 @@
     <button class="refresh-btn" id="refreshBtn" title="更新">↻</button>
 
     <script>
-        // 複数のCORSプロキシ（フォールバック用）
-        const CORS_PROXIES = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.org/?',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        let currentProxyIndex = 0;
+        // データ取得方法の自動判定
+        // GitHub Pagesでは収集データ、ローカルでは直接APIを使用
+        const isGitHubPages = location.hostname.includes('github.io');
+        const isLocalFile = location.protocol === 'file:';
+        const USE_LOCAL_DATA = isGitHubPages;
         
         const PARKS = {
             land: {
                 id: 274,
                 name: '東京ディズニーランド',
                 icon: '🏰',
-                apiUrl: 'https://queue-times.com/parks/274/queue_times.json'
+                apiUrl: 'https://queue-times.com/parks/274/queue_times.json',
+                dataFile: 'land'
             },
             sea: {
                 id: 275,
                 name: '東京ディズニーシー',
                 icon: '🚢',
-                apiUrl: 'https://queue-times.com/parks/275/queue_times.json'
+                apiUrl: 'https://queue-times.com/parks/275/queue_times.json',
+                dataFile: 'sea'
             }
         };
 
@@ -837,11 +837,43 @@
             const parkInfo = PARKS[park];
             document.getElementById('parkTitle').textContent = `${parkInfo.icon} ${parkInfo.name}`;
             
+            // 表示をリセット
+            resetDisplay();
+            
             fetchQueueTimes();
             
             // 自動更新設定
             if (autoRefreshInterval) clearInterval(autoRefreshInterval);
             autoRefreshInterval = setInterval(fetchQueueTimes, 5 * 60 * 1000);
+        }
+
+        function resetDisplay() {
+            // 統計をリセット
+            document.getElementById('totalRides').textContent = '-';
+            document.getElementById('openRides').textContent = '-';
+            document.getElementById('avgWait').textContent = '-';
+            document.getElementById('maxWait').textContent = '-';
+            document.getElementById('lastUpdated').textContent = '読み込み中...';
+            
+            // エリアタブをクリア
+            document.getElementById('areaTabs').innerHTML = '';
+            
+            // コンテンツを読み込み中表示に
+            document.getElementById('ridesContainer').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>待ち時間を取得中...</p>
+                </div>
+            `;
+            
+            // フィルターとエリアをリセット
+            currentArea = 'all';
+            currentFilter = 'all';
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === 'all');
+            });
+            document.getElementById('sortSelect').value = 'name';
+            currentSort = 'name';
         }
 
         function goBack() {
@@ -850,19 +882,14 @@
             document.getElementById('refreshBtn').classList.remove('visible');
             
             currentPark = null;
-            currentArea = 'all';
-            currentFilter = 'all';
             
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
                 autoRefreshInterval = null;
             }
             
-            // フィルターボタンをリセット
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === 'all');
-            });
-            document.getElementById('sortSelect').value = 'name';
+            // 表示をリセット
+            resetDisplay();
         }
 
         function getRideInfo(rideId) {
@@ -877,22 +904,35 @@
             return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
 
-        async function fetchWithProxy(url) {
-            // 複数のプロキシを順番に試す
-            for (let i = 0; i < CORS_PROXIES.length; i++) {
-                const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
-                const proxy = CORS_PROXIES[proxyIndex];
-                try {
-                    const response = await fetch(proxy + encodeURIComponent(url));
-                    if (response.ok) {
-                        currentProxyIndex = proxyIndex; // 成功したプロキシを記憶
-                        return await response.json();
+        function getTodayDateString() {
+            const now = new Date();
+            // 日本時間で日付を取得
+            const jst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+            return jst.toISOString().split('T')[0];
+        }
+
+        async function fetchLocalData(parkFile) {
+            // 今日のデータファイルを取得
+            const today = getTodayDateString();
+            const url = `data/${parkFile}_${today}.json`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    // 今日のデータがない場合、昨日のデータを試す
+                    const yesterday = new Date(Date.now() + (9 * 60 * 60 * 1000) - 86400000)
+                        .toISOString().split('T')[0];
+                    const yesterdayUrl = `data/${parkFile}_${yesterday}.json`;
+                    const yesterdayResponse = await fetch(yesterdayUrl);
+                    if (!yesterdayResponse.ok) {
+                        throw new Error('データファイルが見つかりません');
                     }
-                } catch (e) {
-                    console.log(`Proxy ${proxyIndex} failed, trying next...`);
+                    return await yesterdayResponse.json();
                 }
+                return await response.json();
+            } catch (e) {
+                throw new Error('収集データの読み込みに失敗しました');
             }
-            throw new Error('すべてのプロキシで取得に失敗しました');
         }
 
         async function fetchQueueTimes() {
@@ -901,14 +941,40 @@
 
             try {
                 const parkInfo = PARKS[currentPark];
-                const data = await fetchWithProxy(parkInfo.apiUrl);
-                
-                ridesData = (data.rides || []).map(ride => {
+                let rides = [];
+                let lastUpdated = null;
+
+                if (USE_LOCAL_DATA) {
+                    // GitHub Actionsで収集したデータを使用
+                    const localData = await fetchLocalData(parkInfo.dataFile);
+                    
+                    if (localData.records && localData.records.length > 0) {
+                        // 最新のレコードを取得
+                        const latestRecord = localData.records[localData.records.length - 1];
+                        rides = latestRecord.rides;
+                        lastUpdated = latestRecord.timestamp;
+                    }
+                } else {
+                    // 直接APIから取得（ローカル開発用）
+                    // ローカルファイルの場合はCORSプロキシを使用
+                    let url = parkInfo.apiUrl;
+                    if (isLocalFile) {
+                        url = 'https://corsproxy.io/?' + encodeURIComponent(parkInfo.apiUrl);
+                    }
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('データの取得に失敗しました');
+                    const data = await response.json();
+                    rides = data.rides || [];
+                    lastUpdated = rides[0]?.last_updated;
+                }
+
+                ridesData = rides.map(ride => {
                     const info = getRideInfo(ride.id);
                     return {
                         ...ride,
                         area: info?.area || 'other',
-                        displayName: info?.name || ride.name
+                        displayName: info?.name || ride.name,
+                        last_updated: lastUpdated
                     };
                 });
                 
@@ -922,7 +988,7 @@
                     <div class="error">
                         <h3>エラーが発生しました</h3>
                         <p>${error.message}</p>
-                        <p style="margin-top: 10px; font-size: 0.9rem;">しばらく待ってから再度お試しください</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">GitHub Actionsでデータ収集後に再度お試しください</p>
                     </div>
                 `;
             } finally {
