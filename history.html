@@ -912,6 +912,153 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         }
 
+        /* 前回の来園日と比較 */
+        .compare-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .compare-section-title {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            color: #4ecdc4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compare-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .compare-controls label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .compare-controls select {
+            padding: 10px 16px;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        .compare-controls select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .compare-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .compare-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(78,205,196,0.4);
+        }
+
+        .compare-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .compare-note {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            margin: -8px 0 12px 0;
+        }
+
+        .compare-summary {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .compare-summary.less {
+            background: rgba(78,205,196,0.15);
+            border: 1px solid rgba(78,205,196,0.4);
+            color: #4ecdc4;
+        }
+
+        .compare-summary.more {
+            background: rgba(255,107,107,0.15);
+            border: 1px solid rgba(255,107,107,0.4);
+            color: #ff6b6b;
+        }
+
+        .compare-summary.same {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #a0a0a0;
+        }
+
+        .compare-table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .compare-table th,
+        .compare-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .compare-table th {
+            background: rgba(255,255,255,0.06);
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        .compare-table td.compare-diff-less {
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        .compare-table td.compare-diff-more {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .compare-table td.compare-diff-same {
+            color: #a0a0a0;
+        }
+
+        .compare-no-data {
+            text-align: center;
+            color: #a0a0a0;
+            padding: 20px;
+            font-size: 0.95rem;
+        }
+
         /* グラフの点クリック時のポップアップ */
         .point-popup-overlay {
             position: fixed;
@@ -1482,6 +1629,8 @@
                     <div class="chart-legend" id="chartLegend"></div>
                 </div>
 
+                ${currentPeriod === 'day' ? renderCompareSection() : ''}
+
                 ${currentPeriod === 'week' ? renderWeeklyCalendar() : ''}
                 ${currentPeriod === 'month' ? renderMonthlyCalendar() : ''}
                 ${currentPeriod === 'year' ? renderYearlyCalendar() : ''}
@@ -1505,6 +1654,17 @@
                     showFavoritesOnly = !showFavoritesOnly;
                     showAllRides();
                 });
+            }
+
+            // 前回の来園日と比較（日ビューのみ）：ボタン・年月変更で日の選択肢を更新
+            if (currentPeriod === 'day') {
+                const compareBtn = document.getElementById('compareBtn');
+                if (compareBtn) compareBtn.addEventListener('click', runCompare);
+                updateCompareDayOptions();
+                const compareYear = document.getElementById('compareYear');
+                const compareMonth = document.getElementById('compareMonth');
+                if (compareYear) compareYear.addEventListener('change', updateCompareDayOptions);
+                if (compareMonth) compareMonth.addEventListener('change', updateCompareDayOptions);
             }
 
             // エリアタブのイベントリスナー（複数選択対応）
@@ -3210,6 +3370,233 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // ── 前回の来園日と比較 ──
+        function getCurrentViewingDate() {
+            if (!loadedData) return null;
+            if (loadedData.dateRange && loadedData.dateRange.length > 0) return loadedData.dateRange[0];
+            if (loadedData.selectedValue) return loadedData.selectedValue;
+            if (loadedData.date) return loadedData.date;
+            return null;
+        }
+
+        function getDaysInMonth(year, month) {
+            return new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
+        }
+
+        function updateCompareDayOptions() {
+            const yearSelect = document.getElementById('compareYear');
+            const monthSelect = document.getElementById('compareMonth');
+            const daySelect = document.getElementById('compareDay');
+            if (!yearSelect || !monthSelect || !daySelect) return;
+            const year = yearSelect.value;
+            const month = monthSelect.value;
+            if (!year || !month) return;
+            const lastDay = getDaysInMonth(year, month);
+            const currentDay = parseInt(daySelect.value, 10) || 1;
+            daySelect.innerHTML = '';
+            for (let d = 1; d <= lastDay; d++) {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d + '日';
+                if (d === Math.min(currentDay, lastDay)) opt.selected = true;
+                daySelect.appendChild(opt);
+            }
+        }
+
+        function getJstDate() {
+            const now = new Date();
+            const ymd = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
+            const [y, m, d] = ymd.split('-');
+            return { year: parseInt(y, 10), month: m, day: d };
+        }
+
+        function renderCompareSection() {
+            const baseDate = getCurrentViewingDate();
+            if (!baseDate) return '';
+            const jst = getJstDate();
+            const currentYear = jst.year;
+            const currentMonth = jst.month;
+            const currentDay = jst.day;
+            const yearOptions = [];
+            for (let y = currentYear; y >= currentYear - 3; y--) {
+                yearOptions.push(`<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}年</option>`);
+            }
+            const monthOptions = Array.from({ length: 12 }, (_, i) => {
+                const v = String(i + 1).padStart(2, '0');
+                return `<option value="${v}" ${v === currentMonth ? 'selected' : ''}>${i + 1}月</option>`;
+            }).join('');
+            const dayOptions = Array.from({ length: 31 }, (_, i) => {
+                const v = String(i + 1).padStart(2, '0');
+                return `<option value="${v}" ${v === currentDay ? 'selected' : ''}>${i + 1}日</option>`;
+            }).join('');
+            return `
+                <div class="compare-section">
+                    <div class="compare-section-title">📅 前回の来園日と比較</div>
+                    <div class="compare-controls">
+                        <label>前回行った日：</label>
+                        <select id="compareYear">${yearOptions}</select>
+                        <select id="compareMonth">${monthOptions}</select>
+                        <select id="compareDay">${dayOptions}</select>
+                        <button type="button" class="compare-btn" id="compareBtn">比較する</button>
+                    </div>
+                    <p class="compare-note">過去365日以外の日付は、その日のデータのみ取得して比較します。</p>
+                    <div id="compareResult"></div>
+                </div>
+            `;
+        }
+
+        async function fetchHistoryDataForDate(dateStr) {
+            if (!dateStr || !currentPark) return null;
+            const parkInfo = PARKS[currentPark];
+            const [year, month, day] = dateStr.split('-');
+            const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
+            const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${dateStr}.json`;
+            const legacyUrl = `data/${parkInfo.filePrefix}_${dateStr}.json`;
+            try {
+                let response = await fetch(newUrl, { cache: 'no-store' });
+                if (!response.ok) response = await fetch(legacyUrl, { cache: 'no-store' });
+                if (!response.ok) return null;
+                const data = await response.json();
+                return {
+                    date: data.date,
+                    records: (data.records || []).map(r => ({
+                        date: data.date,
+                        time: r.time,
+                        timestamp: r.timestamp,
+                        rides: r.rides
+                    }))
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function computeDayStats(records) {
+            const rideWaits = new Map();
+            let parkSum = 0;
+            let parkCount = 0;
+            for (const record of records) {
+                for (const ride of record.rides) {
+                    if (ride.is_open && ride.wait_time > 0) {
+                        const key = String(ride.id);
+                        if (!rideWaits.has(key)) rideWaits.set(key, []);
+                        rideWaits.get(key).push(ride.wait_time);
+                        parkSum += ride.wait_time;
+                        parkCount++;
+                    }
+                }
+            }
+            const rideAvg = new Map();
+            rideWaits.forEach((waits, id) => {
+                const avg = waits.reduce((a, b) => a + b, 0) / waits.length;
+                rideAvg.set(id, Math.round(avg * 10) / 10);
+            });
+            const parkAvg = parkCount > 0 ? Math.round((parkSum / parkCount) * 10) / 10 : 0;
+            return { rideAvg, parkAvg };
+        }
+
+        function getCompareDateFromInputs() {
+            const y = document.getElementById('compareYear');
+            const m = document.getElementById('compareMonth');
+            const d = document.getElementById('compareDay');
+            if (!y || !m || !d || !y.value || !m.value || !d.value) return null;
+            return `${y.value}-${String(m.value).padStart(2, '0')}-${String(d.value).padStart(2, '0')}`;
+        }
+
+        async function runCompare() {
+            const resultEl = document.getElementById('compareResult');
+            const btnEl = document.getElementById('compareBtn');
+            if (!resultEl || !loadedData) return;
+            const compareDate = getCompareDateFromInputs();
+            if (!compareDate) {
+                resultEl.innerHTML = '<div class="compare-no-data">年・月・日を選択してください。</div>';
+                return;
+            }
+            const baseDate = getCurrentViewingDate();
+            if (baseDate === compareDate) {
+                resultEl.innerHTML = '<div class="compare-no-data">基準日と別の日を選択してください。</div>';
+                return;
+            }
+            const today = new Date();
+            const jstToday = new Date(today.getTime() + (9 * 60 * 60 * 1000));
+            const todayStr = jstToday.toISOString().split('T')[0];
+            if (compareDate > todayStr) {
+                resultEl.innerHTML = '<div class="compare-no-data">前回の来園日は今日以前の日付を選択してください。</div>';
+                return;
+            }
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.textContent = '読み込み中...';
+            }
+            resultEl.innerHTML = '<div class="loading"><div class="spinner"></div><p>比較データを取得中...</p></div>';
+            try {
+                const compareData = await fetchHistoryDataForDate(compareDate);
+                if (!compareData || !compareData.records.length) {
+                    resultEl.innerHTML = '<div class="compare-no-data">前回の日のデータを読み込めませんでした。</div>';
+                    return;
+                }
+                const baseStats = computeDayStats(loadedData.records);
+                const compareStats = computeDayStats(compareData.records);
+                const baseParkAvg = baseStats.parkAvg;
+                const compareParkAvg = compareStats.parkAvg;
+                const parkDiff = baseParkAvg - compareParkAvg;
+                let summaryClass = 'same';
+                let summaryText = '';
+                if (Math.abs(parkDiff) < 1) {
+                    summaryText = `前回（${formatDateForPeriod(compareDate, 'day')}）とほぼ同じ混雑度です。`;
+                } else if (parkDiff < 0) {
+                    summaryClass = 'more';
+                    summaryText = `前回（${formatDateForPeriod(compareDate, 'day')}）より 平均 ${Math.abs(parkDiff).toFixed(1)}分 混んでいます。`;
+                } else {
+                    summaryClass = 'less';
+                    summaryText = `前回（${formatDateForPeriod(compareDate, 'day')}）より 平均 ${parkDiff.toFixed(1)}分 空いています。`;
+                }
+                const allRideIds = new Set([...baseStats.rideAvg.keys(), ...compareStats.rideAvg.keys()]);
+                const rowData = [];
+                for (const rideId of allRideIds) {
+                    const name = getRideName(parseInt(rideId, 10), '');
+                    const baseAvg = baseStats.rideAvg.get(rideId);
+                    const compareAvg = compareStats.rideAvg.get(rideId);
+                    if (baseAvg == null && compareAvg == null) continue;
+                    const baseStr = baseAvg != null ? baseAvg + '分' : '-';
+                    const compareStr = compareAvg != null ? compareAvg + '分' : '-';
+                    let diffHtml = '-';
+                    let diffClass = 'compare-diff-same';
+                    if (baseAvg != null && compareAvg != null) {
+                        const diff = baseAvg - compareAvg;
+                        if (Math.abs(diff) < 1) {
+                            diffHtml = '±0分';
+                        } else if (diff > 0) {
+                            diffClass = 'compare-diff-more';
+                            diffHtml = '+' + diff.toFixed(1) + '分';
+                        } else {
+                            diffClass = 'compare-diff-less';
+                            diffHtml = diff.toFixed(1) + '分';
+                        }
+                    }
+                    rowData.push({ name, baseStr, compareStr, diffHtml, diffClass });
+                }
+                rowData.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+                const rows = rowData.map(r => `<tr><td>${escapeHtml(r.name)}</td><td>${r.baseStr}</td><td>${r.compareStr}</td><td class="${r.diffClass}">${r.diffHtml}</td></tr>`);
+                resultEl.innerHTML = `
+                    <div class="compare-summary ${summaryClass}">${summaryText}<br><span style="font-size:0.9rem;opacity:0.9;">今回 ${baseParkAvg}分 vs 前回 ${compareParkAvg}分（パーク平均）</span></div>
+                    <div class="compare-table-wrapper">
+                        <table class="compare-table">
+                            <thead><tr><th>アトラクション</th><th>今回（${formatDateForPeriod(baseDate, 'day')}）</th><th>前回（${formatDateForPeriod(compareDate, 'day')}）</th><th>差</th></tr></thead>
+                            <tbody>${rows.join('')}</tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (e) {
+                resultEl.innerHTML = '<div class="compare-no-data">比較中にエラーが発生しました。</div>';
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.textContent = '比較する';
+                }
+            }
         }
 
         // グラフの点クリック時ポップアップを表示
