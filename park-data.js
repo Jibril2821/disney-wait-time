@@ -4,6 +4,223 @@
  * このファイルを編集することで、アトラクションやエリアの追加・変更が可能です。
  */
 
+// 待ち時間の色コード設定（両画面で共通）
+const WAIT_TIME_COLORS = {
+    short: {
+        // 0〜30分
+        primary: '#4ecdc4',
+        gradient: ['#4ecdc4', '#44a08d'],
+        bgRgba: 'rgba(46, 213, 115, 0.28)',
+        borderRgba: 'rgba(46, 213, 115, 0.6)',
+        textOnBg: '#e9ffef'
+    },
+    medium: {
+        // 30〜60分
+        primary: '#f9ca24',
+        gradient: ['#f9ca24', '#f0932b'],
+        bgRgba: 'rgba(241, 196, 15, 0.32)',
+        borderRgba: 'rgba(241, 196, 15, 0.6)',
+        textOnBg: '#fff8e1'
+    },
+    long: {
+        // 60〜90分
+        primary: '#ff6b6b',
+        gradient: ['#ff6b6b', '#ee5a5a'],
+        bgRgba: 'rgba(230, 126, 34, 0.42)',
+        borderRgba: 'rgba(230, 126, 34, 0.6)',
+        textOnBg: '#fff4e5'
+    },
+    veryLong: {
+        // 90〜120分
+        primary: '#e84393',
+        gradient: ['#e84393', '#d63031'],
+        bgRgba: 'rgba(231, 76, 60, 0.55)',
+        borderRgba: 'rgba(231, 76, 60, 0.7)',
+        textOnBg: '#ffecec'
+    },
+    extremeLong: {
+        // 120〜180分
+        primary: '#ff4757',
+        gradient: ['#ff4757', '#c23616'],
+        bgRgba: 'rgba(192, 57, 43, 0.65)',
+        borderRgba: 'rgba(192, 57, 43, 0.8)',
+        textOnBg: '#ffecec'
+    },
+    insaneLong: {
+        // 180分以上
+        primary: '#ff6b6b',
+        gradient: ['#c23616', '#8b0000'],
+        bgRgba: 'rgba(139, 0, 0, 0.75)',
+        borderRgba: 'rgba(139, 0, 0, 0.9)',
+        textOnBg: '#ffecec'
+    }
+};
+
+// CSS変数として色コードを注入する関数
+function injectWaitTimeColorStyles() {
+    const style = document.createElement('style');
+    style.id = 'wait-time-colors';
+    
+    const c = WAIT_TIME_COLORS;
+    style.textContent = `
+        :root {
+            /* wait-short (0〜30分) */
+            --wait-short-primary: ${c.short.primary};
+            --wait-short-gradient: linear-gradient(90deg, ${c.short.gradient[0]}, ${c.short.gradient[1]});
+            --wait-short-bg: ${c.short.bgRgba};
+            --wait-short-border: ${c.short.borderRgba};
+            --wait-short-text-on-bg: ${c.short.textOnBg};
+
+            /* wait-medium (30〜60分) */
+            --wait-medium-primary: ${c.medium.primary};
+            --wait-medium-gradient: linear-gradient(90deg, ${c.medium.gradient[0]}, ${c.medium.gradient[1]});
+            --wait-medium-bg: ${c.medium.bgRgba};
+            --wait-medium-border: ${c.medium.borderRgba};
+            --wait-medium-text-on-bg: ${c.medium.textOnBg};
+
+            /* wait-long (60〜90分) */
+            --wait-long-primary: ${c.long.primary};
+            --wait-long-gradient: linear-gradient(90deg, ${c.long.gradient[0]}, ${c.long.gradient[1]});
+            --wait-long-bg: ${c.long.bgRgba};
+            --wait-long-border: ${c.long.borderRgba};
+            --wait-long-text-on-bg: ${c.long.textOnBg};
+
+            /* wait-very-long (90〜120分) */
+            --wait-very-long-primary: ${c.veryLong.primary};
+            --wait-very-long-gradient: linear-gradient(90deg, ${c.veryLong.gradient[0]}, ${c.veryLong.gradient[1]});
+            --wait-very-long-bg: ${c.veryLong.bgRgba};
+            --wait-very-long-border: ${c.veryLong.borderRgba};
+            --wait-very-long-text-on-bg: ${c.veryLong.textOnBg};
+
+            /* wait-extreme-long (120〜180分) */
+            --wait-extreme-long-primary: ${c.extremeLong.primary};
+            --wait-extreme-long-gradient: linear-gradient(90deg, ${c.extremeLong.gradient[0]}, ${c.extremeLong.gradient[1]});
+            --wait-extreme-long-bg: ${c.extremeLong.bgRgba};
+            --wait-extreme-long-border: ${c.extremeLong.borderRgba};
+            --wait-extreme-long-text-on-bg: ${c.extremeLong.textOnBg};
+
+            /* wait-insane-long (180分以上) */
+            --wait-insane-long-primary: ${c.insaneLong.primary};
+            --wait-insane-long-gradient: linear-gradient(90deg, ${c.insaneLong.gradient[0]}, ${c.insaneLong.gradient[1]});
+            --wait-insane-long-bg: ${c.insaneLong.bgRgba};
+            --wait-insane-long-border: ${c.insaneLong.borderRgba};
+            --wait-insane-long-text-on-bg: ${c.insaneLong.textOnBg};
+        }
+
+        /* 待ち時間テキスト色 */
+        .wait-short .wait-time-number { color: var(--wait-short-primary); }
+        .wait-short .wait-time-fill { background: var(--wait-short-gradient); }
+
+        .wait-medium .wait-time-number { color: var(--wait-medium-primary); }
+        .wait-medium .wait-time-fill { background: var(--wait-medium-gradient); }
+
+        .wait-long .wait-time-number { color: var(--wait-long-primary); }
+        .wait-long .wait-time-fill { background: var(--wait-long-gradient); }
+
+        .wait-very-long .wait-time-number { color: var(--wait-very-long-primary); }
+        .wait-very-long .wait-time-fill { background: var(--wait-very-long-gradient); }
+
+        .wait-extreme-long .wait-time-number { color: var(--wait-extreme-long-primary); }
+        .wait-extreme-long .wait-time-fill { background: var(--wait-extreme-long-gradient); }
+
+        .wait-insane-long .wait-time-number { color: var(--wait-insane-long-primary); }
+        .wait-insane-long .wait-time-fill { background: var(--wait-insane-long-gradient); }
+
+        /* 汎用待ち時間クラス（テキスト色のみ）- テーブルセル等で使用 */
+        td.wait-short, span.wait-short { color: var(--wait-short-primary); }
+        td.wait-medium, span.wait-medium { color: var(--wait-medium-primary); }
+        td.wait-long, span.wait-long { color: var(--wait-long-primary); }
+        td.wait-very-long, span.wait-very-long { color: var(--wait-very-long-primary); }
+        td.wait-extreme-long, span.wait-extreme-long { color: var(--wait-extreme-long-primary); }
+        td.wait-insane-long, span.wait-insane-long { color: var(--wait-insane-long-primary); }
+
+        /* リアルタイム画面のアトラクション名は白色を維持 */
+        .ride-card .ride-name { color: #fff; }
+
+        /* ライドカード統計値用 */
+        .ride-card-stat-value.wait-short { color: var(--wait-short-primary); }
+        .ride-card-stat-value.wait-medium { color: var(--wait-medium-primary); }
+        .ride-card-stat-value.wait-long { color: var(--wait-long-primary); }
+        .ride-card-stat-value.wait-very-long { color: var(--wait-very-long-primary); }
+        .ride-card-stat-value.wait-extreme-long { color: var(--wait-extreme-long-primary); }
+        .ride-card-stat-value.wait-insane-long { color: var(--wait-insane-long-primary); }
+
+        /* ヒートマップセル用 */
+        .heatmap-cell.wait-short {
+            background: var(--wait-short-bg);
+            color: var(--wait-short-text-on-bg);
+        }
+        .heatmap-cell.wait-medium {
+            background: var(--wait-medium-bg);
+            color: var(--wait-medium-text-on-bg);
+        }
+        .heatmap-cell.wait-long {
+            background: var(--wait-long-bg);
+            color: var(--wait-long-text-on-bg);
+        }
+        .heatmap-cell.wait-very-long {
+            background: var(--wait-very-long-bg);
+            color: var(--wait-very-long-text-on-bg);
+        }
+        .heatmap-cell.wait-extreme-long {
+            background: var(--wait-extreme-long-bg);
+            color: var(--wait-extreme-long-text-on-bg);
+        }
+        .heatmap-cell.wait-insane-long {
+            background: var(--wait-insane-long-bg);
+            color: var(--wait-insane-long-text-on-bg);
+        }
+
+        /* カレンダー日付セル用 */
+        .calendar-day.wait-short {
+            background: var(--wait-short-bg);
+            border-color: var(--wait-short-border);
+            color: var(--wait-short-text-on-bg);
+        }
+        .calendar-day.wait-medium {
+            background: var(--wait-medium-bg);
+            border-color: var(--wait-medium-border);
+            color: var(--wait-medium-text-on-bg);
+        }
+        .calendar-day.wait-long {
+            background: var(--wait-long-bg);
+            border-color: var(--wait-long-border);
+            color: var(--wait-long-text-on-bg);
+        }
+        .calendar-day.wait-very-long {
+            background: var(--wait-very-long-bg);
+            border-color: var(--wait-very-long-border);
+            color: var(--wait-very-long-text-on-bg);
+        }
+        .calendar-day.wait-extreme-long {
+            background: var(--wait-extreme-long-bg);
+            border-color: var(--wait-extreme-long-border);
+            color: var(--wait-extreme-long-text-on-bg);
+        }
+        .calendar-day.wait-insane-long {
+            background: var(--wait-insane-long-bg);
+            border-color: var(--wait-insane-long-border);
+            color: var(--wait-insane-long-text-on-bg);
+        }
+    `;
+    
+    // 既存のスタイルがあれば削除して追加
+    const existing = document.getElementById('wait-time-colors');
+    if (existing) {
+        existing.remove();
+    }
+    document.head.appendChild(style);
+}
+
+// ページ読み込み時に自動的にスタイルを注入
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectWaitTimeColorStyles);
+    } else {
+        injectWaitTimeColorStyles();
+    }
+}
+
 // パーク情報
 const PARKS = {
     land: {
