@@ -151,13 +151,31 @@
         }
 
         header {
-            text-align: center;
             padding: 30px 20px;
             background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(78,205,196,0.1) 100%);
             border-radius: 20px;
             margin-bottom: 30px;
             backdrop-filter: blur(10px);
             position: relative;
+        }
+
+        .header-main {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .header-title-block {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .header-title-block .header-stats {
+            margin-top: 20px;
         }
 
         .header-buttons {
@@ -689,15 +707,15 @@
             grid-column: 1 / -1;
         }
 
-        /* 混雑スコアメーター */
+        /* 混雑スコアメーター（ヘッダー内） */
         .congestion-meter {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
-            padding: 30px 25px 20px;
-            margin-bottom: 30px;
+            padding: 20px 20px 15px;
             text-align: center;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
 
         .meter-title {
@@ -1187,38 +1205,41 @@
                         </a>
                     </div>
                 </div>
-                <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
-                <p class="subtitle">リアルタイム待ち時間情報</p>
-                <div class="last-updated" id="lastUpdated">読み込み中...</div>
-            </header>
-
-            <div class="congestion-meter" id="congestionMeter" style="display:none;">
-                <div class="meter-title">パーク混雑スコア</div>
-                <div class="meter-gauge">
-                    <svg viewBox="0 0 220 120">
-                        <defs>
-                            <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#4ecdc4" />
-                                <stop offset="35%" stop-color="#f9ca24" />
-                                <stop offset="65%" stop-color="#e17055" />
-                                <stop offset="100%" stop-color="#ff6b6b" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M 20 105 A 90 90 0 0 1 200 105"
-                              fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
-                        <path id="meterArc" d="M 20 105 A 90 90 0 0 1 200 105"
-                              fill="none" stroke="url(#meterGradient)" stroke-width="14" stroke-linecap="round"
-                              stroke-dasharray="283" stroke-dashoffset="283"/>
-                    </svg>
-                    <div class="meter-score">
-                        <span class="meter-score-value" id="meterScoreValue">0</span>
-                        <span class="meter-score-unit"> /100</span>
+                <div class="header-main">
+                    <div class="header-title-block">
+                        <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
+                        <p class="subtitle">リアルタイム待ち時間情報</p>
+                        <div class="last-updated" id="lastUpdated">読み込み中...</div>
+                        <div class="header-stats meter-stats" id="meterStats"></div>
+                    </div>
+                    <div class="congestion-meter" id="congestionMeter" style="display:none;">
+                        <div class="meter-title">パーク混雑スコア</div>
+                        <div class="meter-gauge">
+                            <svg viewBox="0 0 220 120">
+                                <defs>
+                                    <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4ecdc4" />
+                                        <stop offset="35%" stop-color="#f9ca24" />
+                                        <stop offset="65%" stop-color="#e17055" />
+                                        <stop offset="100%" stop-color="#ff6b6b" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 20 105 A 90 90 0 0 1 200 105"
+                                      fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+                                <path id="meterArc" d="M 20 105 A 90 90 0 0 1 200 105"
+                                      fill="none" stroke="url(#meterGradient)" stroke-width="14" stroke-linecap="round"
+                                      stroke-dasharray="283" stroke-dashoffset="283"/>
+                            </svg>
+                            <div class="meter-score">
+                                <span class="meter-score-value" id="meterScoreValue">0</span>
+                                <span class="meter-score-unit"> /100</span>
+                            </div>
+                        </div>
+                        <div class="meter-label" id="meterLabel"></div>
+                        <div class="meter-comment" id="meterComment"></div>
                     </div>
                 </div>
-                <div class="meter-label" id="meterLabel"></div>
-                <div class="meter-comment" id="meterComment"></div>
-                <div class="meter-stats" id="meterStats"></div>
-            </div>
+            </header>
 
             <div class="area-tabs" id="areaTabs"></div>
 
@@ -2042,8 +2063,10 @@
 
         function renderCongestionMeter() {
             const meter = document.getElementById('congestionMeter');
+            const statsEl = document.getElementById('meterStats');
             if (!meter || ridesData.length === 0) {
                 if (meter) meter.style.display = 'none';
+                if (statsEl) statsEl.innerHTML = '';
                 return;
             }
 
