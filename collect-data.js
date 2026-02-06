@@ -21,10 +21,15 @@ const PARKS = {
 };
 
 const DATA_DIR = path.join(__dirname, 'data');
+const LOG_DIR = 'C:/logs';
 
 // データ保存ディレクトリの作成
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+// ログディレクトリの作成
+if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
 async function fetchParkData(park) {
@@ -71,6 +76,34 @@ function getJapanTimestamp(date) {
     // parts: [YYYY, MM, DD, HH, mm, ss]
     return `${parts[0]}-${parts[1]}-${parts[2]}T${parts[3]}:${parts[4]}:${parts[5]}+09:00`;
 }
+
+// ログを C:/logs の日付別ファイルに追記（console にもそのまま出力）
+let logStream = null;
+function initLogStream() {
+    const now = new Date();
+    const dateStr = getJapanDate(now);
+    const logPath = path.join(LOG_DIR, `collect-data_${dateStr}.log`);
+    logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    const originalLog = console.log;
+    const originalError = console.error;
+    function writeToFile(level, args) {
+        if (!logStream) return;
+        const msg = args.map(a => (typeof a === 'object' && a !== null && a instanceof Error)
+            ? a.message + (a.stack ? '\n' + a.stack : '')
+            : (typeof a === 'object' && a !== null) ? JSON.stringify(a) : String(a)).join(' ');
+        const timestamp = getJapanTimestamp(new Date());
+        logStream.write(`[${timestamp}] [${level}] ${msg}\n`);
+    }
+    console.log = function (...args) {
+        writeToFile('INFO', args);
+        originalLog.apply(console, args);
+    };
+    console.error = function (...args) {
+        writeToFile('ERROR', args);
+        originalError.apply(console, args);
+    };
+}
+initLogStream();
 
 async function collectData() {
     const now = new Date();

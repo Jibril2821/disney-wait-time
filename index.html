@@ -1410,32 +1410,19 @@
             const [year, month, day] = today.split('-');
             const folder = parkFolder || parkFile.toUpperCase();
 
-            // 新形式: data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等
-            const newUrlToday = `data/${folder}/${year}/${month}/${parkFile}_${today}.json`;
-            const legacyUrlToday = `data/${parkFile}_${today}.json`;
-
+            // data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等（階層形式のみ使用）
+            const urlToday = `data/${folder}/${year}/${month}/${parkFile}_${today}.json`;
             const fetchOptions = { cache: 'no-store' }; // キャッシュ無効化
-            
-            try {
-                // 新形式 → 旧形式の順に試す
-                let response = await fetch(newUrlToday, fetchOptions);
-                if (!response.ok) {
-                    response = await fetch(legacyUrlToday, fetchOptions);
-                }
 
+            try {
+                let response = await fetch(urlToday, fetchOptions);
                 if (!response.ok) {
                     // 今日のデータがない場合、昨日のデータを試す
                     const yesterday = new Date(Date.now() + (9 * 60 * 60 * 1000) - 86400000)
                         .toISOString().split('T')[0];
                     const [yYear, yMonth, yDay] = yesterday.split('-');
-                    const newUrlYesterday = `data/${folder}/${yYear}/${yMonth}/${parkFile}_${yesterday}.json`;
-                    const legacyUrlYesterday = `data/${parkFile}_${yesterday}.json`;
-
-                    let yRes = await fetch(newUrlYesterday, fetchOptions);
-                    if (!yRes.ok) {
-                        yRes = await fetch(legacyUrlYesterday, fetchOptions);
-                    }
-
+                    const urlYesterday = `data/${folder}/${yYear}/${yMonth}/${parkFile}_${yesterday}.json`;
+                    const yRes = await fetch(urlYesterday, fetchOptions);
                     if (!yRes.ok) {
                         throw new Error('データファイルが見つかりません');
                     }
@@ -1757,15 +1744,10 @@
             const folder = parkInfo.folder || parkInfo.dataFile.toUpperCase();
             const parkFile = parkInfo.dataFile;
 
-            const newUrl = `data/${folder}/${year}/${month}/${parkFile}_${dateStr}.json`;
-            const legacyUrl = `data/${parkFile}_${dateStr}.json`;
+            const url = `data/${folder}/${year}/${month}/${parkFile}_${dateStr}.json`;
             const fetchOptions = { cache: 'no-store' };
 
-            // 新形式 → 旧形式の順に試す
-            let response = await fetch(newUrl, fetchOptions);
-            if (!response.ok) {
-                response = await fetch(legacyUrl, fetchOptions);
-            }
+            const response = await fetch(url, fetchOptions);
             if (!response.ok) {
                 throw new Error('history data not found');
             }

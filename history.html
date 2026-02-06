@@ -1296,7 +1296,7 @@
                     <h2>ファイルを選択してください</h2>
                     <p>ローカル環境では、dataフォルダのJSONファイルを手動で選択する必要があります。</p>
                     <p style="margin-top: 15px; color: #4ecdc4;">
-                        📁 data/${PARKS[currentPark].filePrefix}_YYYY-MM-DD.json
+                        📁 data/${PARKS[currentPark].folder}/YYYY/MM/${PARKS[currentPark].filePrefix}_YYYY-MM-DD.json
                     </p>
                 </div>
             `;
@@ -1378,41 +1378,20 @@
                 // 並列でチェック（高速化）
                 const checkPromises = dates.map(async (date) => {
                     const [year, month, day] = date.split('-');
-                    // 新形式: data/TDL/YYYY/MM/land_YYYY-MM-DD.json or data/TDS/YYYY/MM/sea_YYYY-MM-DD.json
+                    // data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等（階層形式のみ使用）
                     const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-                    const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                    const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
-
-                    // 新形式を優先して確認し、無ければ旧形式ファイルを探す
+                    const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
                     try {
-                        const resNew = await fetch(newUrl, { method: 'HEAD' });
-                        if (resNew.ok) {
-                            return { date, type: 'new' };
-                        }
-                    } catch (e) {}
-
-                    try {
-                        const resOld = await fetch(legacyUrl, { method: 'HEAD' });
-                        if (resOld.ok) {
-                            return { date, type: 'legacy' };
-                        }
-                    } catch (e) {}
-
-                    return null;
+                        const res = await fetch(url, { method: 'HEAD' });
+                        return res.ok ? { date } : null;
+                    } catch (e) {
+                        return null;
+                    }
                 });
-                
+
                 const results = await Promise.all(checkPromises);
-                // 利用可能日だけを保持しつつ、どの形式かも一緒に保存
                 const found = results.filter(r => r !== null);
-                availableDates = found
-                    .map(r => r.date)
-                    .sort()
-                    .reverse();
-                // 形式情報をマップで保持
-                window.__dateFileTypeMap = {};
-                for (const r of found) {
-                    window.__dateFileTypeMap[r.date] = r.type;
-                }
+                availableDates = found.map(r => r.date).sort().reverse();
 
                 if (availableDates.length === 0) {
                     content.innerHTML = `
@@ -1452,14 +1431,8 @@
             try {
                 const [year, month, day] = date.split('-');
                 const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-                const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
-
-                // まず新形式を試し、ダメなら旧形式を読む
-                let response = await fetch(newUrl);
-                if (!response.ok) {
-                    response = await fetch(legacyUrl);
-                }
+                const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error('データの取得に失敗しました');
                 
                 const data = await response.json();
@@ -3452,11 +3425,9 @@
             const parkInfo = PARKS[currentPark];
             const [year, month, day] = dateStr.split('-');
             const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-            const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${dateStr}.json`;
-            const legacyUrl = `data/${parkInfo.filePrefix}_${dateStr}.json`;
+            const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${dateStr}.json`;
             try {
-                let response = await fetch(newUrl, { cache: 'no-store' });
-                if (!response.ok) response = await fetch(legacyUrl, { cache: 'no-store' });
+                const response = await fetch(url, { cache: 'no-store' });
                 if (!response.ok) return null;
                 const data = await response.json();
                 return {
@@ -4096,13 +4067,9 @@
                 const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
                 for (const date of datesToLoad) {
                     const [year, month, day] = date.split('-');
-                    const newUrl = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                    const legacyUrl = `data/${parkInfo.filePrefix}_${date}.json`;
+                    const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
                     try {
-                        let response = await fetch(newUrl);
-                        if (!response.ok) {
-                            response = await fetch(legacyUrl);
-                        }
+                        const response = await fetch(url);
                         if (response.ok) {
                             const data = await response.json();
                             for (const record of data.records) {
