@@ -60,6 +60,9 @@
         h1 {
             font-size: 2rem;
             margin-bottom: 10px;
+        }
+
+        h1 .title-text {
             background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -723,6 +726,18 @@
 
         /* .heatmap-cell.wait-* スタイルは park-data.js から動的に注入されます */
 
+        /* 曜日×時間帯マトリクス */
+        .matrix-best-cell {
+            outline: 2px solid #f9ca24;
+            outline-offset: -2px;
+            position: relative;
+        }
+
+        .matrix-day-label {
+            min-width: 30px;
+            font-weight: 600;
+        }
+
         /* 混雑カレンダー（月ビュー用） */
         .calendar-container {
             margin-bottom: 24px;
@@ -1026,7 +1041,7 @@
     <div class="container">
         <header>
             <a href="index.html" class="back-btn">← 待ち時間に戻る</a>
-            <h1>📊 待ち時間履歴</h1>
+            <h1>📊 <span class="title-text">待ち時間履歴</span></h1>
             <p class="park-name" id="parkName">読み込み中...</p>
         </header>
 
@@ -1471,6 +1486,7 @@
                 ${currentPeriod === 'month' ? renderMonthlyCalendar() : ''}
                 ${currentPeriod === 'year' ? renderYearlyCalendar() : ''}
                 ${currentPeriod === 'day' ? renderHeatmapSection(filteredCards) : ''}
+                ${renderDayTimeMatrix(filteredCards)}
 
                 <div class="chart-container">
                     <h2 class="chart-title">全アトラクション一覧</h2>
@@ -1565,25 +1581,25 @@
             let labels, datasets, xAxisTitle;
 
             if (currentPeriod === 'day') {
-                // 日単位: 8:00〜22:00 を30分刻みで表示
+                // 日単位: 9:00〜21:00 を30分刻みで表示
                 labels = [];
-                for (let h = 8; h <= 22; h++) {
+                for (let h = 9; h <= 21; h++) {
                     labels.push(`${h.toString().padStart(2, '0')}:00`);
-                    if (h !== 22) {
+                    if (h !== 21) {
                         labels.push(`${h.toString().padStart(2, '0')}:30`);
                     }
                 }
                 xAxisTitle = '時刻';
 
                 datasets = allRides.map((ride, index) => {
-                    // 8:00〜22:00 を30分刻み → 29ポイント
+                    // 9:00〜21:00 を30分刻み
                     const slotData = new Array(labels.length).fill(null);
                     for (const td of ride.timeData) {
                         if (td.wait !== null) {
                             const [hours, minutes] = td.time.split(':').map(Number);
-                            if (hours < 8 || hours > 22) continue;
-                            // 8:00 を 0、8:30 を 1 ... 22:00 を 28 にマッピング
-                            const baseIndex = (hours - 8) * 2;
+                            if (hours < 9 || hours > 21) continue;
+                            // 9:00 を 0、9:30 を 1 ... 21:00 にマッピング
+                            const baseIndex = (hours - 9) * 2;
                             const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
                             if (index30 >= 0 && index30 < slotData.length) {
                                 slotData[index30] = td.wait;
@@ -1901,12 +1917,12 @@
                 return '';
             }
 
-            // 8:00〜22:00 を30分刻みでスロット化
+            // 9:00〜21:00 を30分刻みでスロット化
             const slots = [];
-            for (let h = 8; h <= 22; h++) {
+            for (let h = 9; h <= 21; h++) {
                 const hh = h.toString().padStart(2, '0');
                 slots.push(`${hh}:00`);
-                if (h !== 22) slots.push(`${hh}:30`);
+                if (h !== 21) slots.push(`${hh}:30`);
             }
 
             const rowsHtml = rideCards.map(ride => {
@@ -1916,8 +1932,8 @@
                 for (const td of ride.timeData) {
                     if (td.wait == null || !td.time) continue;
                     const [hours, minutes] = td.time.split(':').map(Number);
-                    if (hours < 8 || hours > 22) continue;
-                    const base = (hours - 8) * 2;
+                    if (hours < 9 || hours > 21) continue;
+                    const base = (hours - 9) * 2;
                     const idx = minutes >= 30 ? base + 1 : base;
                     if (idx < 0 || idx >= slots.length) continue;
                     sums[idx] += td.wait;
@@ -1945,7 +1961,7 @@
 
             return `
                 <div class="heatmap-container">
-                    <h3 class="heatmap-title">⏱ 混雑ヒートマップ（8:00〜22:00）</h3>
+                    <h3 class="heatmap-title">⏱ 混雑ヒートマップ（9:00〜21:00）</h3>
                     <div class="heatmap-note">色が濃いほど平均待ち時間が長い時間帯です。</div>
                     <div class="heatmap-table-wrapper">
                         <table class="heatmap-table">
@@ -2303,18 +2319,157 @@
             `;
         }
 
+        // ── 曜日×時間帯マトリクス ──
+
+        function buildDayTimeMatrix(dataIterator) {
+            // 7曜日 x 13時間帯 (9〜21時) の集計用マトリクス
+            const matrix = Array.from({ length: 7 }, () =>
+                Array.from({ length: 13 }, () => ({ sum: 0, count: 0 }))
+            );
+
+            for (const item of dataIterator) {
+                const cell = matrix[item.dow][item.hourIdx];
+                cell.sum += item.wait;
+                cell.count += 1;
+            }
+
+            return matrix;
+        }
+
+        function renderDayTimeMatrixHtml(matrix, title, options) {
+            const onlyDow = options && options.onlyDow !== undefined ? options.onlyDow : null;
+            const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+            const hourSlots = [];
+            for (let h = 9; h <= 21; h++) hourSlots.push(h);
+
+            // 曜日ごとの最小値セルを探す
+            const bestPerDay = []; // { hourIdx, avg } or null
+            for (let dow = 0; dow < 7; dow++) {
+                let bestHi = -1, bestAvg = Infinity;
+                for (let hi = 0; hi < hourSlots.length; hi++) {
+                    const c = matrix[dow][hi];
+                    if (c.count > 0) {
+                        const avg = c.sum / c.count;
+                        if (avg < bestAvg) {
+                            bestAvg = avg;
+                            bestHi = hi;
+                        }
+                    }
+                }
+                bestPerDay.push(bestHi >= 0 ? { hourIdx: bestHi, avg: bestAvg } : null);
+            }
+
+            const headerCells = hourSlots.map(h => `<th class="heatmap-header">${h}時</th>`).join('');
+
+            const rowsToRender = onlyDow !== null ? [onlyDow] : [0, 1, 2, 3, 4, 5, 6];
+            const rowsHtml = rowsToRender.map(dow => {
+                const label = dayLabels[dow];
+                const best = bestPerDay[dow];
+                const cells = hourSlots.map((h, hi) => {
+                    const c = matrix[dow][hi];
+                    if (!c.count) {
+                        return '<td class="heatmap-cell heat-none">-</td>';
+                    }
+                    const avg = Math.round(c.sum / c.count);
+                    const waitClass = getWaitClass(avg) || '';
+                    const bestClass = (best && hi === best.hourIdx) ? ' matrix-best-cell' : '';
+                    return `<td class="heatmap-cell ${waitClass || 'heat-none'}${bestClass}">${avg}</td>`;
+                }).join('');
+
+                return `<tr><td class="matrix-day-label">${label}</td>${cells}</tr>`;
+            }).join('');
+
+            const tipHtml = '';
+            const noteText = onlyDow !== null
+                ? 'その日の時間帯別平均待ち時間です。黄色枠が狙い目です。'
+                : '蓄積データから曜日×時間帯の平均待ち時間を算出しています。黄色枠が各曜日の狙い目です。';
+
+            return `
+                <div class="heatmap-container">
+                    <h3 class="heatmap-title">${title}</h3>
+                    <div class="heatmap-note">${noteText}</div>
+                    <div class="heatmap-table-wrapper">
+                        <table class="heatmap-table">
+                            <thead>
+                                <tr>
+                                    <th class="heatmap-header">曜日</th>
+                                    ${headerCells}
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    ${tipHtml}
+                </div>
+            `;
+        }
+
+        function renderDayTimeMatrix(filteredCards) {
+            if (!filteredCards || filteredCards.length === 0) return '';
+
+            // 全アトラクション合算のデータイテレータを作成
+            const items = [];
+            for (const ride of filteredCards) {
+                for (const td of ride.timeData) {
+                    if (td.wait == null || !td.time || !td.date) continue;
+                    const hour = parseInt(td.time.split(':')[0], 10);
+                    if (hour < 9 || hour > 21) continue;
+                    const [y, m, d] = td.date.split('-').map(Number);
+                    const dow = new Date(y, m - 1, d).getDay();
+                    items.push({ dow, hourIdx: hour - 9, wait: td.wait });
+                }
+            }
+
+            if (items.length === 0) return '';
+
+            const matrix = buildDayTimeMatrix(items);
+            const title = currentPeriod === 'day' ? '📅 今日のおすすめ時間帯' : '📅 曜日別おすすめ時間帯';
+            let onlyDow = null;
+            if (currentPeriod === 'day' && loadedData && (loadedData.dateRange?.length > 0 || loadedData.selectedValue)) {
+                const dateStr = loadedData.dateRange?.[0] || loadedData.selectedValue;
+                const [y, m, d] = dateStr.split('-').map(Number);
+                onlyDow = new Date(y, m - 1, d).getDay();
+            }
+            return renderDayTimeMatrixHtml(matrix, title, { onlyDow });
+        }
+
+        function renderSingleRideDayTimeMatrix(rideId, rideName, rideData) {
+            if (!rideData || rideData.length === 0) return '';
+
+            const items = [];
+            for (const d of rideData) {
+                if (!d.is_open || d.wait_time == null || d.wait_time <= 0 || !d.time || !d.date) continue;
+                const hour = parseInt(d.time.split(':')[0], 10);
+                if (hour < 9 || hour > 21) continue;
+                const [y, m, day] = d.date.split('-').map(Number);
+                const dow = new Date(y, m - 1, day).getDay();
+                items.push({ dow, hourIdx: hour - 9, wait: d.wait_time });
+            }
+
+            if (items.length === 0) return '';
+
+            const matrix = buildDayTimeMatrix(items);
+            const title = currentPeriod === 'day' ? '📅 今日のおすすめ時間帯' : '📅 曜日別おすすめ時間帯';
+            let onlyDow = null;
+            if (currentPeriod === 'day' && rideData.length > 0 && rideData[0].date) {
+                const [y, m, d] = rideData[0].date.split('-').map(Number);
+                onlyDow = new Date(y, m - 1, d).getDay();
+            }
+            return renderDayTimeMatrixHtml(matrix, title, { onlyDow });
+        }
+
         // 個別アトラクション用ヒートマップ（日単位）
         function renderSingleRideHeatmap(rideId, rideName, rideData) {
             if (!rideData || rideData.length === 0 || currentPeriod !== 'day') {
                 return '';
             }
 
-            // 8:00〜22:00 を30分刻みでスロット化
+            // 9:00〜21:00 を30分刻みでスロット化
             const slots = [];
-            for (let h = 8; h <= 22; h++) {
+            for (let h = 9; h <= 21; h++) {
                 const hh = h.toString().padStart(2, '0');
                 slots.push(`${hh}:00`);
-                if (h !== 22) slots.push(`${hh}:30`);
+                if (h !== 21) slots.push(`${hh}:30`);
             }
 
             const sums = new Array(slots.length).fill(0);
@@ -2323,8 +2478,8 @@
             for (const d of rideData) {
                 if (!d.is_open || d.wait_time == null || !d.time) continue;
                 const [hours, minutes] = d.time.split(':').map(Number);
-                if (hours < 8 || hours > 22) continue;
-                const base = (hours - 8) * 2;
+                if (hours < 9 || hours > 21) continue;
+                const base = (hours - 9) * 2;
                 const idx = minutes >= 30 ? base + 1 : base;
                 if (idx < 0 || idx >= slots.length) continue;
                 sums[idx] += d.wait_time;
@@ -2344,7 +2499,7 @@
 
             return `
                 <div class="heatmap-container">
-                    <h3 class="heatmap-title">⏱ 時間帯別 混雑ヒートマップ（8:00〜22:00）</h3>
+                    <h3 class="heatmap-title">⏱ 時間帯別 混雑ヒートマップ（9:00〜21:00）</h3>
                     <div class="heatmap-note">色が濃いほど待ち時間が長い時間帯です。</div>
                     <div class="heatmap-table-wrapper">
                         <table class="heatmap-table">
@@ -2639,6 +2794,7 @@
 
             // 期間に応じたヒートマップ・カレンダーのHTML
             const heatmapHtml = currentPeriod === 'day' ? renderSingleRideHeatmap(rideId, rideName, rideData) : '';
+            const dayTimeMatrixHtml = renderSingleRideDayTimeMatrix(rideId, rideName, rideData);
             const weekCalendarHtml = currentPeriod === 'week' ? renderSingleRideWeeklyCalendar(rideId, rideData) : '';
             const monthCalendarHtml = currentPeriod === 'month' ? renderSingleRideMonthlyCalendar(rideId, rideData) : '';
             const yearCalendarHtml = currentPeriod === 'year' ? renderSingleRideYearlyCalendar(rideId, rideData) : '';
@@ -2686,6 +2842,7 @@
                 ${monthCalendarHtml}
                 ${yearCalendarHtml}
                 ${heatmapHtml}
+                ${dayTimeMatrixHtml}
                 <div class="chart-container">
                     <h2 class="chart-title">詳細データ</h2>
                     <div class="table-container">
@@ -2812,10 +2969,10 @@
             let buildSeries;
 
             if (currentPeriod === 'day') {
-                // 日単位: 8:00〜22:00 を30分刻みで表示
-                for (let h = 8; h <= 22; h++) {
+                // 日単位: 9:00〜21:00 を30分刻みで表示
+                for (let h = 9; h <= 21; h++) {
                     labels.push(`${h.toString().padStart(2, '0')}:00`);
-                    if (h !== 22) {
+                    if (h !== 21) {
                         labels.push(`${h.toString().padStart(2, '0')}:30`);
                     }
                 }
@@ -2825,8 +2982,8 @@
                     for (const d of series) {
                         if (d.is_open && d.wait_time !== null) {
                             const [hours, minutes] = d.time.split(':').map(Number);
-                            if (hours < 8 || hours > 22) continue;
-                            const baseIndex = (hours - 8) * 2;
+                            if (hours < 9 || hours > 21) continue;
+                            const baseIndex = (hours - 9) * 2;
                             const index30 = minutes >= 30 ? baseIndex + 1 : baseIndex;
                             if (index30 >= 0 && index30 < data.length) {
                                 data[index30] = d.wait_time;

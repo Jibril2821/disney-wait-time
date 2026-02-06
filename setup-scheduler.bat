@@ -37,13 +37,13 @@ set /p CHOICE="番号を入力 (1-4): "
 
 if "%CHOICE%"=="1" (
     set INTERVAL=5
-    set DURATION=14:00
+    set DURATION=12:00
 ) else if "%CHOICE%"=="2" (
     set INTERVAL=15
-    set DURATION=14:00
+    set DURATION=12:00
 ) else if "%CHOICE%"=="3" (
     set INTERVAL=30
-    set DURATION=14:00
+    set DURATION=12:00
 ) else if "%CHOICE%"=="4" (
     echo キャンセルしました。
     pause
@@ -57,7 +57,7 @@ if "%CHOICE%"=="1" (
 echo.
 echo 登録するタスク:
 echo   - 名前: DisneyWaitTimeCollector
-echo   - 実行間隔: %INTERVAL%分ごと（8:00〜22:00）
+echo   - 実行間隔: %INTERVAL%分ごと（9:00〜21:00）
 echo   - スクリプト: %SCRIPT_PATH%
 echo.
 
@@ -73,8 +73,8 @@ if %errorlevel% neq 0 (
 :: 既存タスクの削除（存在する場合）
 schtasks /delete /tn "DisneyWaitTimeCollector" /f >nul 2>nul
 
-:: タスクの作成（8:00〜22:00の間、指定間隔で実行）
-schtasks /create /tn "DisneyWaitTimeCollector" /tr "\"C:\Program Files\nodejs\node.exe\" \"%SCRIPT_PATH%\"" /sc daily /st 08:00 /du %DURATION% /ri %INTERVAL% /f
+:: タスクの作成（9:00〜21:00の間、指定間隔で実行）
+schtasks /create /tn "DisneyWaitTimeCollector" /tr "\"C:\Program Files\nodejs\node.exe\" \"%SCRIPT_PATH%\"" /sc daily /st 09:00 /du %DURATION% /ri %INTERVAL% /f
 
 if %errorlevel% equ 0 (
     echo.
@@ -82,7 +82,7 @@ if %errorlevel% equ 0 (
     echo [成功] タスクが登録されました！
     echo ========================================
     echo.
-    echo 8:00〜22:00の間、%INTERVAL%分ごとに自動でデータが収集され、GitHubにプッシュされます。
+    echo 9:00〜21:00の間、%INTERVAL%分ごとに自動でデータが収集され、GitHubにプッシュされます。
     echo データは %~dp0data\ フォルダに保存されます。
     echo.
     echo タスクを削除するには以下のコマンドを実行:

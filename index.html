@@ -289,37 +289,6 @@
             color: #fff;
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #a0a0a0;
-            font-size: 0.85rem;
-        }
-
-        .stat-card:nth-child(1) .stat-value { color: #4ecdc4; }
-        .stat-card:nth-child(2) .stat-value { color: #ff6b6b; }
-        .stat-card:nth-child(3) .stat-value { color: #45b7d1; }
-        .stat-card:nth-child(4) .stat-value { color: #f9ca24; }
-
         /* エリアタブ */
         .area-tabs {
             display: grid;
@@ -604,7 +573,16 @@
             box-shadow: 0 6px 30px rgba(78,205,196,0.6);
         }
 
+        .refresh-btn .refresh-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
         .refresh-btn.loading {
+            pointer-events: none;
+        }
+
+        .refresh-btn.loading .refresh-icon {
             animation: spin 1s linear infinite;
         }
 
@@ -669,7 +647,7 @@
                 gap: 10px;
             }
 
-            .back-btn, .history-btn {
+            .back-btn, .history-btn, .planner-btn {
                 width: 100%;
                 justify-content: center;
             }
@@ -710,6 +688,464 @@
             color: #a0a0a0;
             grid-column: 1 / -1;
         }
+
+        /* 混雑スコアメーター */
+        .congestion-meter {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px 25px 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .meter-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .meter-gauge {
+            position: relative;
+            width: 220px;
+            height: 125px;
+            margin: 0 auto;
+        }
+
+        .meter-gauge svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .meter-score {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            line-height: 1;
+        }
+
+        .meter-score-value {
+            font-size: 2.8rem;
+            font-weight: 700;
+        }
+
+        .meter-score-unit {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            font-weight: 400;
+        }
+
+        .meter-label {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .meter-label-emoji {
+            font-size: 1.5rem;
+            margin-right: 4px;
+        }
+
+        .meter-comment {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+
+        .meter-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 18px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .meter-stat {
+            text-align: center;
+        }
+
+        .meter-stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .meter-stat-unit {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            font-weight: 400;
+        }
+
+        .meter-stat-label {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .meter-gauge {
+                width: 180px;
+                height: 105px;
+            }
+            .meter-score-value {
+                font-size: 2.2rem;
+            }
+            .meter-stats {
+                gap: 20px;
+            }
+        }
+
+        /* 回り順プランナー */
+        .header-right-btns {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .planner-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, rgba(249,202,36,0.3), rgba(240,147,43,0.3));
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .planner-btn:hover {
+            background: linear-gradient(135deg, rgba(249,202,36,0.5), rgba(240,147,43,0.5));
+        }
+
+        .planner-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .planner-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .planner-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .planner-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .planner-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .planner-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .planner-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+        }
+
+        .planner-section-title {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            margin-bottom: 12px;
+        }
+
+        .planner-select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .planner-select-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.08);
+            color: #ccc;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .planner-select-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .planner-rides-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .planner-ride-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .planner-ride-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .planner-ride-item.selected {
+            background: rgba(78,205,196,0.15);
+            border-color: rgba(78,205,196,0.4);
+        }
+
+        .planner-ride-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .planner-ride-item.selected .planner-ride-checkbox {
+            background: #4ecdc4;
+            border-color: #4ecdc4;
+        }
+
+        .planner-ride-name {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .planner-ride-wait {
+            font-size: 1rem;
+            font-weight: 700;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .planner-footer {
+            padding: 15px 25px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .planner-count {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .planner-count span {
+            color: #4ecdc4;
+            font-weight: 700;
+        }
+
+        .planner-generate-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .planner-generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(78,205,196,0.4);
+        }
+
+        .planner-generate-btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .planner-route {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .planner-route-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #f9ca24;
+        }
+
+        .planner-route-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .planner-route-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .planner-route-item:last-child {
+            border-bottom: none;
+        }
+
+        .planner-route-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .planner-route-info {
+            flex: 1;
+        }
+
+        .planner-route-ride-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .planner-route-ride-area {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+        }
+
+        .planner-route-wait {
+            font-size: 1.2rem;
+            font-weight: 700;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        .planner-route-wait .unit {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: #a0a0a0;
+        }
+
+        .planner-route-summary {
+            margin-top: 20px;
+            padding: 18px 20px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, rgba(78,205,196,0.15), rgba(68,160,141,0.15));
+            border: 1px solid rgba(78,205,196,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .planner-route-summary-label {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .planner-route-summary-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4ecdc4;
+        }
+
+        .planner-route-summary-value .unit {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #a0a0a0;
+        }
+
+        .planner-route-note {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+            margin-top: 12px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .planner-no-rides {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+        }
+
+        @media (max-width: 768px) {
+            .header-right-btns {
+                flex-direction: column;
+                width: 100%;
+            }
+            .planner-overlay {
+                padding: 0;
+            }
+            .planner-modal {
+                max-height: 100vh;
+                border-radius: 0;
+                height: 100vh;
+            }
+        }
     </style>
     <script src="park-data.js"></script>
 </head>
@@ -742,32 +1178,46 @@
                     <button class="back-btn" onclick="goBack()">
                         ← パーク選択に戻る
                     </button>
-                    <a href="#" class="history-btn" id="historyBtn" onclick="goToHistory()">
-                        📊 履歴を見る
-                    </a>
+                    <div class="header-right-btns">
+                        <button class="planner-btn" onclick="openPlanner()">
+                            🗺️ 回り順プランナー
+                        </button>
+                        <a href="#" class="history-btn" id="historyBtn" onclick="goToHistory()">
+                            📊 履歴を見る
+                        </a>
+                    </div>
                 </div>
                 <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
                 <p class="subtitle">リアルタイム待ち時間情報</p>
                 <div class="last-updated" id="lastUpdated">読み込み中...</div>
             </header>
 
-            <div class="stats" id="stats">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalRides">-</div>
-                    <div class="stat-label">総アトラクション数</div>
+            <div class="congestion-meter" id="congestionMeter" style="display:none;">
+                <div class="meter-title">パーク混雑スコア</div>
+                <div class="meter-gauge">
+                    <svg viewBox="0 0 220 120">
+                        <defs>
+                            <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#4ecdc4" />
+                                <stop offset="35%" stop-color="#f9ca24" />
+                                <stop offset="65%" stop-color="#e17055" />
+                                <stop offset="100%" stop-color="#ff6b6b" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M 20 105 A 90 90 0 0 1 200 105"
+                              fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+                        <path id="meterArc" d="M 20 105 A 90 90 0 0 1 200 105"
+                              fill="none" stroke="url(#meterGradient)" stroke-width="14" stroke-linecap="round"
+                              stroke-dasharray="283" stroke-dashoffset="283"/>
+                    </svg>
+                    <div class="meter-score">
+                        <span class="meter-score-value" id="meterScoreValue">0</span>
+                        <span class="meter-score-unit"> /100</span>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="openRides">-</div>
-                    <div class="stat-label">運営中</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="avgWait">-</div>
-                    <div class="stat-label">平均待ち時間</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="maxWait">-</div>
-                    <div class="stat-label">最長待ち時間</div>
-                </div>
+                <div class="meter-label" id="meterLabel"></div>
+                <div class="meter-comment" id="meterComment"></div>
+                <div class="meter-stats" id="meterStats"></div>
             </div>
 
             <div class="area-tabs" id="areaTabs"></div>
@@ -793,7 +1243,24 @@
         </div>
     </div>
 
-    <button class="refresh-btn" id="refreshBtn" title="更新">↻</button>
+    <button class="refresh-btn" id="refreshBtn" title="更新"><span class="refresh-icon">↻</span></button>
+
+    <!-- 回り順プランナーモーダル -->
+    <div class="planner-overlay" id="plannerOverlay" style="display:none;" onclick="closePlannerOverlay(event)">
+        <div class="planner-modal">
+            <div class="planner-header">
+                <div class="planner-title">🗺️ 最適回り順プランナー</div>
+                <button class="planner-close" onclick="closePlanner()">✕</button>
+            </div>
+            <div class="planner-body" id="plannerBody"></div>
+            <div class="planner-footer">
+                <div class="planner-count"><span id="plannerCount">0</span> 件選択中</div>
+                <button class="planner-generate-btn" id="plannerGenerateBtn" onclick="generateRoute()" disabled>
+                    ルートを生成 →
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // データ取得方法の自動判定
@@ -815,6 +1282,7 @@
         let favoriteRideIds = new Set(); // history.html と共有するお気に入りID群（文字列）
         let showFavoritesOnly = false;   // true のときお気に入りのみ表示
         let chanceHighlights = new Map(); // 「今がチャンス！」対象アトラクション情報
+        let historicalParkAvg = null;     // 過去7日間の同時間帯パーク平均待ち時間
 
         function selectPark(park) {
             currentPark = park;
@@ -836,12 +1304,9 @@
         }
 
         function resetDisplay() {
-            // 統計をリセット
-            document.getElementById('totalRides').textContent = '-';
-            document.getElementById('openRides').textContent = '-';
-            document.getElementById('avgWait').textContent = '-';
-            document.getElementById('maxWait').textContent = '-';
             document.getElementById('lastUpdated').textContent = '読み込み中...';
+            const meter = document.getElementById('congestionMeter');
+            if (meter) meter.style.display = 'none';
             
             // エリアタブをクリア
             document.getElementById('areaTabs').innerHTML = '';
@@ -999,10 +1464,10 @@
                 // 「今がチャンス！」判定用データを計算（ローカル収集データがある場合）
                 await computeChanceHighlights(parkInfo, ridesData, lastUpdated);
 
-                updateStats();
                 renderAreaTabs();
                 renderRides();
                 updateLastUpdated();
+                renderCongestionMeter();
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('ridesContainer').innerHTML = `
@@ -1015,23 +1480,6 @@
             } finally {
                 refreshBtn.classList.remove('loading');
             }
-        }
-
-        function updateStats() {
-            const total = ridesData.length;
-            const open = ridesData.filter(r => r.is_open).length;
-            const openRides = ridesData.filter(r => r.is_open && r.wait_time > 0);
-            const avgWait = openRides.length > 0 
-                ? Math.round(openRides.reduce((sum, r) => sum + r.wait_time, 0) / openRides.length)
-                : 0;
-            const maxWait = openRides.length > 0
-                ? Math.max(...openRides.map(r => r.wait_time))
-                : 0;
-
-            document.getElementById('totalRides').textContent = total;
-            document.getElementById('openRides').textContent = open;
-            document.getElementById('avgWait').textContent = avgWait + '分';
-            document.getElementById('maxWait').textContent = maxWait + '分';
         }
 
         function updateLastUpdated() {
@@ -1298,6 +1746,7 @@
         async function computeChanceHighlights(parkInfo, rides, lastUpdated) {
             // デフォルトでは空にしておく
             chanceHighlights = new Map();
+            historicalParkAvg = null;
 
             // ローカル収集データが使えない場合や更新時刻が不明な場合はスキップ
             if (!USE_LOCAL_DATA || !lastUpdated) {
@@ -1321,6 +1770,8 @@
             const baseDate = new Date(tYear, tMonth - 1, tDay);
 
             const aggregates = new Map(); // rideId -> { sum, count }
+            let historicalParkSum = 0;
+            let historicalParkCount = 0;
             const MAX_DAYS = 7; // 過去7日分を対象
 
             for (let offset = 1; offset <= MAX_DAYS; offset++) {
@@ -1348,6 +1799,8 @@
                             current.sum += r.wait_time;
                             current.count += 1;
                             aggregates.set(key, current);
+                            historicalParkSum += r.wait_time;
+                            historicalParkCount += 1;
                         }
                     }
                 } catch (_) {
@@ -1355,6 +1808,9 @@
                     continue;
                 }
             }
+
+            // パーク全体の過去平均待ち時間を保存（混雑スコアメーター用）
+            historicalParkAvg = historicalParkCount > 0 ? historicalParkSum / historicalParkCount : null;
 
             if (aggregates.size === 0) return;
 
@@ -1391,6 +1847,268 @@
                     });
                 }
             }
+        }
+
+        // ── 回り順プランナー ──
+
+        let plannerSelectedIds = new Set();
+
+        function openPlanner() {
+            if (ridesData.length === 0) return;
+            const overlay = document.getElementById('plannerOverlay');
+            plannerSelectedIds = new Set();
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            renderPlannerRideList();
+        }
+
+        function closePlanner() {
+            document.getElementById('plannerOverlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function closePlannerOverlay(event) {
+            if (event.target === document.getElementById('plannerOverlay')) {
+                closePlanner();
+            }
+        }
+
+        function renderPlannerRideList() {
+            const body = document.getElementById('plannerBody');
+            const areas = getAreas();
+
+            const openRides = ridesData
+                .filter(r => r.is_open && r.wait_time >= 0)
+                .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+
+            if (openRides.length === 0) {
+                body.innerHTML = '<div class="planner-no-rides">現在運営中のアトラクションがありません</div>';
+                updatePlannerCount();
+                return;
+            }
+
+            let html = `
+                <p class="planner-section-title">乗りたいアトラクションを選んでください（運営中のみ）</p>
+                <div class="planner-select-actions">
+                    <button class="planner-select-btn" onclick="selectAllPlannerRides()">すべて選択</button>
+                    <button class="planner-select-btn" onclick="clearPlannerRides()">選択解除</button>
+                </div>
+                <div class="planner-rides-list">
+            `;
+
+            // エリアごとにグループ化して表示
+            Object.entries(areas).forEach(([key, area]) => {
+                const areaRides = openRides.filter(r => r.area === key);
+                if (areaRides.length === 0) return;
+
+                html += `<div style="font-size:0.8rem;color:#a0a0a0;padding:10px 0 6px;font-weight:600;">${area.icon} ${area.name}</div>`;
+
+                for (const ride of areaRides) {
+                    const selected = plannerSelectedIds.has(String(ride.id));
+                    const waitClass = getWaitClass(ride.wait_time);
+                    html += `
+                        <div class="planner-ride-item ${selected ? 'selected' : ''}" onclick="togglePlannerRide('${ride.id}')">
+                            <div class="planner-ride-checkbox">${selected ? '✓' : ''}</div>
+                            <div class="planner-ride-name">${escapeHtml(ride.displayName)}</div>
+                            <div class="planner-ride-wait ${waitClass}">${ride.wait_time}分</div>
+                        </div>
+                    `;
+                }
+            });
+
+            html += '</div>';
+            html += '<div id="plannerRouteResults"></div>';
+
+            body.innerHTML = html;
+            updatePlannerCount();
+        }
+
+        function togglePlannerRide(id) {
+            const key = String(id);
+            if (plannerSelectedIds.has(key)) {
+                plannerSelectedIds.delete(key);
+            } else {
+                plannerSelectedIds.add(key);
+            }
+            // 選択状態のみ更新（スクロール位置を維持）
+            document.querySelectorAll('.planner-ride-item').forEach(item => {
+                const itemId = item.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                if (!itemId) return;
+                const isSelected = plannerSelectedIds.has(String(itemId));
+                item.classList.toggle('selected', isSelected);
+                const checkbox = item.querySelector('.planner-ride-checkbox');
+                if (checkbox) checkbox.textContent = isSelected ? '✓' : '';
+            });
+            updatePlannerCount();
+        }
+
+        function selectAllPlannerRides() {
+            ridesData.filter(r => r.is_open && r.wait_time >= 0).forEach(r => {
+                plannerSelectedIds.add(String(r.id));
+            });
+            renderPlannerRideList();
+        }
+
+        function clearPlannerRides() {
+            plannerSelectedIds.clear();
+            renderPlannerRideList();
+        }
+
+        function updatePlannerCount() {
+            const count = plannerSelectedIds.size;
+            document.getElementById('plannerCount').textContent = count;
+            document.getElementById('plannerGenerateBtn').disabled = count < 2;
+        }
+
+        function generateRoute() {
+            const selectedRides = ridesData.filter(r =>
+                plannerSelectedIds.has(String(r.id)) && r.is_open
+            );
+
+            if (selectedRides.length < 2) return;
+
+            // 貪欲法: 待ち時間の短い順に回る
+            const route = [...selectedRides].sort((a, b) => a.wait_time - b.wait_time);
+            const totalWait = route.reduce((sum, r) => sum + r.wait_time, 0);
+            const areas = getAreas();
+
+            let html = `
+                <div class="planner-route">
+                    <div class="planner-route-title">✨ おすすめ回り順</div>
+                    <div class="planner-route-list">
+            `;
+
+            route.forEach((ride, index) => {
+                const areaInfo = areas[ride.area];
+                const areaName = areaInfo ? areaInfo.name : '';
+                const waitClass = getWaitClass(ride.wait_time);
+                html += `
+                    <div class="planner-route-item">
+                        <div class="planner-route-number">${index + 1}</div>
+                        <div class="planner-route-info">
+                            <div class="planner-route-ride-name">${escapeHtml(ride.displayName)}</div>
+                            <div class="planner-route-ride-area">${areaInfo ? areaInfo.icon + ' ' : ''}${areaName}</div>
+                        </div>
+                        <div class="planner-route-wait ${waitClass}">${ride.wait_time}<span class="unit">分</span></div>
+                    </div>
+                `;
+            });
+
+            // 時間を時間:分で表示
+            const hours = Math.floor(totalWait / 60);
+            const mins = totalWait % 60;
+            const totalDisplay = hours > 0 ? `${hours}時間${mins > 0 ? mins + '分' : ''}` : `${totalWait}分`;
+
+            html += `
+                    </div>
+                    <div class="planner-route-summary">
+                        <div class="planner-route-summary-label">合計予測待ち時間</div>
+                        <div class="planner-route-summary-value">${totalDisplay}</div>
+                    </div>
+                    <div class="planner-route-note">
+                        待ち時間の短い順に回ることで効率的に楽しめます<br>
+                        実際の待ち時間は変動する場合があります
+                    </div>
+                </div>
+            `;
+
+            const results = document.getElementById('plannerRouteResults');
+            if (results) {
+                results.innerHTML = html;
+                results.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // ── 混雑スコアメーター ──
+
+        function computeCongestionScore(rides) {
+            const openRides = rides.filter(r => r.is_open && r.wait_time > 0);
+            if (openRides.length === 0) {
+                return { score: 0, avgWait: 0, maxWait: 0, openCount: 0, totalCount: rides.length };
+            }
+            const avgWait = openRides.reduce((sum, r) => sum + r.wait_time, 0) / openRides.length;
+            const maxWait = Math.max(...openRides.map(r => r.wait_time));
+            // sqrt 曲線で 0〜100 にマッピング（平均 90 分で 100）
+            const score = Math.min(100, Math.round(Math.sqrt(avgWait / 90) * 100));
+            return { score, avgWait: Math.round(avgWait), maxWait, openCount: openRides.length, totalCount: rides.length };
+        }
+
+        function getCongestionLevel(score) {
+            if (score <= 25) return { label: '空いている', color: '#4ecdc4', emoji: '😊' };
+            if (score <= 50) return { label: 'やや混雑', color: '#f9ca24', emoji: '😐' };
+            if (score <= 75) return { label: '混雑', color: '#e17055', emoji: '😓' };
+            return { label: '激混み', color: '#ff6b6b', emoji: '🔥' };
+        }
+
+        function renderCongestionMeter() {
+            const meter = document.getElementById('congestionMeter');
+            if (!meter || ridesData.length === 0) {
+                if (meter) meter.style.display = 'none';
+                return;
+            }
+
+            const result = computeCongestionScore(ridesData);
+            const level = getCongestionLevel(result.score);
+
+            meter.style.display = 'block';
+
+            // スコア表示
+            const scoreEl = document.getElementById('meterScoreValue');
+            scoreEl.textContent = result.score;
+            scoreEl.style.color = level.color;
+
+            // レベルラベル
+            const labelEl = document.getElementById('meterLabel');
+            labelEl.innerHTML = `<span class="meter-label-emoji">${level.emoji}</span>${level.label}`;
+            labelEl.style.color = level.color;
+
+            // 過去平均との比較コメント
+            const commentEl = document.getElementById('meterComment');
+            if (historicalParkAvg !== null && result.avgWait > 0) {
+                const diff = result.avgWait - historicalParkAvg;
+                const ratio = result.avgWait / historicalParkAvg;
+                if (ratio < 0.8) {
+                    commentEl.textContent = `📉 今日は普段より空いてます！（平均より${Math.round(Math.abs(diff))}分短い）`;
+                } else if (ratio > 1.2) {
+                    commentEl.textContent = `📈 今日は普段より混んでいます...（平均より${Math.round(diff)}分長い）`;
+                } else {
+                    commentEl.textContent = '📊 今日は平均的な混み具合です';
+                }
+            } else if (result.openCount === 0) {
+                commentEl.textContent = '現在運営中のアトラクションがありません';
+            } else {
+                commentEl.textContent = '';
+            }
+
+            // 統計値
+            document.getElementById('meterStats').innerHTML = `
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.openCount}<span class="meter-stat-unit"> / ${result.totalCount}</span></div>
+                    <div class="meter-stat-label">運営中</div>
+                </div>
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.avgWait}<span class="meter-stat-unit">分</span></div>
+                    <div class="meter-stat-label">平均待ち時間</div>
+                </div>
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.maxWait}<span class="meter-stat-unit">分</span></div>
+                    <div class="meter-stat-label">最長待ち時間</div>
+                </div>
+            `;
+
+            // ゲージアニメーション
+            const arc = document.getElementById('meterArc');
+            const totalLength = 283;
+            const targetOffset = totalLength * (1 - result.score / 100);
+            // リセットしてからアニメーション開始
+            arc.style.transition = 'none';
+            arc.style.strokeDashoffset = totalLength;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    arc.style.transition = 'stroke-dashoffset 1.2s ease-out';
+                    arc.style.strokeDashoffset = targetOffset;
+                });
+            });
         }
 
         function loadFavoriteRides() {

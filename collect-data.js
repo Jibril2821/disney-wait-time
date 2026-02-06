@@ -172,9 +172,19 @@ function gitCommitAndPush() {
         } catch (e) {
             // 変更がある場合はエラーになる（正常）
         }
+
+        // 変更がある場合、リモートの最新を取り込んでからコミット
+        try {
+            console.log(`  📥 リモートの最新を取得中...`);
+            execSync('git pull --rebase', { stdio: 'pipe' });
+            console.log(`  ✅ 最新化完了`);
+        } catch (pullError) {
+            // リモート未設定・ネットワークエラー等は無視してコミット継続
+            console.log(`  ⚠️  pull スキップ（リモート未設定の可能性）`);
+        }
         
         // git commit
-        const commitMessage = `📊 Update wait time data - ${timeStr}`;
+        const commitMessage = `📊 待ち時間データ更新 - ${timeStr}`;
         execSync(`git commit -m "${commitMessage}"`, { stdio: 'pipe' });
         console.log(`  ✅ コミット完了`);
         
@@ -192,7 +202,7 @@ function gitCommitAndPush() {
     }
 }
 
-// 時間チェック（8時〜22時の間のみ実行）
+// 時間チェック（9時〜21時の間のみ実行）
 function isWithinOperatingHours() {
     const now = new Date();
     const hour = parseInt(now.toLocaleString('ja-JP', { 
@@ -200,15 +210,15 @@ function isWithinOperatingHours() {
         hour: '2-digit', 
         hour12: false 
     }));
-    return hour >= 8 && hour < 22;
+    return hour >= 9 && hour < 21;
 }
 
 // 実行
 async function main() {
-    // 8時〜22時の範囲外なら終了
+    // 9時〜21時の範囲外なら終了
     if (!isWithinOperatingHours()) {
         const now = new Date();
-        console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（8:00〜22:00のみ実行）`);
+        console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（9:00〜21:00のみ実行）`);
         return;
     }
 
