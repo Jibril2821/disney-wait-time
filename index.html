@@ -725,6 +725,12 @@
             margin-bottom: 15px;
             letter-spacing: 0.5px;
         }
+        .meter-title-note {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #888;
+            margin-left: 4px;
+        }
 
         .meter-gauge {
             position: relative;
@@ -1213,7 +1219,7 @@
                         <div class="header-stats meter-stats" id="meterStats"></div>
                     </div>
                     <div class="congestion-meter" id="congestionMeter" style="display:none;">
-                        <div class="meter-title">パーク混雑スコア</div>
+                        <div class="meter-title">パーク混雑スコア<span class="meter-title-note" id="meterTitleNote"></span></div>
                         <div class="meter-gauge">
                             <svg viewBox="0 0 220 120">
                                 <defs>
@@ -1304,6 +1310,8 @@
         let showFavoritesOnly = false;   // true のときお気に入りのみ表示
         let chanceHighlights = new Map(); // 「今がチャンス！」対象アトラクション情報
         let historicalParkAvg = null;     // 過去7日間の同時間帯パーク平均待ち時間
+        let historicalParkMin = null;     // 過去同時間帯のパーク平均の最小値（混雑スコア用）
+        let historicalParkMax = null;     // 過去同時間帯のパーク平均の最大値（混雑スコア用）
 
         function selectPark(park) {
             currentPark = park;
@@ -1768,6 +1776,8 @@
             // デフォルトでは空にしておく
             chanceHighlights = new Map();
             historicalParkAvg = null;
+            historicalParkMin = null;
+            historicalParkMax = null;
 
             // ローカル収集データが使えない場合や更新時刻が不明な場合はスキップ
             if (!USE_LOCAL_DATA || !lastUpdated) {
@@ -1793,6 +1803,7 @@
             const aggregates = new Map(); // rideId -> { sum, count }
             let historicalParkSum = 0;
             let historicalParkCount = 0;
+            const parkAvgsPerSnapshot = []; // 過去の同時間帯・各スナップショットのパーク平均（混雑スコア用 min/max）
             const MAX_DAYS = 7; // 過去7日分を対象
 
             for (let offset = 1; offset <= MAX_DAYS; offset++) {
@@ -1813,6 +1824,11 @@
                         if (Number.isNaN(hour) || hour !== currentHour) continue;
 
                         const ridesAtTime = record.rides || [];
+                        const openWithWait = ridesAtTime.filter(r => r.is_open && r.wait_time > 0);
+                        if (openWithWait.length > 0) {
+                            const snapshotAvg = openWithWait.reduce((s, r) => s + r.wait_time, 0) / openWithWait.length;
+                            parkAvgsPerSnapshot.push(snapshotAvg);
+                        }
                         for (const r of ridesAtTime) {
                             if (!r.is_open || !r.wait_time || r.wait_time <= 0) continue;
                             const key = String(r.id);
@@ -1832,6 +1848,10 @@
 
             // パーク全体の過去平均待ち時間を保存（混雑スコアメーター用）
             historicalParkAvg = historicalParkCount > 0 ? historicalParkSum / historicalParkCount : null;
+            if (parkAvgsPerSnapshot.length > 0) {
+                historicalParkMin = Math.min(...parkAvgsPerSnapshot);
+                historicalParkMax = Math.max(...parkAvgsPerSnapshot);
+            }
 
             if (aggregates.size === 0) return;
 
@@ -2041,16 +2061,24 @@
         }
 
         // ── 混雑スコアメーター ──
+        // 過去統計 histStats: { min, max } がある場合、現在の平均待ち時間を過去の min〜max の範囲で 0〜100 にマッピング
 
-        function computeCongestionScore(rides) {
+        function computeCongestionScore(rides, histStats) {
             const openRides = rides.filter(r => r.is_open && r.wait_time > 0);
             if (openRides.length === 0) {
                 return { score: 0, avgWait: 0, maxWait: 0, openCount: 0, totalCount: rides.length };
             }
             const avgWait = openRides.reduce((sum, r) => sum + r.wait_time, 0) / openRides.length;
             const maxWait = Math.max(...openRides.map(r => r.wait_time));
-            // sqrt 曲線で 0〜100 にマッピング（平均 90 分で 100）
-            const score = Math.min(100, Math.round(Math.sqrt(avgWait / 90) * 100));
+            let score;
+            if (histStats && histStats.min != null && histStats.max != null && histStats.max > histStats.min) {
+                // 過去の同時間帯の min〜max の範囲に対して現在値を 0〜100 にマッピング
+                const raw = ((avgWait - histStats.min) / (histStats.max - histStats.min)) * 100;
+                score = Math.round(Math.max(0, Math.min(100, raw)));
+            } else {
+                // 過去統計がない場合は従来の sqrt 曲線（平均 90 分で 100）
+                score = Math.min(100, Math.round(Math.sqrt(avgWait / 90) * 100));
+            }
             return { score, avgWait: Math.round(avgWait), maxWait, openCount: openRides.length, totalCount: rides.length };
         }
 
@@ -2070,10 +2098,17 @@
                 return;
             }
 
-            const result = computeCongestionScore(ridesData);
+            const histStats = (historicalParkMin != null && historicalParkMax != null)
+                ? { min: historicalParkMin, max: historicalParkMax } : null;
+            const result = computeCongestionScore(ridesData, histStats);
             const level = getCongestionLevel(result.score);
 
             meter.style.display = 'block';
+
+            const titleNoteEl = document.getElementById('meterTitleNote');
+            if (titleNoteEl) {
+                titleNoteEl.textContent = histStats ? '（過去7日・同時間帯と比較）' : '';
+            }
 
             // スコア表示
             const scoreEl = document.getElementById('meterScoreValue');
