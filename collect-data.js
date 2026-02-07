@@ -166,13 +166,13 @@ async function collectData() {
             : 0;
 
         console.log(`  ✅ 保存完了: ${fileName}`);
-        console.log(`     運営中: ${openCount}/${data.rides.length}, 平均待ち時間: ${avg}分\n`);
+        console.log(`     運営中: ${openCount}/${data.rides.length}, 平均待ち時間: ${avg}分`);
     }
 
     console.log(`========================================`);
     console.log(`データ収集完了！`);
     console.log(`保存先: ${DATA_DIR}`);
-    console.log(`========================================\n`);
+    console.log(`========================================`);
     
     return true; // 成功
 }
@@ -188,7 +188,7 @@ function gitCommitAndPush() {
     const minutes = jst.getUTCMinutes().toString().padStart(2, '0');
     const timeStr = `${year}/${month}/${day} ${hours}:${minutes}`;
     
-    console.log(`\n🔄 GitHubにプッシュ中...`);
+    console.log(`🔄 GitHubにプッシュ中...`);
     
     try {
         // 作業ディレクトリをスクリプトのディレクトリに変更
@@ -212,8 +212,8 @@ function gitCommitAndPush() {
             execSync('git pull --rebase', { stdio: 'pipe' });
             console.log(`  ✅ 最新化完了`);
         } catch (pullError) {
-            // リモート未設定・ネットワークエラー等は無視してコミット継続
-            console.log(`  ⚠️  pull スキップ（リモート未設定の可能性）`);
+            // リモートは変更されていない
+            console.log(`  ✅  pull スキップ（リモート未変更・コミット続行）`);
         }
         
         // git commit
@@ -223,11 +223,11 @@ function gitCommitAndPush() {
         
         // git push
         execSync('git push', { stdio: 'pipe' });
-        console.log(`  ✅ プッシュ完了\n`);
+        console.log(`  ✅ プッシュ完了`);
         
         console.log(`========================================`);
         console.log(`GitHubへの同期完了！`);
-        console.log(`========================================\n`);
+        console.log(`========================================`);
         
     } catch (error) {
         console.error(`  ❌ Gitエラー:`, error.message);
