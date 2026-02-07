@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>東京ディズニーリゾート 待ち時間</title>
     <style>
@@ -32,12 +35,14 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: clamp(24px, 5vw, 48px) 20px;
         }
 
         .park-select-title {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            margin-bottom: 0.5em;
+            letter-spacing: 0.04em;
+            line-height: 1.25;
             background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -46,9 +51,14 @@
         }
 
         .park-select-subtitle {
-            color: #a0a0a0;
-            font-size: 1.1rem;
-            margin-bottom: 50px;
+            color: rgba(255,255,255,0.6);
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            line-height: 1.65;
+            text-align: center;
+            max-width: 22em;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: clamp(2.75rem, 7vw, 4.5rem);
         }
 
         .park-cards {
@@ -141,6 +151,46 @@
 
         .main-screen.active {
             display: block;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        /* プルで更新（一番上からさらに上に引いたらリロード） */
+        .pull-refresh-wrapper {
+            min-height: 100%;
+            transition: transform 0.15s ease-out;
+            will-change: transform;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        .pull-refresh-indicator {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            /* 背景は付けず、wrapper のグラデーションがそのまま続いて見えるようにする */
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .pull-refresh-icon {
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .pull-refresh-indicator.ready .pull-refresh-icon {
+            transform: scale(1.2);
+        }
+
+        .pull-refresh-indicator.refreshing .pull-refresh-icon {
+            animation: spin 0.8s linear infinite;
+        }
+
+        .pull-refresh-indicator.refreshing .pull-refresh-text {
+            opacity: 0.9;
         }
 
         header {
@@ -173,26 +223,36 @@
 
         .header-buttons {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 15px;
         }
 
-        .back-btn, .history-btn {
+        .back-btn {
+            margin-right: auto;
+        }
+
+        .back-btn, .history-btn, .planner-btn {
             padding: 10px 20px;
             border: none;
             border-radius: 25px;
-            background: rgba(255,255,255,0.1);
             color: #fff;
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 6px;
             text-decoration: none;
         }
 
-        .back-btn:hover, .history-btn:hover {
+        .back-btn {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .back-btn:hover {
             background: rgba(255,255,255,0.2);
         }
 
@@ -207,6 +267,10 @@
         h1 {
             font-size: 2.2rem;
             margin-bottom: 10px;
+        }
+
+        /* パーク名のみグラデーション（絵文字はそのまま表示） */
+        #parkTitle .park-title-text {
             background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -284,6 +348,21 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.4);
         }
 
+        .ride-search-input {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            min-width: 160px;
+        }
+
+        .ride-search-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
         .sort-select {
             padding: 12px 20px;
             border: none;
@@ -300,23 +379,23 @@
             color: #fff;
         }
 
-        /* エリアタブ */
+        /* エリアタブ（PC: 表示幅から計算して一行に収める） */
         .area-tabs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            display: flex;
+            flex-wrap: nowrap;
             gap: 10px;
             margin-bottom: 25px;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 100%;
         }
 
         .area-tab {
-            padding: 12px 16px;
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 12px 8px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: clamp(0.7rem, 1.2vw, 0.85rem);
             font-weight: 600;
             transition: all 0.3s ease;
             background: rgba(255,255,255,0.08);
@@ -324,8 +403,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             text-align: center;
+            overflow: hidden;
+        }
+
+        .area-tab span:not(.area-icon):not(.area-count) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .area-tab:hover {
@@ -528,19 +614,35 @@
 
         /* 待ち時間の色スタイルは park-data.js から動的に注入されます */
 
+        /* 待ち時間取得中：画面全体を暗くし、中央に表示 */
         .loading {
-            text-align: center;
-            padding: 100px 20px;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .loading p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.05rem;
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255,255,255,0.1);
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(255, 255, 255, 0.15);
             border-top-color: #4ecdc4;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            flex-shrink: 0;
         }
 
         @keyframes spin {
@@ -553,48 +655,6 @@
             background: rgba(255,107,107,0.1);
             border-radius: 20px;
             color: #ff6b6b;
-        }
-
-        .refresh-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border: none;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: #fff;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(78,205,196,0.4);
-            transition: all 0.3s ease;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
-        .refresh-btn.visible {
-            display: flex;
-        }
-
-        .refresh-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 30px rgba(78,205,196,0.6);
-        }
-
-        .refresh-btn .refresh-icon {
-            display: inline-block;
-            transition: transform 0.3s ease;
-        }
-
-        .refresh-btn.loading {
-            pointer-events: none;
-        }
-
-        .refresh-btn.loading .refresh-icon {
-            animation: spin 1s linear infinite;
         }
 
         /* TDL エリアカラー（セクション用） */
@@ -637,16 +697,49 @@
 
         @media (max-width: 768px) {
             .park-select-title {
-                font-size: 1.8rem;
+                font-size: 1.75rem;
+                letter-spacing: 0.03em;
+            }
+
+            .park-select-subtitle {
+                margin-bottom: 8vw;
+                max-width: 90%;
             }
 
             .park-cards {
-                flex-direction: column;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 2.5vw;
+                width: 100%;
+                max-width: 100%;
+                padding: 0 1vw;
             }
 
             .park-card {
-                width: 100%;
-                max-width: 320px;
+                flex: 1 1 0;
+                min-width: 0;
+                width: auto;
+                max-width: none;
+                padding: 4vw 2vw;
+                border-radius: 4vw;
+            }
+
+            .park-card .park-icon {
+                font-size: clamp(1.75rem, 10vw, 3rem);
+                margin-bottom: 2vw;
+            }
+
+            .park-card .park-name {
+                font-size: clamp(0.85rem, 3.8vw, 1.2rem);
+                margin-bottom: 1.5vw;
+            }
+
+            .park-card .park-description {
+                font-size: clamp(0.65rem, 2.2vw, 0.8rem);
+            }
+
+            .park-card:hover {
+                transform: translateY(-4px);
             }
 
             h1 {
@@ -654,13 +747,32 @@
             }
 
             .header-buttons {
-                flex-direction: column;
-                gap: 10px;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 6px;
+            }
+
+            .back-btn {
+                margin-right: 0;
             }
 
             .back-btn, .history-btn, .planner-btn {
-                width: 100%;
-                justify-content: center;
+                flex: 1 1 0;
+                min-width: 0;
+                width: auto;
+                padding: 10px 6px;
+                font-size: 0.7rem;
+                border-radius: 14px;
+            }
+
+            .header-btn-icon {
+                flex-shrink: 0;
+            }
+
+            .header-btn-text {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .rides-grid {
@@ -671,17 +783,22 @@
                 flex-direction: column;
             }
 
-            .filter-btn, .sort-select {
+            .filter-btn, .sort-select, .ride-search-input {
                 width: 100%;
                 text-align: center;
             }
+            .ride-search-input { min-width: 0; }
 
             .area-tabs {
+                display: grid;
                 grid-template-columns: repeat(2, 1fr);
+                flex-wrap: wrap;
                 gap: 8px;
             }
 
             .area-tab {
+                flex: none;
+                min-width: unset;
                 padding: 10px 12px;
                 font-size: 0.75rem;
             }
@@ -717,6 +834,8 @@
             color: #a0a0a0;
             margin-bottom: 15px;
             letter-spacing: 0.5px;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
         .meter-title-note {
             font-size: 0.75rem;
@@ -806,6 +925,18 @@
         }
 
         @media (max-width: 768px) {
+            .congestion-meter {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+            }
+            .meter-title,
+            .meter-label,
+            .meter-comment {
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+                word-break: normal;
+            }
             .meter-gauge {
                 width: 180px;
                 height: 105px;
@@ -819,25 +950,8 @@
         }
 
         /* 回り順プランナー */
-        .header-right-btns {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
         .planner-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
             background: linear-gradient(135deg, rgba(249,202,36,0.3), rgba(240,147,43,0.3));
-            color: #fff;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
         }
 
         .planner-btn:hover {
@@ -1150,10 +1264,6 @@
         }
 
         @media (max-width: 768px) {
-            .header-right-btns {
-                flex-direction: column;
-                width: 100%;
-            }
             .planner-overlay {
                 padding: 0;
             }
@@ -1190,24 +1300,30 @@
 
     <!-- メイン画面 -->
     <div class="main-screen" id="mainScreen">
-        <div class="container">
+        <div class="pull-refresh-wrapper" id="pullRefreshWrapper">
+            <div class="pull-refresh-indicator" id="pullRefreshIndicator">
+                <span class="pull-refresh-icon" id="pullRefreshIcon">↓</span>
+                <span class="pull-refresh-text" id="pullRefreshText">引いて更新</span>
+            </div>
+            <div class="container">
             <header>
                 <div class="header-buttons">
                     <button class="back-btn" onclick="goBack()">
-                        ← パーク選択に戻る
+                        <span class="header-btn-icon">←</span>
+                        <span class="header-btn-text">パーク選択に戻る</span>
                     </button>
-                    <div class="header-right-btns">
-                        <button class="planner-btn" onclick="openPlanner()">
-                            🗺️ 回り順プランナー
-                        </button>
-                        <a href="#" class="history-btn" id="historyBtn" onclick="goToHistory()">
-                            📊 履歴を見る
-                        </a>
-                    </div>
+                    <button class="planner-btn" onclick="openPlanner()">
+                        <span class="header-btn-icon">🗺️</span>
+                        <span class="header-btn-text">回り順プランナー</span>
+                    </button>
+                    <a href="#" class="history-btn" id="historyBtn" onclick="goToHistory()">
+                        <span class="header-btn-icon">📊</span>
+                        <span class="header-btn-text">履歴を見る</span>
+                    </a>
                 </div>
                 <div class="header-main">
                     <div class="header-title-block">
-                        <h1 id="parkTitle">🏰 東京ディズニーランド</h1>
+                        <h1 id="parkTitle"><span class="park-title-icon">🏰</span><span class="park-title-text">東京ディズニーランド</span></h1>
                         <p class="subtitle">リアルタイム待ち時間情報</p>
                         <div class="last-updated" id="lastUpdated">読み込み中...</div>
                         <div class="header-stats meter-stats" id="meterStats"></div>
@@ -1248,6 +1364,7 @@
                 <button class="filter-btn" data-filter="open">運営中のみ</button>
                 <button class="filter-btn" data-filter="closed">休止中のみ</button>
                 <button class="fav-toggle-btn" id="favToggleBtn">★ お気に入りだけ表示</button>
+                <input type="text" class="ride-search-input" id="rideSearchInput" placeholder="名前で検索" autocomplete="off">
                 <select class="sort-select" id="sortSelect">
                     <option value="name">名前順</option>
                     <option value="wait-asc">待ち時間（短い順）</option>
@@ -1262,9 +1379,8 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
-
-    <button class="refresh-btn" id="refreshBtn" title="更新"><span class="refresh-icon">↻</span></button>
 
     <!-- 回り順プランナーモーダル -->
     <div class="planner-overlay" id="plannerOverlay" style="display:none;" onclick="closePlannerOverlay(event)">
@@ -1300,18 +1416,18 @@
         let favoriteRideIds = new Set(); // history.html と共有するお気に入りID群（文字列）
         let showFavoritesOnly = false;   // true のときお気に入りのみ表示
         let chanceHighlights = new Map(); // 「今がチャンス！」対象アトラクション情報
-        let historicalParkAvg = null;     // 過去7日間の同時間帯パーク平均待ち時間
+        let historicalParkAvg = null;     // 過去約1か月の同じ曜日・同時間帯パーク平均待ち時間
         let historicalParkMin = null;     // 過去同時間帯のパーク平均の最小値（混雑スコア用）
         let historicalParkMax = null;     // 過去同時間帯のパーク平均の最大値（混雑スコア用）
+        let rideNameSearchQuery = '';     // アトラクション名の部分一致検索
 
         function selectPark(park) {
             currentPark = park;
             document.getElementById('parkSelectScreen').style.display = 'none';
             document.getElementById('mainScreen').classList.add('active');
-            document.getElementById('refreshBtn').classList.add('visible');
-            
+
             const parkInfo = PARKS[park];
-            document.getElementById('parkTitle').textContent = `${parkInfo.icon} ${parkInfo.name}`;
+            document.getElementById('parkTitle').innerHTML = `<span class="park-title-icon">${parkInfo.icon}</span><span class="park-title-text">${parkInfo.name}</span>`;
             
             // 表示をリセット
             resetDisplay();
@@ -1325,12 +1441,7 @@
 
         function resetDisplay() {
             document.getElementById('lastUpdated').textContent = '読み込み中...';
-            const meter = document.getElementById('congestionMeter');
-            if (meter) meter.style.display = 'none';
-            
-            // エリアタブをクリア
-            document.getElementById('areaTabs').innerHTML = '';
-            
+            // 混雑スコア・エリアタブは非表示にせずそのまま（取得完了後に更新される）
             // コンテンツを読み込み中表示に
             document.getElementById('ridesContainer').innerHTML = `
                 <div class="loading">
@@ -1352,13 +1463,15 @@
             }
             document.getElementById('sortSelect').value = 'name';
             currentSort = 'name';
+            rideNameSearchQuery = '';
+            const searchInput = document.getElementById('rideSearchInput');
+            if (searchInput) searchInput.value = '';
         }
 
         function goBack() {
             document.getElementById('parkSelectScreen').style.display = 'flex';
             document.getElementById('mainScreen').classList.remove('active');
-            document.getElementById('refreshBtn').classList.remove('visible');
-            
+
             currentPark = null;
             
             if (autoRefreshInterval) {
@@ -1477,9 +1590,6 @@
         }
 
         async function fetchQueueTimes() {
-            const refreshBtn = document.getElementById('refreshBtn');
-            refreshBtn.classList.add('loading');
-
             try {
                 const parkInfo = PARKS[currentPark];
                 let rides = [];
@@ -1526,8 +1636,6 @@
                         <p style="margin-top: 10px; font-size: 0.9rem;">Supabase を使用する場合は supabase-config.js に設定し、データが登録されているか確認してください。</p>
                     </div>
                 `;
-            } finally {
-                refreshBtn.classList.remove('loading');
             }
         }
 
@@ -1647,6 +1755,12 @@
             // お気に入りフィルタ（有効時＆お気に入りが1件以上ある場合）
             if (showFavoritesOnly && favoriteRideIds.size > 0) {
                 filtered = filtered.filter(r => favoriteRideIds.has(String(r.id)));
+            }
+
+            // 名前の部分一致検索
+            const q = (rideNameSearchQuery || '').trim().toLowerCase();
+            if (q) {
+                filtered = filtered.filter(r => (r.displayName || '').toLowerCase().includes(q));
             }
             
             return filtered;
@@ -1830,10 +1944,10 @@
             let historicalParkSum = 0;
             let historicalParkCount = 0;
             const parkAvgsPerSnapshot = []; // 過去の同時間帯・各スナップショットのパーク平均（混雑スコア用 min/max）
-            const MAX_DAYS = 7; // 過去7日分を対象
+            const MAX_WEEKS = 5; // 過去約1か月の同じ曜日を対象（最大5週間前まで）
 
-            for (let offset = 1; offset <= MAX_DAYS; offset++) {
-                const target = new Date(baseDate.getTime() - offset * 86400000);
+            for (let weekOffset = 1; weekOffset <= MAX_WEEKS; weekOffset++) {
+                const target = new Date(baseDate.getTime() - weekOffset * 7 * 86400000);
                 const y = target.getFullYear();
                 const m = String(target.getMonth() + 1).padStart(2, '0');
                 const d = String(target.getDate()).padStart(2, '0');
@@ -2133,7 +2247,7 @@
 
             const titleNoteEl = document.getElementById('meterTitleNote');
             if (titleNoteEl) {
-                titleNoteEl.textContent = histStats ? '（過去7日・同時間帯と比較）' : '';
+                titleNoteEl.textContent = histStats ? '（過去1か月の同じ曜日・同時間帯と比較）' : '';
             }
 
             // スコア表示
@@ -2152,9 +2266,9 @@
                 const diff = result.avgWait - historicalParkAvg;
                 const ratio = result.avgWait / historicalParkAvg;
                 if (ratio < 0.8) {
-                    commentEl.textContent = `📉 今日は普段より空いてます！（平均より${Math.round(Math.abs(diff))}分短い）`;
+                    commentEl.innerHTML = `📉 今日は普段より空いてます！<br>（平均より${Math.round(Math.abs(diff))}分短い）`;
                 } else if (ratio > 1.2) {
-                    commentEl.textContent = `📈 今日は普段より混んでいます...（平均より${Math.round(diff)}分長い）`;
+                    commentEl.innerHTML = `📈 今日は普段より混んでいます...<br>（平均より${Math.round(diff)}分長い）`;
                 } else {
                     commentEl.textContent = '📊 今日は平均的な混み具合です';
                 }
@@ -2245,6 +2359,14 @@
             renderRides();
         });
 
+        const rideSearchInput = document.getElementById('rideSearchInput');
+        if (rideSearchInput) {
+            rideSearchInput.addEventListener('input', () => {
+                rideNameSearchQuery = rideSearchInput.value;
+                renderRides();
+            });
+        }
+
         const favToggleBtn = document.getElementById('favToggleBtn');
         if (favToggleBtn) {
             favToggleBtn.addEventListener('click', () => {
@@ -2254,7 +2376,111 @@
             });
         }
 
-        document.getElementById('refreshBtn').addEventListener('click', fetchQueueTimes);
+        // ── プルで更新（一番上からさらに上に引いたらリロード） ──
+        const PULL_THRESHOLD = 70;
+        const PULL_MAX = 110;
+        let pullStartY = 0;
+        let pullCurrentY = 0;
+        let isPullRefreshing = false;
+
+        function getScrollTop() {
+            return window.scrollY ?? document.documentElement.scrollTop;
+        }
+
+        async function runPullRefresh() {
+            const wrapper = document.getElementById('pullRefreshWrapper');
+            const indicator = document.getElementById('pullRefreshIndicator');
+            const icon = document.getElementById('pullRefreshIcon');
+            const text = document.getElementById('pullRefreshText');
+            if (!wrapper || !indicator || isPullRefreshing || !currentPark) return;
+            isPullRefreshing = true;
+            indicator.classList.remove('ready');
+            indicator.classList.add('refreshing');
+            icon.textContent = '↻';
+            text.textContent = '更新中...';
+            wrapper.style.transition = 'transform 0.2s ease';
+            wrapper.style.transform = 'translateY(56px)';
+            try {
+                await fetchQueueTimes();
+            } finally {
+                setTimeout(() => {
+                    wrapper.style.transition = 'transform 0.25s ease';
+                    wrapper.style.transform = 'translateY(0)';
+                    indicator.classList.remove('refreshing', 'ready');
+                    icon.textContent = '↓';
+                    text.textContent = '引いて更新';
+                    isPullRefreshing = false;
+                }, 300);
+            }
+        }
+
+        function updatePullIndicator(pullDistance) {
+            const wrapper = document.getElementById('pullRefreshWrapper');
+            const indicator = document.getElementById('pullRefreshIndicator');
+            if (!wrapper || !indicator) return;
+            const damped = Math.min(pullDistance, PULL_MAX) * 0.6;
+            wrapper.style.transition = 'none';
+            wrapper.style.transform = `translateY(${damped}px)`;
+            indicator.classList.toggle('ready', damped >= PULL_THRESHOLD);
+        }
+
+        function resetPullIndicator() {
+            const wrapper = document.getElementById('pullRefreshWrapper');
+            const indicator = document.getElementById('pullRefreshIndicator');
+            const icon = document.getElementById('pullRefreshIcon');
+            const text = document.getElementById('pullRefreshText');
+            if (!wrapper || !indicator) return;
+            wrapper.style.transition = 'transform 0.25s ease';
+            wrapper.style.transform = 'translateY(0)';
+            indicator.classList.remove('ready', 'refreshing');
+            if (icon) icon.textContent = '↓';
+            if (text) text.textContent = '引いて更新';
+        }
+
+        function setupPullRefresh() {
+            const mainScreen = document.getElementById('mainScreen');
+            if (!mainScreen) return;
+
+            function onPointerStart(e) {
+                if (!currentPark || isPullRefreshing || !mainScreen.classList.contains('active')) return;
+                if (getScrollTop() > 5) return;
+                pullStartY = e.touches ? e.touches[0].clientY : e.clientY;
+                pullCurrentY = pullStartY;
+            }
+
+            function onPointerMove(e) {
+                if (!currentPark || isPullRefreshing || pullStartY === 0) return;
+                const y = e.touches ? e.touches[0].clientY : e.clientY;
+                pullCurrentY = y;
+                if (getScrollTop() > 5) { pullStartY = 0; resetPullIndicator(); return; }
+                const delta = y - pullStartY;
+                if (delta > 0) {
+                    e.preventDefault();
+                    updatePullIndicator(delta);
+                }
+            }
+
+            function onPointerEnd() {
+                if (pullStartY === 0) return;
+                const delta = pullCurrentY - pullStartY;
+                if (delta >= PULL_THRESHOLD && !isPullRefreshing) {
+                    runPullRefresh();
+                } else {
+                    resetPullIndicator();
+                }
+                pullStartY = 0;
+                pullCurrentY = 0;
+            }
+
+            mainScreen.addEventListener('touchstart', onPointerStart, { passive: true });
+            mainScreen.addEventListener('touchmove', onPointerMove, { passive: false });
+            mainScreen.addEventListener('touchend', onPointerEnd, { passive: true });
+            mainScreen.addEventListener('mousedown', onPointerStart);
+            mainScreen.addEventListener('mousemove', onPointerMove);
+            mainScreen.addEventListener('mouseup', onPointerEnd);
+            mainScreen.addEventListener('mouseleave', () => { if (pullStartY) { pullStartY = 0; pullCurrentY = 0; resetPullIndicator(); } });
+        }
+        setupPullRefresh();
 
         // URLパラメータからパークを自動選択（履歴ページから戻った時用）
         const urlParams = new URLSearchParams(window.location.search);

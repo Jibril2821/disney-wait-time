@@ -37,13 +37,13 @@ set /p CHOICE="番号を入力 (1-4): "
 
 if "%CHOICE%"=="1" (
     set INTERVAL=5
-    set DURATION=12:00
+    set DURATION=12:05
 ) else if "%CHOICE%"=="2" (
     set INTERVAL=15
-    set DURATION=12:00
+    set DURATION=12:15
 ) else if "%CHOICE%"=="3" (
     set INTERVAL=30
-    set DURATION=12:00
+    set DURATION=12:30
 ) else if "%CHOICE%"=="4" (
     echo キャンセルしました。
     pause
@@ -57,7 +57,7 @@ if "%CHOICE%"=="1" (
 echo.
 echo 登録するタスク:
 echo   - 名前: DisneyWaitTimeCollector
-echo   - 実行間隔: %INTERVAL%分ごと（9:00〜21:00）
+echo   - 実行間隔: %INTERVAL%分ごと（9:00〜21:00、21:00含む）
 echo   - スクリプト: %SCRIPT_PATH%
 echo.
 
@@ -82,7 +82,7 @@ if %errorlevel% equ 0 (
     echo [成功] タスクが登録されました！
     echo ========================================
     echo.
-    echo 9:00〜21:00の間、%INTERVAL%分ごとに自動でデータが収集され、GitHubにプッシュされます。
+    echo 9:00〜21:00の間（21:00含む）、%INTERVAL%分ごとに自動でデータが収集され、GitHubにプッシュされます。
     echo データは %~dp0data\ フォルダに保存されます。
     echo.
     echo タスクを削除するには以下のコマンドを実行:

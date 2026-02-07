@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>待ち時間履歴ビューア</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -134,6 +137,21 @@
             color: #fff;
         }
 
+        .ride-search-input {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            min-width: 160px;
+        }
+
+        .ride-search-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
         /* 期間選択タブ */
         .period-tabs {
             display: flex;
@@ -210,20 +228,35 @@
             color: #a0a0a0;
         }
 
+        /* 読み込み中：画面全体を暗くし、中央に表示（リアルタイム画面と同様） */
         .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #a0a0a0;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .loading p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.05rem;
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255,255,255,0.1);
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(255, 255, 255, 0.15);
             border-top-color: #4ecdc4;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            flex-shrink: 0;
         }
 
         @keyframes spin {
@@ -485,23 +518,23 @@
             transform: translateY(-2px);
         }
 
-        /* エリアタブ */
+        /* エリアタブ（PC: 表示幅から計算して一行に収める） */
         .area-tabs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            display: flex;
+            flex-wrap: nowrap;
             gap: 10px;
             margin-bottom: 25px;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 100%;
         }
 
         .area-tab {
-            padding: 12px 16px;
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 12px 8px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: clamp(0.7rem, 1.2vw, 0.85rem);
             font-weight: 600;
             transition: all 0.3s ease;
             background: rgba(255,255,255,0.08);
@@ -509,8 +542,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             text-align: center;
+            overflow: hidden;
+        }
+
+        .area-tab span:not(.area-icon):not(.area-count) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .area-tab:hover {
@@ -1148,25 +1188,36 @@
                 font-size: 1.5rem;
             }
 
+            header {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
             .back-btn {
                 position: static;
                 margin-bottom: 20px;
+                align-self: flex-start;
             }
 
             .controls {
                 flex-direction: column;
             }
 
-            select, .btn {
+            select, .btn, .ride-search-input {
                 width: 100%;
             }
 
             .area-tabs {
+                display: grid;
                 grid-template-columns: repeat(2, 1fr);
+                flex-wrap: wrap;
                 gap: 8px;
             }
 
             .area-tab {
+                flex: none;
+                min-width: unset;
                 padding: 10px 12px;
                 font-size: 0.75rem;
             }
@@ -1179,6 +1230,14 @@
                 flex-direction: column;
                 text-align: center;
                 gap: 10px;
+            }
+
+            /* スマホ表示時は待ち時間推移グラフを非表示 */
+            .overview-chart-container {
+                display: none !important;
+            }
+            .chart-container:has(#waitTimeChart) {
+                display: none !important;
             }
         }
     </style>
@@ -1207,9 +1266,7 @@
             <select id="dateSelect">
                 <option value="">日付を選択...</option>
             </select>
-            <select id="rideSelect" disabled>
-                <option value="all">すべてのアトラクション</option>
-            </select>
+            <input type="text" class="ride-search-input" id="rideSearchInput" placeholder="名前で検索" autocomplete="off">
         </div>
 
         <div id="content">
@@ -1349,7 +1406,6 @@
                 records: allRecords
             };
 
-            populateRideSelect();
             showAllRides();
         }
 
@@ -1427,12 +1483,10 @@
             return date.toLocaleDateString('ja-JP', options);
         }
 
-        function populateRideSelect() {
-            const select = document.getElementById('rideSelect');
-            select.innerHTML = '<option value="all">すべてのアトラクション</option>';
-            
-            if (!loadedData || loadedData.records.length === 0) return;
-
+        /** 読み込み済みデータからアトラクション一覧（id, name）を取得（比較モード用） */
+        function getRideListFromLoadedData() {
+            const list = [];
+            if (!loadedData || !loadedData.records.length) return list;
             const ridesMap = new Map();
             for (const record of loadedData.records) {
                 for (const ride of record.rides) {
@@ -1441,18 +1495,7 @@
                     }
                 }
             }
-
-            const sortedRides = [...ridesMap.entries()].sort((a, b) => a[1].localeCompare(b[1], 'ja'));
-            
-            for (const [id, name] of sortedRides) {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = name;
-                select.appendChild(option);
-            }
-
-            select.disabled = false;
-            select.value = 'all';
+            return [...ridesMap.entries()].sort((a, b) => a[1].localeCompare(b[1], 'ja'));
         }
 
         function showAllRides() {
@@ -1529,6 +1572,13 @@
                 filteredCards = filteredCards.filter(r => favoriteRideIds.has(String(r.id)));
             }
 
+            // 名前の部分一致検索
+            const searchEl = document.getElementById('rideSearchInput');
+            const searchQ = (searchEl && searchEl.value) ? searchEl.value.trim().toLowerCase() : '';
+            if (searchQ) {
+                filteredCards = filteredCards.filter(r => (r.name || '').toLowerCase().includes(searchQ));
+            }
+
             const openCount = filteredCards.filter(r => r.lastOpen).length;
 
             content.innerHTML = `
@@ -1579,6 +1629,9 @@
             // 全体グラフを描画
             renderOverviewChart(filteredCards);
 
+            // スマホ表示時、ヒートマップの横スクロールを現在時刻の位置に
+            setTimeout(() => scrollHeatmapToCurrentTime(content), 0);
+
             // お気に入りトグルボタンのイベントリスナー
             const favToggleBtn = document.getElementById('favToggleBtn');
             if (favToggleBtn) {
@@ -1627,7 +1680,6 @@
             content.querySelectorAll('.ride-card').forEach(card => {
                 card.addEventListener('click', () => {
                     const rideId = parseInt(card.dataset.rideId);
-                    document.getElementById('rideSelect').value = rideId;
                     showRideDetail(rideId);
                 });
             });
@@ -1907,10 +1959,6 @@
 
                         if (candidates.length === 1) {
                             const target = candidates[0];
-                            const rideSelect = document.getElementById('rideSelect');
-                            if (rideSelect) {
-                                rideSelect.value = String(target.rideId);
-                            }
                             showRideDetail(target.rideId);
                             return;
                         }
@@ -2955,6 +3003,8 @@
             setupCompareControls(rideId, rideName, rideData);
             renderChart(rideName, rideData, rideId);
             renderTable(rideData);
+            // スマホ表示時、ヒートマップの横スクロールを現在時刻の位置に
+            setTimeout(() => scrollHeatmapToCurrentTime(content), 0);
         }
 
         function collectRideData(rideId) {
@@ -2985,29 +3035,24 @@
         function setupCompareControls(primaryRideId, primaryRideName, primaryRideData) {
             const select = document.getElementById('compareSelect');
             const chipsContainer = document.getElementById('compareChips');
-            const rideSelect = document.getElementById('rideSelect');
-            if (!select || !chipsContainer || !rideSelect) return;
+            if (!select || !chipsContainer) return;
+
+            const rideList = getRideListFromLoadedData();
+            const labelMap = new Map(rideList.map(([id, name]) => [String(id), name]));
 
             // 比較対象候補をセレクトにセット（現在のプライマリと既に追加済みは除外）
             select.innerHTML = '<option value="">アトラクションを選択して追加...</option>';
-            Array.from(rideSelect.options).forEach(opt => {
-                if (opt.value === 'all') return;
-                if (String(opt.value) === String(primaryRideId)) return;
-                if (compareRideIds.has(String(opt.value))) return;
+            rideList.forEach(([id, name]) => {
+                if (String(id) === String(primaryRideId)) return;
+                if (compareRideIds.has(String(id))) return;
                 const option = document.createElement('option');
-                option.value = opt.value;
-                option.textContent = opt.textContent;
+                option.value = id;
+                option.textContent = name;
                 select.appendChild(option);
             });
 
             // 現在の比較対象チップを描画（存在しないIDは除外）
             const validCompareIds = [];
-            const labelMap = new Map();
-            Array.from(rideSelect.options).forEach(opt => {
-                if (opt.value !== 'all') {
-                    labelMap.set(String(opt.value), opt.textContent);
-                }
-            });
             compareRideIds.forEach(id => {
                 if (labelMap.has(id) && id !== String(primaryRideId)) {
                     validCompareIds.push(id);
@@ -3294,7 +3339,6 @@
 
         function backToList() {
             currentDetailRideId = null;
-            document.getElementById('rideSelect').value = 'all';
             showAllRides();
         }
 
@@ -3342,6 +3386,46 @@
             const ymd = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
             const [y, m, d] = ymd.split('-');
             return { year: parseInt(y, 10), month: m, day: d };
+        }
+
+        /** スマホ表示時、ヒートマップの横スクロールを現在時刻の列の位置に合わせる */
+        function scrollHeatmapToCurrentTime(container) {
+            if (!window.matchMedia('(max-width: 768px)').matches) return;
+            const root = container && container.nodeType === 1 ? container : document;
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: 'numeric', minute: 'numeric', hour12: false });
+            const parts = formatter.formatToParts(now);
+            const hour = parseInt(parts.find(p => p.type === 'hour').value, 10) || 0;
+            const minute = parseInt(parts.find(p => p.type === 'minute').value, 10) || 0;
+            // 9:00〜21:00 を30分刻み → スロット index 0〜24。範囲外の場合は先頭または末尾へ
+            let slotIndex = (hour - 9) * 2 + (minute >= 30 ? 1 : 0);
+            const beforeRange = slotIndex < 0;   // 9:00より前
+            const afterRange = slotIndex > 24;  // 21:00より後
+            if (beforeRange) slotIndex = 0;
+            if (afterRange) slotIndex = 24;
+            const thIndex = slotIndex + 1;
+
+            root.querySelectorAll('.heatmap-table-wrapper').forEach(wrapper => {
+                requestAnimationFrame(() => {
+                    if (beforeRange) {
+                        wrapper.scrollLeft = 0;
+                        return;
+                    }
+                    if (afterRange) {
+                        wrapper.scrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+                        return;
+                    }
+                    const table = wrapper.querySelector('.heatmap-table');
+                    if (!table) return;
+                    const headerRow = table.querySelector('thead tr');
+                    if (!headerRow) return;
+                    const ths = headerRow.querySelectorAll('th');
+                    if (ths.length <= thIndex) return;
+                    const th = ths[thIndex];
+                    if (!th) return;
+                    wrapper.scrollLeft = Math.max(0, th.offsetLeft - 20);
+                });
+            });
         }
 
         function renderCompareSection() {
@@ -3566,10 +3650,6 @@
                 item.appendChild(meta);
 
                 item.addEventListener('click', () => {
-                    const rideSelect = document.getElementById('rideSelect');
-                    if (rideSelect) {
-                        rideSelect.value = String(c.rideId);
-                    }
                     showRideDetail(c.rideId);
                     overlay.remove();
                 });
@@ -3641,10 +3721,6 @@
                 tab.classList.add('active');
                 currentPeriod = tab.dataset.period;
                 selectedAreas = [];
-                // アトラクション個別画面でない場合のみリセット
-                if (currentDetailRideId === null) {
-                    document.getElementById('rideSelect').value = 'all';
-                }
                 await updateDateSelectOptions();
             });
         });
@@ -3652,26 +3728,17 @@
         // 日付選択のイベントリスナー
         document.getElementById('dateSelect').addEventListener('change', async (e) => {
             if (e.target.value) {
-                // アトラクション個別画面でない場合のみリセット
-                if (currentDetailRideId === null) {
-                    document.getElementById('rideSelect').value = 'all';
-                }
                 selectedAreas = []; // エリア選択をリセット（すべて選択）
                 await loadPeriodData(e.target.value);
             }
         });
 
-        document.getElementById('rideSelect').addEventListener('change', (e) => {
-            if (e.target.value === 'all') {
-                currentDetailRideId = null;
-                showAllRides();
-            } else {
-                const rideId = parseInt(e.target.value);
-                if (rideId && loadedData) {
-                    showRideDetail(rideId);
-                }
-            }
-        });
+        const rideSearchInput = document.getElementById('rideSearchInput');
+        if (rideSearchInput) {
+            rideSearchInput.addEventListener('input', () => {
+                if (currentDetailRideId === null && loadedData) showAllRides();
+            });
+        }
 
         async function jumpToDay(dateStr) {
             // 「日」タブをアクティブにする
@@ -3683,10 +3750,6 @@
 
             currentPeriod = 'day';
             selectedAreas = [];
-            const rideSelect = document.getElementById('rideSelect');
-            if (rideSelect) {
-                rideSelect.value = 'all';
-            }
 
             const dateSelect = document.getElementById('dateSelect');
 
@@ -4027,11 +4090,8 @@
                     records: allRecords
                 };
 
-                populateRideSelect();
-                
                 // アトラクション個別画面を維持（期間/日付変更時）
                 if (currentDetailRideId !== null) {
-                    document.getElementById('rideSelect').value = currentDetailRideId;
                     showRideDetail(currentDetailRideId);
                 } else {
                     showAllRides();
@@ -4042,7 +4102,6 @@
                     initialRideHandled = true;
                     const rideId = parseInt(rideParam);
                     if (rideId) {
-                        document.getElementById('rideSelect').value = rideId;
                         showRideDetail(rideId);
                     }
                 }
