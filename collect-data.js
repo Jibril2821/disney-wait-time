@@ -223,7 +223,7 @@ function gitCommitAndPush() {
     }
 }
 
-// 時間チェック（9時〜21時の間のみ実行）
+// 時間チェック（9時〜21時を含む間のみ実行。21:00ピッタリも実行する）
 function isWithinOperatingHours() {
     const now = new Date();
     const hour = parseInt(now.toLocaleString('ja-JP', { 
@@ -231,17 +231,17 @@ function isWithinOperatingHours() {
         hour: '2-digit', 
         hour12: false 
     }));
-    return hour >= 9 && hour < 21;
+    return hour >= 9 && hour <= 21;
 }
 
 // 実行
 async function main() {
     // 9時〜21時の範囲外なら終了
-    // if (!isWithinOperatingHours()) {
-    //     const now = new Date();
-    //     console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（9:00〜21:00のみ実行）`);
-    //     return;
-    // }
+    if (!isWithinOperatingHours()) {
+        const now = new Date();
+        console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（9:00〜21:00のみ実行）`);
+        return;
+    }
 
     const success = await collectData().catch(err => {
         console.error(err);
