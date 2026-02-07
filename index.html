@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="TDR.jpg">
     <title>東京ディズニーリゾート 待ち時間</title>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="TDR.jpg">
-    <title>東京ディズニーリゾート 待ち時間</title>
     <style>
         * {
             margin: 0;
@@ -1172,6 +1165,7 @@
         }
     </style>
     <script src="park-data.js"></script>
+    <script src="supabase-config.js"></script>
 </head>
 <body>
     <!-- パーク選択画面 -->
@@ -1290,14 +1284,11 @@
     </div>
 
     <script>
-        // データ取得方法の自動判定
-        // GitHub Pages/localhost では収集データ、file://ではCORSプロキシ経由でAPI
-        const isGitHubPages = location.hostname.includes('github.io');
-        const isLocalServer = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        // データ取得: Supabase 設定があれば Supabase から取得、なければ queue-times.com API（file:// のときは CORS プロキシ経由）
         const isLocalFile = location.protocol === 'file:';
-        const USE_LOCAL_DATA = isGitHubPages || isLocalServer;
-        
-        // パーク・エリア・アトラクション情報は js/park-data.js から読み込み
+        const USE_SUPABASE = typeof window !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY;
+
+        // パーク・エリア・アトラクション情報は park-data.js から読み込み
 
         let currentPark = null;
         let ridesData = [];
@@ -1404,34 +1395,85 @@
             return jst.toISOString().split('T')[0];
         }
 
-        async function fetchLocalData(parkFile, parkFolder) {
-            // 今日のデータファイルを取得
-            const today = getTodayDateString(); // YYYY-MM-DD
-            const [year, month, day] = today.split('-');
-            const folder = parkFolder || parkFile.toUpperCase();
+        /**
+         * Supabase から指定パークの最新待ち時間を取得する。
+         * 1) wait_times_with_master ビューがあればそれを使用
+         * 2) ビューが無い場合（PGRST205）は wait_time_snapshots + rides を取得してクライアントで結合
+         */
+        async function fetchSupabaseWaitTimes(parkId) {
+            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
+            const key = window.SUPABASE_ANON_KEY || '';
+            const headers = {
+                'apikey': key,
+                'Authorization': 'Bearer ' + key,
+                'Accept': 'application/json'
+            };
 
-            // data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等（階層形式のみ使用）
-            const urlToday = `data/${folder}/${year}/${month}/${parkFile}_${today}.json`;
-            const fetchOptions = { cache: 'no-store' }; // キャッシュ無効化
+            const viewUrl = `${baseUrl}/rest/v1/wait_times_with_master?park_id=eq.${encodeURIComponent(parkId)}&order=timestamp.desc&limit=500`;
+            const viewResponse = await fetch(viewUrl, { method: 'GET', headers, cache: 'no-store' });
+            const viewBody = await viewResponse.text();
 
-            try {
-                let response = await fetch(urlToday, fetchOptions);
-                if (!response.ok) {
-                    // 今日のデータがない場合、昨日のデータを試す
-                    const yesterday = new Date(Date.now() + (9 * 60 * 60 * 1000) - 86400000)
-                        .toISOString().split('T')[0];
-                    const [yYear, yMonth, yDay] = yesterday.split('-');
-                    const urlYesterday = `data/${folder}/${yYear}/${yMonth}/${parkFile}_${yesterday}.json`;
-                    const yRes = await fetch(urlYesterday, fetchOptions);
-                    if (!yRes.ok) {
-                        throw new Error('データファイルが見つかりません');
-                    }
-                    return await yRes.json();
+            if (viewResponse.ok) {
+                const rows = JSON.parse(viewBody);
+                if (!Array.isArray(rows) || rows.length === 0) {
+                    return { rides: [], lastUpdated: null };
                 }
-                return await response.json();
-            } catch (e) {
-                throw new Error('収集データの読み込みに失敗しました');
+                const latestSnapshotId = rows[0].snapshot_id;
+                const latestRows = rows.filter(r => r.snapshot_id === latestSnapshotId);
+                const lastUpdated = latestRows[0] ? latestRows[0].timestamp : null;
+                const rides = latestRows.map(r => ({
+                    id: r.ride_id,
+                    name: r.ride_name || '',
+                    displayName: r.ride_name || '',
+                    is_open: r.is_open === true,
+                    wait_time: r.wait_time != null ? r.wait_time : 0,
+                    area: r.area_key || 'other',
+                    last_updated: lastUpdated
+                }));
+                return { rides, lastUpdated };
             }
+
+            if (!viewBody.includes('PGRST205') && !viewBody.includes('wait_times_with_master')) {
+                throw new Error('Supabase からの取得に失敗しました: ' + viewBody);
+            }
+
+            // フォールバック: ビューが無い場合は wait_time_snapshots と rides を取得して結合
+            const snapUrl = `${baseUrl}/rest/v1/wait_time_snapshots?park_id=eq.${encodeURIComponent(parkId)}&order=timestamp.desc&limit=1`;
+            const ridesUrl = `${baseUrl}/rest/v1/rides?park_id=eq.${encodeURIComponent(parkId)}`;
+            const [snapRes, masterRes] = await Promise.all([
+                fetch(snapUrl, { method: 'GET', headers, cache: 'no-store' }),
+                fetch(ridesUrl, { method: 'GET', headers, cache: 'no-store' })
+            ]);
+            if (!snapRes.ok) throw new Error('Supabase スナップショット取得失敗: ' + await snapRes.text());
+            if (!masterRes.ok) throw new Error('Supabase マスタ取得失敗: ' + await masterRes.text());
+
+            const snapList = await snapRes.json();
+            const masterList = await masterRes.json();
+            if (!Array.isArray(snapList) || snapList.length === 0) {
+                return { rides: [], lastUpdated: null };
+            }
+
+            const snapshot = snapList[0];
+            const ridesArray = snapshot.rides || [];
+            const lastUpdated = snapshot.timestamp || null;
+            const masterByRideId = {};
+            (masterList || []).forEach(r => {
+                masterByRideId[r.ride_id] = { area_key: r.area_key, name: r.name };
+            });
+
+            const rides = ridesArray.map(r => {
+                const m = masterByRideId[r.id];
+                return {
+                    id: r.id,
+                    name: m ? m.name : (r.name || ''),
+                    displayName: m ? m.name : (r.name || ''),
+                    is_open: r.is_open === true,
+                    wait_time: r.wait_time != null ? r.wait_time : 0,
+                    area: m ? m.area_key : 'other',
+                    last_updated: lastUpdated
+                };
+            });
+            return { rides, lastUpdated };
         }
 
         async function fetchQueueTimes() {
@@ -1443,39 +1485,30 @@
                 let rides = [];
                 let lastUpdated = null;
 
-                if (USE_LOCAL_DATA) {
-                    // GitHub Actionsで収集したデータを使用
-                    const localData = await fetchLocalData(parkInfo.dataFile, parkInfo.folder);
-                    
-                    if (localData.records && localData.records.length > 0) {
-                        // 最新のレコードを取得
-                        const latestRecord = localData.records[localData.records.length - 1];
-                        rides = latestRecord.rides;
-                        lastUpdated = latestRecord.timestamp;
-                    }
+                if (USE_SUPABASE) {
+                    const result = await fetchSupabaseWaitTimes(currentPark);
+                    ridesData = result.rides;
+                    lastUpdated = result.lastUpdated;
                 } else {
-                    // 直接APIから取得（ローカル開発用）
-                    // ローカルファイルの場合はCORSプロキシを使用
                     let url = parkInfo.apiUrl;
                     if (isLocalFile) {
                         url = 'https://corsproxy.io/?' + encodeURIComponent(parkInfo.apiUrl);
                     }
                     const response = await fetch(url, { cache: 'no-store' });
-                    if (!response.ok) throw new Error('データの取得に失敗しました');
+                    if (!response.ok) throw new Error('データの取得に失敗しました。Supabase を使う場合は supabase-config.js に URL と anon キーを設定してください。');
                     const data = await response.json();
                     rides = data.rides || [];
                     lastUpdated = rides[0]?.last_updated;
+                    ridesData = rides.map(ride => {
+                        const info = getRideInfo(ride.id);
+                        return {
+                            ...ride,
+                            area: info?.area || 'other',
+                            displayName: info?.name || ride.name,
+                            last_updated: lastUpdated
+                        };
+                    });
                 }
-
-                ridesData = rides.map(ride => {
-                    const info = getRideInfo(ride.id);
-                    return {
-                        ...ride,
-                        area: info?.area || 'other',
-                        displayName: info?.name || ride.name,
-                        last_updated: lastUpdated
-                    };
-                });
 
                 // 「今がチャンス！」判定用データを計算（ローカル収集データがある場合）
                 await computeChanceHighlights(parkInfo, ridesData, lastUpdated);
@@ -1490,7 +1523,7 @@
                     <div class="error">
                         <h3>エラーが発生しました</h3>
                         <p>${error.message}</p>
-                        <p style="margin-top: 10px; font-size: 0.9rem;">GitHub Actionsでデータ収集後に再度お試しください</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Supabase を使用する場合は supabase-config.js に設定し、データが登録されているか確認してください。</p>
                     </div>
                 `;
             } finally {
@@ -1739,30 +1772,41 @@
             return div.innerHTML;
         }
 
-        async function fetchLocalHistoryData(parkInfo, dateStr) {
-            const [year, month, day] = dateStr.split('-');
-            const folder = parkInfo.folder || parkInfo.dataFile.toUpperCase();
-            const parkFile = parkInfo.dataFile;
-
-            const url = `data/${folder}/${year}/${month}/${parkFile}_${dateStr}.json`;
-            const fetchOptions = { cache: 'no-store' };
-
-            const response = await fetch(url, fetchOptions);
-            if (!response.ok) {
-                throw new Error('history data not found');
-            }
-            return await response.json();
+        /**
+         * Supabase から指定パーク・指定日のスナップショット一覧を取得する。
+         * 戻り値は computeChanceHighlights が期待する形式 { records: [ { time, timestamp, rides }, ... ] }
+         */
+        async function fetchSupabaseHistoryData(parkId, dateStr) {
+            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
+            const key = window.SUPABASE_ANON_KEY || '';
+            const url = `${baseUrl}/rest/v1/wait_time_snapshots?park_id=eq.${encodeURIComponent(parkId)}&date=eq.${encodeURIComponent(dateStr)}&order=time.asc`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'apikey': key,
+                    'Authorization': 'Bearer ' + key,
+                    'Accept': 'application/json'
+                },
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error('history data not found');
+            const rows = await response.json();
+            if (!Array.isArray(rows)) return { records: [] };
+            const records = rows.map(r => ({
+                time: r.time,
+                timestamp: r.timestamp,
+                rides: r.rides || []
+            }));
+            return { records };
         }
 
         async function computeChanceHighlights(parkInfo, rides, lastUpdated) {
-            // デフォルトでは空にしておく
             chanceHighlights = new Map();
             historicalParkAvg = null;
             historicalParkMin = null;
             historicalParkMax = null;
 
-            // ローカル収集データが使えない場合や更新時刻が不明な場合はスキップ
-            if (!USE_LOCAL_DATA || !lastUpdated) {
+            if (!USE_SUPABASE || !lastUpdated) {
                 return;
             }
 
@@ -1796,7 +1840,7 @@
                 const dateStr = `${y}-${m}-${d}`;
 
                 try {
-                    const data = await fetchLocalHistoryData(parkInfo, dateStr);
+                    const data = await fetchSupabaseHistoryData(currentPark, dateStr);
                     if (!data || !Array.isArray(data.records)) continue;
 
                     for (const record of data.records) {

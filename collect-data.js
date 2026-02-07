@@ -1,11 +1,19 @@
 /**
  * 東京ディズニーリゾート 待ち時間データ収集スクリプト
- * データ取得後、自動でGitHubにコミット＆プッシュ
+ * 取得データを Supabase に登録（オプションで GitHub にコミット＆プッシュ）
  */
 
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
 const PARKS = {
     land: {
@@ -20,13 +28,8 @@ const PARKS = {
     }
 };
 
-const DATA_DIR = path.join(__dirname, 'data');
 const LOG_DIR = 'C:/logs';
 
-// データ保存ディレクトリの作成
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 // ログディレクトリの作成
 if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -121,57 +124,42 @@ async function collectData() {
         const data = await fetchParkData(park);
         if (!data) continue;
 
-        // 日付ごとのファイルに保存
-        // 例: data/TDL/2026/02/land_2026-02-05.json, data/TDS/2026/02/sea_2026-02-05.json
-        const [year, month, day] = dateStr.split('-'); // YYYY, MM, DD
-        const parkDir = path.join(DATA_DIR, park.folder || parkId.toUpperCase(), year, month);
-        if (!fs.existsSync(parkDir)) {
-            fs.mkdirSync(parkDir, { recursive: true });
-        }
-        const fileName = `${parkId}_${dateStr}.json`;
-        const filePath = path.join(parkDir, fileName);
+        const rides = data.rides.map(ride => ({
+            id: ride.id,
+            name: ride.name,
+            is_open: ride.is_open,
+            wait_time: ride.wait_time
+        }));
 
-        let dailyData = { date: dateStr, park: park.name, records: [] };
-        
-        // 既存ファイルがあれば読み込み
-        if (fs.existsSync(filePath)) {
-            try {
-                dailyData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            } catch (e) {
-                console.error(`[WARN] 既存ファイルの読み込みに失敗、新規作成します`);
+        if (supabase) {
+            const { error } = await supabase.from('wait_time_snapshots').insert({
+                park_id: parkId,
+                date: dateStr,
+                time: timeStr,
+                timestamp: timestampStr,
+                rides
+            });
+            if (error) {
+                console.error(`  ❌ Supabase 登録失敗:`, error.message);
+                continue;
             }
+        } else {
+            console.error(`  ⚠️ SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY が未設定です。.env を設定してください。`);
+            continue;
         }
 
-        // 新しいレコードを追加
-        const record = {
-            time: timeStr,
-            timestamp: timestampStr,
-            rides: data.rides.map(ride => ({
-                id: ride.id,
-                name: ride.name,
-                is_open: ride.is_open,
-                wait_time: ride.wait_time
-            }))
-        };
-
-        dailyData.records.push(record);
-
-        // ファイルに保存
-        fs.writeFileSync(filePath, JSON.stringify(dailyData, null, 2), 'utf-8');
-        
         const openCount = data.rides.filter(r => r.is_open).length;
         const avgWait = data.rides.filter(r => r.is_open && r.wait_time > 0);
-        const avg = avgWait.length > 0 
+        const avg = avgWait.length > 0
             ? Math.round(avgWait.reduce((sum, r) => sum + r.wait_time, 0) / avgWait.length)
             : 0;
 
-        console.log(`  ✅ 保存完了: ${fileName}`);
+        console.log(`  ✅ DB登録完了: ${park.name} (${timeStr})`);
         console.log(`     運営中: ${openCount}/${data.rides.length}, 平均待ち時間: ${avg}分`);
     }
 
     console.log(`========================================`);
-    console.log(`データ収集完了！`);
-    console.log(`保存先: ${DATA_DIR}`);
+    console.log(`データ収集完了！（Supabase に登録済み）`);
     console.log(`========================================`);
     
     return true; // 成功
@@ -249,11 +237,11 @@ function isWithinOperatingHours() {
 // 実行
 async function main() {
     // 9時〜21時の範囲外なら終了
-    if (!isWithinOperatingHours()) {
-        const now = new Date();
-        console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（9:00〜21:00のみ実行）`);
-        return;
-    }
+    // if (!isWithinOperatingHours()) {
+    //     const now = new Date();
+    //     console.log(`[${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}] 営業時間外のためスキップ（9:00〜21:00のみ実行）`);
+    //     return;
+    // }
 
     const success = await collectData().catch(err => {
         console.error(err);

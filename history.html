@@ -1183,6 +1183,7 @@
         }
     </style>
     <script src="park-data.js"></script>
+    <script src="supabase-config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1220,12 +1221,8 @@
     </div>
 
     <script>
-        // パーク・エリア・アトラクション情報は js/park-data.js から読み込み
-
-        // 環境判定
-        const isLocalFile = location.protocol === 'file:';
-        const isGitHubPages = location.hostname.includes('github.io');
-        const isLocalServer = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        // パーク・エリア・アトラクション情報は park-data.js から読み込み
+        const USE_SUPABASE = typeof window !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY;
 
         let currentPark = null;
         let loadedData = null;
@@ -1279,28 +1276,24 @@
             // お気に入りをローカルストレージから復元
             loadFavoriteRides();
             
-            if (isLocalFile) {
-                showLocalFileUI();
+            if (USE_SUPABASE) {
+                await loadAvailableDatesFromSupabase();
             } else {
-                await loadAvailableDates();
+                showLocalFileUI();
             }
         }
 
         function showLocalFileUI() {
             document.getElementById('fileInputWrapper').style.display = 'block';
             document.getElementById('dateSelect').style.display = 'none';
-            
             const content = document.getElementById('content');
             content.innerHTML = `
                 <div class="no-data">
-                    <h2>ファイルを選択してください</h2>
-                    <p>ローカル環境では、dataフォルダのJSONファイルを手動で選択する必要があります。</p>
-                    <p style="margin-top: 15px; color: #4ecdc4;">
-                        📁 data/${PARKS[currentPark].folder}/YYYY/MM/${PARKS[currentPark].filePrefix}_YYYY-MM-DD.json
-                    </p>
+                    <h2>データを読み込んでください</h2>
+                    <p>Supabase を使う場合は supabase-config.js に URL と anon キーを設定してください。</p>
+                    <p style="margin-top: 15px;">未設定の場合は、下のボタンから JSON ファイルを選択して読み込めます。</p>
                 </div>
             `;
-
             document.getElementById('fileInput').addEventListener('change', handleFileSelect);
         }
 
@@ -1360,52 +1353,39 @@
             showAllRides();
         }
 
-        async function loadAvailableDates() {
+        function getSupabaseHeaders() {
+            return {
+                'apikey': window.SUPABASE_ANON_KEY || '',
+                'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || ''),
+                'Accept': 'application/json'
+            };
+        }
+
+        async function loadAvailableDatesFromSupabase() {
             const parkInfo = PARKS[currentPark];
             const content = document.getElementById('content');
-            
+            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
             try {
-                // 過去365日分を探す
-                const dates = [];
-                for (let i = 0; i < 365; i++) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-                    dates.push(jstDate.toISOString().split('T')[0]);
-                }
-
-                availableDates = [];
-                // 並列でチェック（高速化）
-                const checkPromises = dates.map(async (date) => {
-                    const [year, month, day] = date.split('-');
-                    // data/TDL/YYYY/MM/land_YYYY-MM-DD.json 等（階層形式のみ使用）
-                    const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-                    const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                    try {
-                        const res = await fetch(url, { method: 'HEAD' });
-                        return res.ok ? { date } : null;
-                    } catch (e) {
-                        return null;
-                    }
-                });
-
-                const results = await Promise.all(checkPromises);
-                const found = results.filter(r => r !== null);
-                availableDates = found.map(r => r.date).sort().reverse();
+                const url = `${baseUrl}/rest/v1/wait_time_snapshots?park_id=eq.${encodeURIComponent(currentPark)}&select=date&order=timestamp.desc&limit=5000`;
+                const response = await fetch(url, { method: 'GET', headers: getSupabaseHeaders(), cache: 'no-store' });
+                if (!response.ok) throw new Error('Supabase からの取得に失敗しました');
+                const rows = await response.json();
+                const dateSet = new Set();
+                (rows || []).forEach(r => { if (r.date) dateSet.add(r.date); });
+                availableDates = [...dateSet].sort().reverse();
 
                 if (availableDates.length === 0) {
                     content.innerHTML = `
                         <div class="no-data">
                             <h2>データがありません</h2>
-                            <p>まだ履歴データが収集されていません。</p>
+                            <p>まだ履歴データが Supabase に登録されていません。</p>
                         </div>
                     `;
                     return;
                 }
-
-                // 期間に応じた選択オプションを設定
+                document.getElementById('fileInputWrapper').style.display = 'none';
+                document.getElementById('dateSelect').style.display = '';
                 await updateDateSelectOptions();
-
             } catch (error) {
                 console.error('Error:', error);
                 content.innerHTML = `
@@ -1417,48 +1397,27 @@
             }
         }
 
-        async function loadDateData(date) {
-            const parkInfo = PARKS[currentPark];
-            const content = document.getElementById('content');
-            
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>データを読み込み中...</p>
-                </div>
-            `;
-
+        async function fetchSupabaseDataForDate(parkId, dateStr) {
+            if (!dateStr || !parkId) return null;
+            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
+            const url = `${baseUrl}/rest/v1/wait_time_snapshots?park_id=eq.${encodeURIComponent(parkId)}&date=eq.${encodeURIComponent(dateStr)}&order=time.asc`;
             try {
-                const [year, month, day] = date.split('-');
-                const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-                const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('データの取得に失敗しました');
-                
-                const data = await response.json();
-                
-                loadedData = {
-                    park: data.park,
-                    date: data.date,
-                    records: data.records.map(record => ({
-                        date: data.date,
-                        time: record.time,
-                        timestamp: record.timestamp,
-                        rides: record.rides
+                const response = await fetch(url, { method: 'GET', headers: getSupabaseHeaders(), cache: 'no-store' });
+                if (!response.ok) return null;
+                const rows = await response.json();
+                if (!Array.isArray(rows) || rows.length === 0) return null;
+                const parkInfo = PARKS[parkId];
+                return {
+                    date: dateStr,
+                    records: rows.map(r => ({
+                        date: r.date,
+                        time: r.time,
+                        timestamp: r.timestamp,
+                        rides: r.rides || []
                     }))
                 };
-
-                populateRideSelect();
-                showAllRides();
-
-            } catch (error) {
-                console.error('Error:', error);
-                content.innerHTML = `
-                    <div class="error">
-                        <h3>データの読み込みに失敗しました</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
+            } catch (e) {
+                return null;
             }
         }
 
@@ -3422,26 +3381,8 @@
 
         async function fetchHistoryDataForDate(dateStr) {
             if (!dateStr || !currentPark) return null;
-            const parkInfo = PARKS[currentPark];
-            const [year, month, day] = dateStr.split('-');
-            const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
-            const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${dateStr}.json`;
-            try {
-                const response = await fetch(url, { cache: 'no-store' });
-                if (!response.ok) return null;
-                const data = await response.json();
-                return {
-                    date: data.date,
-                    records: (data.records || []).map(r => ({
-                        date: data.date,
-                        time: r.time,
-                        timestamp: r.timestamp,
-                        rides: r.rides
-                    }))
-                };
-            } catch (e) {
-                return null;
-            }
+            if (USE_SUPABASE) return await fetchSupabaseDataForDate(currentPark, dateStr);
+            return null;
         }
 
         function computeDayStats(records) {
@@ -4062,26 +4003,20 @@
                     return;
                 }
 
-                // 複数日のデータを読み込んで統合
+                // Supabase から複数日のデータを読み込んで統合
                 const allRecords = [];
-                const folder = parkInfo.folder || parkInfo.filePrefix.toUpperCase();
                 for (const date of datesToLoad) {
-                    const [year, month, day] = date.split('-');
-                    const url = `data/${folder}/${year}/${month}/${parkInfo.filePrefix}_${date}.json`;
-                    try {
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            const data = await response.json();
-                            for (const record of data.records) {
-                                allRecords.push({
-                                    date: data.date,
-                                    time: record.time,
-                                    timestamp: record.timestamp,
-                                    rides: record.rides
-                                });
-                            }
+                    const data = await fetchSupabaseDataForDate(currentPark, date);
+                    if (data && data.records) {
+                        for (const record of data.records) {
+                            allRecords.push({
+                                date: record.date,
+                                time: record.time,
+                                timestamp: record.timestamp,
+                                rides: record.rides
+                            });
                         }
-                    } catch (e) {}
+                    }
                 }
 
                 loadedData = {

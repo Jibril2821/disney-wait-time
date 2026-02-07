@@ -1,0 +1,15 @@
+{
+  "name": "disney-wait-time",
+  "version": "1.0.0",
+  "description": "東京ディズニーリゾート 待ち時間データ収集",
+  "scripts": {
+    "collect": "node collect-data.js",
+    "start": "node server.js",
+    "seed-master": "node scripts/seed-master-to-supabase.js",
+    "seed-data": "node scripts/seed-data-to-supabase.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -13,9 +13,10 @@
 ```
 ├── index.html          # メイン画面（待ち時間確認）
 ├── history.html        # 履歴ビューア（グラフ表示）
-├── collect-data.js     # データ収集スクリプト
+├── collect-data.js     # データ収集スクリプト（Supabase に登録）
 ├── setup-scheduler.bat # Windows用タスク登録
-├── data/               # 収集したデータ（JSON）
+├── supabase/schema.sql # DB テーブル定義
+├── data/               # （旧）収集データ（JSON）※現在は Supabase に登録
 └── .github/workflows/  # GitHub Actions設定
 ```
 
@@ -25,23 +26,58 @@
 
 `index.html` をブラウザで開くだけ！
 
-### 2. 履歴を記録する
+### 2. 履歴を記録する（Supabase）
 
-#### GitHub Actions（推奨）
+収集した待ち時間データは **Supabase** のデータベースに登録されます。
 
-1. このリポジトリをForkまたはクローン
-2. GitHubにプッシュするだけで30分ごとに自動収集開始
-3. Actions → Collect Disney Wait Times で手動実行も可能
+#### 初回セットアップ
 
-#### ローカルで実行（Windows）
+1. [Supabase](https://supabase.com/) でプロジェクトを作成
+2. ダッシュボードの **SQL Editor** で `supabase/schema.sql` の内容を実行し、テーブルを作成
+3. **Project Settings → API** で URL と `service_role` キーをコピー
+4. プロジェクト直下に `.env` を作成（`.env.example` をコピーして値を設定）:
+   ```
+   SUPABASE_URL=https://xxxx.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ```
+5. `npm install` で依存関係をインストール
 
-1. [Node.js](https://nodejs.org/) をインストール
-2. `setup-scheduler.bat` を管理者として実行
-3. 30分ごとに自動でデータ収集開始
+#### 実行方法
 
-### 3. 履歴を確認する
+- **ローカル（Windows）**: [Node.js](https://nodejs.org/) をインストール後、`setup-scheduler.bat` を管理者として実行すると 30 分ごとに自動収集
+- **手動実行**: `npm run collect`
+- **GitHub Actions**: リポジトリの Secrets に `SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY` を登録すれば Actions からも DB に登録可能
 
-`history.html` をブラウザで開き、`data/` フォルダのJSONファイルを読み込む
+### 3. マスタデータを Supabase に登録する
+
+`park-data.js` で定義しているパーク・エリア・アトラクションのマスタを DB に登録できます。
+
+1. `supabase/schema.sql` で `parks` / `areas` / `rides` テーブルを作成済みであること
+2. `npm run seed-master` を実行
+
+※ `park-data.js` を変更した場合は、`scripts/seed-master-to-supabase.js` 内のマスタ定義も同期してください。
+
+### 4. 履歴を確認する
+
+- **Supabase**: ダッシュボードの Table Editor で `wait_time_snapshots` を参照
+- **従来**: `history.html` で `data/` の JSON を読み込む（過去データがある場合）
+
+### 5. スナップショットとマスタの結合クエリ
+
+**Supabase では、`wait_time_snapshots` とマスタ（`parks` / `areas` / `rides`）を結合した SQL をそのまま実行できます。**
+
+- **SQL Editor**: ダッシュボードの **SQL Editor** に任意の SELECT を貼り付けて実行可能です。
+- 結合例は `supabase/query-join.sql` にあります。  
+  - スナップショットの `rides`（JSONB 配列）を `jsonb_array_elements` で行に展開し、`rides.ride_id` でマスタの `rides` と結合、さらに `areas` でエリア名を付与するクエリです。
+- 結合結果を **ビュー** `wait_times_with_master` として定義してあり（`query-join.sql` の例3）、index.html からこのビューでデータを取得できます。
+
+### 6. index.html で Supabase の結合データを表示する
+
+待ち時間を Supabase の結合データ（ビュー）から表示するには次のとおりです。
+
+1. **ビューの作成**: Supabase の SQL Editor で `supabase/query-join.sql` の **例3**（`CREATE OR REPLACE VIEW public.wait_times_with_master ...`）を実行する。
+2. **フロント用設定**: `supabase-config.example.js` をコピーして `supabase-config.js` を作成し、Supabase の **Project Settings → API** で確認した **URL** と **anon (public) キー** を設定する。
+3. **表示**: `index.html` を開くと、設定が読み込まれている場合は Supabase から最新スナップショットの待ち時間（マスタ結合済み）を取得して表示する。設定が空の場合は従来どおりローカル JSON または外部 API を使用する。
 
 ## GitHub Pages でホスト
 
