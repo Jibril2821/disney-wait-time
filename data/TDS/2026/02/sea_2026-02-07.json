@@ -4411,6 +4411,216 @@
           "wait_time": 20
         }
       ]
+    },
+    {
+      "time": "10:45",
+      "timestamp": "2026-02-07T10:45:01+09:00",
+      "rides": [
+        {
+          "id": 8029,
+          "name": "20,000 Leagues Under the Sea",
+          "is_open": true,
+          "wait_time": 40
+        },
+        {
+          "id": 13559,
+          "name": "Anna and Elsa's Frozen Journey",
+          "is_open": true,
+          "wait_time": 180
+        },
+        {
+          "id": 8038,
+          "name": "Aquatopia",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8022,
+          "name": "Ariel's Playground",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8037,
+          "name": "Big City Vehicles",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8044,
+          "name": "Blowfish Balloon Race",
+          "is_open": true,
+          "wait_time": 20
+        },
+        {
+          "id": 8040,
+          "name": "Caravan Carousel",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8036,
+          "name": "DisneySea Electric Railway (American Waterfront)",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8035,
+          "name": "DisneySea Electric Railway (Port Discovery)",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8032,
+          "name": "DisneySea Transit Steamer Line (American Waterfront)",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8033,
+          "name": "DisneySea Transit Steamer Line (Lost River Delta)",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8031,
+          "name": "DisneySea Transit Steamer Line (Mediterranean Harbor)",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 13562,
+          "name": "Fairy Tinker Bell's Busy Buggies",
+          "is_open": true,
+          "wait_time": 50
+        },
+        {
+          "id": 8041,
+          "name": "Flounder's Flying Fish Coaster",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8048,
+          "name": "Fortress Explorations",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8027,
+          "name": "Indiana Jones Adventure®: Temple of the Crystal Skull",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8025,
+          "name": "Jasmine's Flying Carpets",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8028,
+          "name": "Journey to the Center of the Earth",
+          "is_open": true,
+          "wait_time": 140
+        },
+        {
+          "id": 8043,
+          "name": "Jumpin' Jellyfish",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8026,
+          "name": "Mermaid Lagoon Theater",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 8051,
+          "name": "Nemo & Friends SeaRider",
+          "is_open": true,
+          "wait_time": 40
+        },
+        {
+          "id": 13561,
+          "name": "Peter Pan's Never Land Adventure",
+          "is_open": true,
+          "wait_time": 90
+        },
+        {
+          "id": 8046,
+          "name": "Raging Spirits",
+          "is_open": false,
+          "wait_time": 0
+        },
+        {
+          "id": 13560,
+          "name": "Rapunzel's Lantern Festival",
+          "is_open": true,
+          "wait_time": 140
+        },
+        {
+          "id": 8042,
+          "name": "Scuttle's Scooters",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8039,
+          "name": "Sindbad's Storybook Voyage",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8024,
+          "name": "Soaring: Fantastic Flight",
+          "is_open": true,
+          "wait_time": 240
+        },
+        {
+          "id": 8049,
+          "name": "The Leonardo Challenge",
+          "is_open": true,
+          "wait_time": 5
+        },
+        {
+          "id": 8030,
+          "name": "The Magic Lamp Theater",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8045,
+          "name": "The Whirlpool",
+          "is_open": true,
+          "wait_time": 15
+        },
+        {
+          "id": 8047,
+          "name": "Tower of Terror",
+          "is_open": true,
+          "wait_time": 100
+        },
+        {
+          "id": 8023,
+          "name": "Toy Story Mania!",
+          "is_open": true,
+          "wait_time": 120
+        },
+        {
+          "id": 8050,
+          "name": "Turtle Talk",
+          "is_open": true,
+          "wait_time": 30
+        },
+        {
+          "id": 8034,
+          "name": "Venetian Gondolas",
+          "is_open": true,
+          "wait_time": 15
+        }
+      ]
     }
   ]
 }
