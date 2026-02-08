@@ -1,12 +1,12 @@
 /**
  * 東京ディズニーリゾート 待ち時間データ収集スクリプト
- * 取得データを Supabase に登録（オプションで GitHub にコミット＆プッシュ）
+ * 取得データを Supabase に登録
  */
 
-require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+// タスクスケジューラなど CWD が異なる環境でも .env を確実に読み込む
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -165,64 +165,6 @@ async function collectData() {
     return true; // 成功
 }
 
-function gitCommitAndPush() {
-    const now = new Date();
-    // 日本時間の年月日・時刻を手動で整形（例: 2026/2/5 17:31）
-    const jst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-    const year = jst.getUTCFullYear();
-    const month = jst.getUTCMonth() + 1; // 1-12
-    const day = jst.getUTCDate();
-    const hours = jst.getUTCHours();
-    const minutes = jst.getUTCMinutes().toString().padStart(2, '0');
-    const timeStr = `${year}/${month}/${day} ${hours}:${minutes}`;
-    
-    console.log(`🔄 GitHubにプッシュ中...`);
-    
-    try {
-        // 作業ディレクトリをスクリプトのディレクトリに変更
-        process.chdir(__dirname);
-        
-        // git add
-        execSync('git add data/', { stdio: 'pipe' });
-        
-        // 変更があるか確認
-        try {
-            execSync('git diff --staged --quiet', { stdio: 'pipe' });
-            console.log(`  ℹ️  変更なし、スキップします\n`);
-            return;
-        } catch (e) {
-            // 変更がある場合はエラーになる（正常）
-        }
-
-        // 変更がある場合、リモートの最新を取り込んでからコミット
-        try {
-            console.log(`  📥 リモートの最新を取得中...`);
-            execSync('git pull --rebase', { stdio: 'pipe' });
-            console.log(`  ✅ 最新化完了`);
-        } catch (pullError) {
-            // リモートは変更されていない
-            console.log(`  ✅  pull スキップ（リモート未変更・コミット続行）`);
-        }
-        
-        // git commit
-        const commitMessage = `📊 待ち時間データ更新 - ${timeStr}`;
-        execSync(`git commit -m "${commitMessage}"`, { stdio: 'pipe' });
-        console.log(`  ✅ コミット完了`);
-        
-        // git push
-        execSync('git push', { stdio: 'pipe' });
-        console.log(`  ✅ プッシュ完了`);
-        
-        console.log(`========================================`);
-        console.log(`GitHubへの同期完了！`);
-        console.log(`========================================`);
-        
-    } catch (error) {
-        console.error(`  ❌ Gitエラー:`, error.message);
-        console.error(`  ヒント: git設定やネットワーク接続を確認してください\n`);
-    }
-}
-
 // 時間チェック（9時〜21時を含む間のみ実行。21:00ピッタリも実行する）
 function isWithinOperatingHours() {
     const now = new Date();
@@ -243,14 +185,9 @@ async function main() {
         return;
     }
 
-    const success = await collectData().catch(err => {
+    await collectData().catch(err => {
         console.error(err);
-        return false;
     });
-    
-    if (success) {
-        gitCommitAndPush();
-    }
 }
 
 main();
