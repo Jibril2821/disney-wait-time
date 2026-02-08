@@ -18,13 +18,11 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
 const PARKS = {
     land: {
         name: '東京ディズニーランド',
-        apiUrl: 'https://queue-times.com/parks/274/queue_times.json',
-        folder: 'TDL' // data/TDL/YYYY/MM/land_YYYY-MM-DD.json
+        apiUrl: 'https://queue-times.com/parks/274/queue_times.json'
     },
     sea: {
         name: '東京ディズニーシー',
-        apiUrl: 'https://queue-times.com/parks/275/queue_times.json',
-        folder: 'TDS' // data/TDS/YYYY/MM/sea_YYYY-MM-DD.json
+        apiUrl: 'https://queue-times.com/parks/275/queue_times.json'
     }
 };
 
