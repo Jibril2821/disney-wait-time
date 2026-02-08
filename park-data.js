@@ -1,7 +1,16 @@
 /**
- * 東京ディズニーリゾート パーク・エリア・アトラクションデータ
- * 
- * このファイルを編集することで、アトラクションやエリアの追加・変更が可能です。
+ * 待ち時間の色設定とスタイル注入・色分けクラス取得
+ * パーク・エリア・アトラクションのマスタは Supabase（master-from-supabase.js）を参照。
+ *
+ * 待ち時間帯とクラス名一覧（getWaitClassGlobal の戻り値）:
+ *   0〜30分   → wait-short
+ *  30〜60分   → wait-medium
+ *  60〜90分   → wait-long
+ *  90〜120分  → wait-very-long
+ * 120〜180分  → wait-extreme-long
+ * 180〜240分  → wait-insane-long（紫）
+ * 240〜300分  → wait-ultra-long（濃い紫）
+ * 300分〜     → wait-max-long（黒）
  */
 
 // 待ち時間の色コード設定（両画面で共通）
@@ -47,20 +56,43 @@ const WAIT_TIME_COLORS = {
         textOnBg: '#ffecec'
     },
     insaneLong: {
-        // 180分以上
-        primary: '#ff6b6b',
-        gradient: ['#c23616', '#8b0000'],
-        bgRgba: 'rgba(139, 0, 0, 0.75)',
-        borderRgba: 'rgba(139, 0, 0, 0.9)',
-        textOnBg: '#ffecec'
+        // 180〜240分（紫）
+        primary: '#9b59b6',
+        gradient: ['#9b59b6', '#8e44ad'],
+        bgRgba: 'rgba(155, 89, 182, 0.55)',
+        borderRgba: 'rgba(155, 89, 182, 0.75)',
+        textOnBg: '#f5eef8'
+    },
+    ultraLong: {
+        // 240〜300分（濃い紫）
+        primary: '#6c3483',
+        gradient: ['#6c3483', '#4a235a'],
+        bgRgba: 'rgba(108, 52, 131, 0.75)',
+        borderRgba: 'rgba(108, 52, 131, 0.9)',
+        textOnBg: '#f5eef8'
+    },
+    maxLong: {
+        // 300分以上（黒）
+        primary: '#1a1a1a',
+        gradient: ['#2d2d2d', '#1a1a1a'],
+        bgRgba: 'rgba(26, 26, 26, 0.9)',
+        borderRgba: 'rgba(26, 26, 26, 1)',
+        textOnBg: '#f0f0f0'
     }
 };
+
+// 待ち時間文字色を薄めたカード背景用（hex → rgba, opacity 小）
+function hexToRgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
 
 // CSS変数として色コードを注入する関数
 function injectWaitTimeColorStyles() {
     const style = document.createElement('style');
     style.id = 'wait-time-colors';
-    
+    const cardBgOpacity = 0.14;
     const c = WAIT_TIME_COLORS;
     style.textContent = `
         :root {
@@ -70,6 +102,7 @@ function injectWaitTimeColorStyles() {
             --wait-short-bg: ${c.short.bgRgba};
             --wait-short-border: ${c.short.borderRgba};
             --wait-short-text-on-bg: ${c.short.textOnBg};
+            --wait-short-card-bg: ${hexToRgba(c.short.primary, cardBgOpacity)};
 
             /* wait-medium (30〜60分) */
             --wait-medium-primary: ${c.medium.primary};
@@ -77,6 +110,7 @@ function injectWaitTimeColorStyles() {
             --wait-medium-bg: ${c.medium.bgRgba};
             --wait-medium-border: ${c.medium.borderRgba};
             --wait-medium-text-on-bg: ${c.medium.textOnBg};
+            --wait-medium-card-bg: ${hexToRgba(c.medium.primary, cardBgOpacity)};
 
             /* wait-long (60〜90分) */
             --wait-long-primary: ${c.long.primary};
@@ -84,6 +118,7 @@ function injectWaitTimeColorStyles() {
             --wait-long-bg: ${c.long.bgRgba};
             --wait-long-border: ${c.long.borderRgba};
             --wait-long-text-on-bg: ${c.long.textOnBg};
+            --wait-long-card-bg: ${hexToRgba(c.long.primary, cardBgOpacity)};
 
             /* wait-very-long (90〜120分) */
             --wait-very-long-primary: ${c.veryLong.primary};
@@ -91,6 +126,7 @@ function injectWaitTimeColorStyles() {
             --wait-very-long-bg: ${c.veryLong.bgRgba};
             --wait-very-long-border: ${c.veryLong.borderRgba};
             --wait-very-long-text-on-bg: ${c.veryLong.textOnBg};
+            --wait-very-long-card-bg: ${hexToRgba(c.veryLong.primary, cardBgOpacity)};
 
             /* wait-extreme-long (120〜180分) */
             --wait-extreme-long-primary: ${c.extremeLong.primary};
@@ -98,14 +134,42 @@ function injectWaitTimeColorStyles() {
             --wait-extreme-long-bg: ${c.extremeLong.bgRgba};
             --wait-extreme-long-border: ${c.extremeLong.borderRgba};
             --wait-extreme-long-text-on-bg: ${c.extremeLong.textOnBg};
+            --wait-extreme-long-card-bg: ${hexToRgba(c.extremeLong.primary, cardBgOpacity)};
 
-            /* wait-insane-long (180分以上) */
+            /* wait-insane-long (180〜240分) */
             --wait-insane-long-primary: ${c.insaneLong.primary};
             --wait-insane-long-gradient: linear-gradient(90deg, ${c.insaneLong.gradient[0]}, ${c.insaneLong.gradient[1]});
             --wait-insane-long-bg: ${c.insaneLong.bgRgba};
             --wait-insane-long-border: ${c.insaneLong.borderRgba};
             --wait-insane-long-text-on-bg: ${c.insaneLong.textOnBg};
+            --wait-insane-long-card-bg: ${hexToRgba(c.insaneLong.primary, cardBgOpacity)};
+
+            /* wait-ultra-long (240〜300分) */
+            --wait-ultra-long-primary: ${c.ultraLong.primary};
+            --wait-ultra-long-gradient: linear-gradient(90deg, ${c.ultraLong.gradient[0]}, ${c.ultraLong.gradient[1]});
+            --wait-ultra-long-bg: ${c.ultraLong.bgRgba};
+            --wait-ultra-long-border: ${c.ultraLong.borderRgba};
+            --wait-ultra-long-text-on-bg: ${c.ultraLong.textOnBg};
+            --wait-ultra-long-card-bg: ${hexToRgba(c.ultraLong.primary, cardBgOpacity)};
+
+            /* wait-max-long (300分以上) */
+            --wait-max-long-primary: ${c.maxLong.primary};
+            --wait-max-long-gradient: linear-gradient(90deg, ${c.maxLong.gradient[0]}, ${c.maxLong.gradient[1]});
+            --wait-max-long-bg: ${c.maxLong.bgRgba};
+            --wait-max-long-border: ${c.maxLong.borderRgba};
+            --wait-max-long-text-on-bg: ${c.maxLong.textOnBg};
+            --wait-max-long-card-bg: ${hexToRgba(c.maxLong.primary, cardBgOpacity)};
         }
+
+        /* アトラクションカード背景（待ち時間文字色を薄めた色）リアルタイム・履歴共通 */
+        .ride-card.wait-short { background: var(--wait-short-card-bg); }
+        .ride-card.wait-medium { background: var(--wait-medium-card-bg); }
+        .ride-card.wait-long { background: var(--wait-long-card-bg); }
+        .ride-card.wait-very-long { background: var(--wait-very-long-card-bg); }
+        .ride-card.wait-extreme-long { background: var(--wait-extreme-long-card-bg); }
+        .ride-card.wait-insane-long { background: var(--wait-insane-long-card-bg); }
+        .ride-card.wait-ultra-long { background: var(--wait-ultra-long-card-bg); }
+        .ride-card.wait-max-long { background: var(--wait-max-long-card-bg); }
 
         /* 待ち時間テキスト色 */
         .wait-short .wait-time-number { color: var(--wait-short-primary); }
@@ -126,6 +190,12 @@ function injectWaitTimeColorStyles() {
         .wait-insane-long .wait-time-number { color: var(--wait-insane-long-primary); }
         .wait-insane-long .wait-time-fill { background: var(--wait-insane-long-gradient); }
 
+        .wait-ultra-long .wait-time-number { color: var(--wait-ultra-long-primary); }
+        .wait-ultra-long .wait-time-fill { background: var(--wait-ultra-long-gradient); }
+
+        .wait-max-long .wait-time-number { color: var(--wait-max-long-primary); }
+        .wait-max-long .wait-time-fill { background: var(--wait-max-long-gradient); }
+
         /* 汎用待ち時間クラス（テキスト色のみ）- テーブルセル等で使用 */
         td.wait-short, span.wait-short { color: var(--wait-short-primary); }
         td.wait-medium, span.wait-medium { color: var(--wait-medium-primary); }
@@ -133,6 +203,8 @@ function injectWaitTimeColorStyles() {
         td.wait-very-long, span.wait-very-long { color: var(--wait-very-long-primary); }
         td.wait-extreme-long, span.wait-extreme-long { color: var(--wait-extreme-long-primary); }
         td.wait-insane-long, span.wait-insane-long { color: var(--wait-insane-long-primary); }
+        td.wait-ultra-long, span.wait-ultra-long { color: var(--wait-ultra-long-primary); }
+        td.wait-max-long, span.wait-max-long { color: var(--wait-max-long-primary); }
 
         /* リアルタイム画面のアトラクション名は白色を維持 */
         .ride-card .ride-name { color: #fff; }
@@ -144,6 +216,8 @@ function injectWaitTimeColorStyles() {
         .ride-card-stat-value.wait-very-long { color: var(--wait-very-long-primary); }
         .ride-card-stat-value.wait-extreme-long { color: var(--wait-extreme-long-primary); }
         .ride-card-stat-value.wait-insane-long { color: var(--wait-insane-long-primary); }
+        .ride-card-stat-value.wait-ultra-long { color: var(--wait-ultra-long-primary); }
+        .ride-card-stat-value.wait-max-long { color: var(--wait-max-long-primary); }
 
         /* ヒートマップセル用 */
         .heatmap-cell.wait-short {
@@ -169,6 +243,14 @@ function injectWaitTimeColorStyles() {
         .heatmap-cell.wait-insane-long {
             background: var(--wait-insane-long-bg);
             color: var(--wait-insane-long-text-on-bg);
+        }
+        .heatmap-cell.wait-ultra-long {
+            background: var(--wait-ultra-long-bg);
+            color: var(--wait-ultra-long-text-on-bg);
+        }
+        .heatmap-cell.wait-max-long {
+            background: var(--wait-max-long-bg);
+            color: var(--wait-max-long-text-on-bg);
         }
 
         /* カレンダー日付セル用 */
@@ -202,6 +284,16 @@ function injectWaitTimeColorStyles() {
             border-color: var(--wait-insane-long-border);
             color: var(--wait-insane-long-text-on-bg);
         }
+        .calendar-day.wait-ultra-long {
+            background: var(--wait-ultra-long-bg);
+            border-color: var(--wait-ultra-long-border);
+            color: var(--wait-ultra-long-text-on-bg);
+        }
+        .calendar-day.wait-max-long {
+            background: var(--wait-max-long-bg);
+            border-color: var(--wait-max-long-border);
+            color: var(--wait-max-long-text-on-bg);
+        }
     `;
     
     // 既存のスタイルがあれば削除して追加
@@ -221,175 +313,20 @@ if (typeof document !== 'undefined') {
     }
 }
 
-// パーク情報
-const PARKS = {
-    land: {
-        id: 274,
-        name: '東京ディズニーランド',
-        icon: '🏰',
-        apiUrl: 'https://queue-times.com/parks/274/queue_times.json',
-        dataFile: 'land',
-        filePrefix: 'land',
-        // データ保存用フォルダ名（収集スクリプト・履歴ビュー共通）
-        folder: 'TDL'
-    },
-    sea: {
-        id: 275,
-        name: '東京ディズニーシー',
-        icon: '🌋',
-        apiUrl: 'https://queue-times.com/parks/275/queue_times.json',
-        dataFile: 'sea',
-        filePrefix: 'sea',
-        // データ保存用フォルダ名（収集スクリプト・履歴ビュー共通）
-        folder: 'TDS'
-    }
-};
-
-// TDL エリア定義
-const TDL_AREAS = {
-    worldbazaar: { name: 'ワールドバザール', icon: '🏛️' },
-    adventureland: { name: 'アドベンチャーランド', icon: '🌴' },
-    westernland: { name: 'ウエスタンランド', icon: '🤠' },
-    crittercountry: { name: 'クリッターカントリー', icon: '🦫' },
-    fantasyland: { name: 'ファンタジーランド', icon: '🏰' },
-    toontown: { name: 'トゥーンタウン', icon: '🎨' },
-    tomorrowland: { name: 'トゥモローランド', icon: '🚀' }
-};
-
-// TDS エリア定義
-const TDS_AREAS = {
-    mediterranean: { name: 'メディテレーニアンハーバー', icon: '⛵' },
-    americanwaterfront: { name: 'アメリカンウォーターフロント', icon: '🗽' },
-    portdiscovery: { name: 'ポートディスカバリー', icon: '🔬' },
-    lostriverdelta: { name: 'ロストリバーデルタ', icon: '🏛️' },
-    arabiancoast: { name: 'アラビアンコースト', icon: '🕌' },
-    mermaidlagoon: { name: 'マーメイドラグーン', icon: '🧜‍♀️' },
-    mysteriousisland: { name: 'ミステリアスアイランド', icon: '🌋' },
-    fantasysprings: { name: 'ファンタジースプリングス', icon: '✨' }
-};
-
-// TDL アトラクション情報（エリア順）
-const TDL_RIDE_INFO = {
-    // ワールドバザール
-    7985: { area: 'worldbazaar', name: 'オムニバス' },
-    8019: { area: 'worldbazaar', name: 'ペニーアーケード' },
-    // アドベンチャーランド
-    7986: { area: 'adventureland', name: 'カリブの海賊' },
-    7987: { area: 'adventureland', name: 'ジャングルクルーズ：ワイルドライフ・エクスペディション' },
-    7988: { area: 'adventureland', name: 'ウエスタンリバー鉄道' },
-    7989: { area: 'adventureland', name: 'スイスファミリー・ツリーハウス' },
-    7990: { area: 'adventureland', name: '魅惑のチキルーム：スティッチ・プレゼンツ "アロハ・エ・コモ・マイ!"' },
-    // ウエスタンランド
-    7991: { area: 'westernland', name: 'ウエスタンランド・シューティングギャラリー' },
-    7992: { area: 'westernland', name: 'カントリーベア・シアター' },
-    7993: { area: 'westernland', name: '蒸気船マークトウェイン号' },
-    7994: { area: 'westernland', name: 'ビッグサンダー・マウンテン' },
-    7995: { area: 'westernland', name: 'トムソーヤ島いかだ' },
-    // クリッターカントリー
-    7996: { area: 'crittercountry', name: 'スプラッシュ・マウンテン' },
-    7997: { area: 'crittercountry', name: 'ビーバーブラザーズのカヌー探険' },
-    // ファンタジーランド
-    7998: { area: 'fantasyland', name: 'ピーターパン空の旅' },
-    7999: { area: 'fantasyland', name: '白雪姫と七人のこびと' },
-    8000: { area: 'fantasyland', name: 'シンデレラのフェアリーテイル・ホール' },
-    8001: { area: 'fantasyland', name: 'ミッキーのフィルハーマジック' },
-    8002: { area: 'fantasyland', name: 'ピノキオの冒険旅行' },
-    8003: { area: 'fantasyland', name: '空飛ぶダンボ' },
-    8004: { area: 'fantasyland', name: 'キャッスルカルーセル' },
-    8005: { area: 'fantasyland', name: 'ホーンテッドマンション' },
-    8006: { area: 'fantasyland', name: '"イッツ・ア・スモールワールド" with グルート' },
-    8007: { area: 'fantasyland', name: 'アリスのティーパーティー' },
-    8008: { area: 'fantasyland', name: 'プーさんのハニーハント' },
-    8255: { area: 'fantasyland', name: '美女と野獣 "魔法のものがたり"' },
-    // トゥーンタウン
-    8009: { area: 'toontown', name: 'ロジャーラビットのカートゥーンスピン' },
-    8010: { area: 'toontown', name: 'ミニーの家' },
-    8011: { area: 'toontown', name: 'チップとデールのツリーハウス' },
-    8012: { area: 'toontown', name: 'ガジェットのゴーコースター' },
-    8013: { area: 'toontown', name: 'ドナルドのボート' },
-    8014: { area: 'toontown', name: 'グーフィーのペイント＆プレイハウス' },
-    8020: { area: 'toontown', name: 'トゥーンパーク' },
-    15401: { area: 'toontown', name: 'ミッキーの家とミート・ミッキー' },
-    // トゥモローランド
-    8015: { area: 'tomorrowland', name: 'スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー' },
-    8018: { area: 'tomorrowland', name: 'モンスターズ・インク "ライド＆ゴーシーク!"' },
-    8021: { area: 'tomorrowland', name: 'スティッチ・エンカウンター' },
-    8254: { area: 'tomorrowland', name: 'ベイマックスのハッピーライド' },
-};
-
-// TDS アトラクション情報（エリア順）
-const TDS_RIDE_INFO = {
-    // メディテレーニアンハーバー
-    8024: { area: 'mediterranean', name: 'ソアリン：ファンタスティック・フライト' },
-    8031: { area: 'mediterranean', name: 'ディズニーシー・トランジットスチーマーライン（メディテレーニアンハーバー）' },
-    8034: { area: 'mediterranean', name: 'ヴェネツィアン・ゴンドラ' },
-    8048: { area: 'mediterranean', name: 'フォートレス・エクスプロレーション' },
-    8049: { area: 'mediterranean', name: 'ザ・レオナルドチャレンジ' },
-    // アメリカンウォーターフロント
-    8023: { area: 'americanwaterfront', name: 'トイ・ストーリー・マニア！' },
-    8032: { area: 'americanwaterfront', name: 'ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント）' },
-    8036: { area: 'americanwaterfront', name: 'ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント）' },
-    8037: { area: 'americanwaterfront', name: 'ビッグシティ・ヴィークル' },
-    8047: { area: 'americanwaterfront', name: 'タワー・オブ・テラー' },
-    8050: { area: 'americanwaterfront', name: 'タートル・トーク' },
-    // ポートディスカバリー
-    8035: { area: 'portdiscovery', name: 'ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー）' },
-    8038: { area: 'portdiscovery', name: 'アクアトピア' },
-    8051: { area: 'portdiscovery', name: 'ニモ＆フレンズ・シーライダー' },
-    // ロストリバーデルタ
-    8027: { area: 'lostriverdelta', name: 'インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮' },
-    8033: { area: 'lostriverdelta', name: 'ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ）' },
-    8046: { area: 'lostriverdelta', name: 'レイジングスピリッツ' },
-    // アラビアンコースト
-    8025: { area: 'arabiancoast', name: 'ジャスミンのフライングカーペット' },
-    8030: { area: 'arabiancoast', name: 'マジックランプシアター' },
-    8039: { area: 'arabiancoast', name: 'シンドバッド・ストーリーブック・ヴォヤッジ' },
-    8040: { area: 'arabiancoast', name: 'キャラバンカルーセル' },
-    // マーメイドラグーン
-    8022: { area: 'mermaidlagoon', name: 'アリエルのプレイグラウンド' },
-    8026: { area: 'mermaidlagoon', name: 'マーメイドラグーンシアター' },
-    8041: { area: 'mermaidlagoon', name: 'フランダーのフライングフィッシュコースター' },
-    8042: { area: 'mermaidlagoon', name: 'スカットルのスクーター' },
-    8043: { area: 'mermaidlagoon', name: 'ジャンピン・ジェリーフィッシュ' },
-    8044: { area: 'mermaidlagoon', name: 'ブローフィッシュ・バルーンレース' },
-    8045: { area: 'mermaidlagoon', name: 'ワールプール' },
-    // ミステリアスアイランド
-    8028: { area: 'mysteriousisland', name: 'センター・オブ・ジ・アース' },
-    8029: { area: 'mysteriousisland', name: '海底2万マイル' },
-    // ファンタジースプリングス
-    13559: { area: 'fantasysprings', name: 'アナとエルサのフローズンジャーニー' },
-    13560: { area: 'fantasysprings', name: 'ラプンツェルのランタンフェスティバル' },
-    13561: { area: 'fantasysprings', name: 'ピーターパンのネバーランドアドベンチャー' },
-    13562: { area: 'fantasysprings', name: 'フェアリー・ティンカーベルのビジーバギー' },
-};
-
-// ユーティリティ関数：アトラクション名を取得
-function getRideNameFromInfo(rideId, park, originalName) {
-    const rideInfo = park === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
-    return rideInfo?.name || originalName;
-}
-
-// ユーティリティ関数：アトラクション情報を取得
-function getRideInfoByPark(rideId, park) {
-    return park === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
-}
-
-// ユーティリティ関数：エリア情報を取得
-function getAreasByPark(park) {
-    return park === 'land' ? TDL_AREAS : TDS_AREAS;
-}
+// パーク・エリア・アトラクションのマスタは Supabase から取得（master-from-supabase.js で window.PARKS / TDL_AREAS / TDS_AREAS / TDL_RIDE_INFO / TDS_RIDE_INFO をセット）
 
 // ユーティリティ関数：待ち時間から共通の色分けクラスを取得
 // 両画面（index.html / history.html）で同じしきい値を使うための共通関数
 function getWaitClassGlobal(waitTime) {
     if (waitTime == null || isNaN(waitTime)) return '';
     const v = Number(waitTime);
-    // 0〜30 / 30〜60 / 60〜90 / 90〜120 / 120〜180 / 180+ の6段階
+    // 0〜30 / 30〜60 / 60〜90 / 90〜120 / 120〜180 / 180〜240 / 240〜300 / 300+ の8段階
     if (v <= 30)  return 'wait-short';
     if (v <= 60)  return 'wait-medium';
     if (v <= 90)  return 'wait-long';
     if (v <= 120) return 'wait-very-long';
     if (v <= 180) return 'wait-extreme-long';
-    // 180分を超える場合は最も混雑した色
-    return 'wait-insane-long';
+    if (v <= 240) return 'wait-insane-long';   // 紫
+    if (v <= 300) return 'wait-ultra-long';    // 濃い紫
+    return 'wait-max-long';                    // 黒
 }

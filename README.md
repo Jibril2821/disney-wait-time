@@ -11,14 +11,34 @@
 ## ファイル構成
 
 ```
-├── index.html          # メイン画面（待ち時間確認）
-├── history.html        # 履歴ビューア（グラフ表示）
-├── collect-data.js     # データ収集スクリプト（Supabase に登録）
-├── setup-scheduler.bat # Windows用タスク登録
-├── supabase/schema.sql # DB テーブル定義
-├── data/               # （旧）収集データ（JSON）※現在は Supabase に登録
-└── .github/workflows/  # GitHub Actions設定
+├── index.html                    # メイン画面（待ち時間確認）
+├── history.html                  # 履歴ビューア（グラフ表示）
+├── park-data.js                  # 待ち時間の色設定・スタイル注入・色分けクラス取得
+├── master-from-supabase.js       # Supabase マスタを取得し window にセット（画面用）
+├── supabase-config.js            # Supabase URL / anon キー（画面用）
+├── collect-data.js               # データ収集スクリプト（Supabase に登録）
+├── setup-scheduler.bat           # Windows用タスク登録
+├── supabase/
+│   └── schema.sql                # DB テーブル定義
+├── scripts/
+│   └── seed-master-to-supabase.js # マスタを Supabase に登録（upsert、再実行可）
+├── data/                         # （旧）収集データ（JSON）※現在は Supabase に登録
+└── .github/workflows/            # GitHub Actions設定
 ```
+
+## マスタデータと画面の関係
+
+パーク・エリア・アトラクションの**マスタは Supabase が正**です。画面は起動時に Supabase から取得して使います。
+
+| 役割 | ファイル・DB | 説明 |
+|------|----------------|------|
+| **マスタの保存** | Supabase の `parks` / `areas` / `rides` | パーク名・エリア・アトラクション一覧を保持 |
+| **マスタの登録** | `scripts/seed-master-to-supabase.js` | マスタ定義を DB に **upsert** で登録。再実行しても一意制約違反にならない |
+| **マスタの取得（画面）** | `master-from-supabase.js` | Supabase からマスタを取得し、`window.PARKS` / `TDL_AREAS` / `TDS_AREAS` / `TDL_RIDE_INFO` / `TDS_RIDE_INFO` にセットする橋渡し |
+| **画面での利用** | `index.html` / `history.html` | 表示前に `loadMasterFromSupabase()` を `await` し、上記グローバルでパーク名・エリア・アトラクション名を参照 |
+
+- **park-data.js** はマスタを持たず、**待ち時間の色**（`WAIT_TIME_COLORS`）と **スタイル注入**（`injectWaitTimeColorStyles`）、**色分けクラス取得**（`getWaitClassGlobal`）のみを提供します。
+- マスタの追加・変更は `scripts/seed-master-to-supabase.js` を編集してから `npm run seed-master` を実行してください。
 
 ## 使い方
 
@@ -50,12 +70,12 @@
 
 ### 3. マスタデータを Supabase に登録する
 
-`park-data.js` で定義しているパーク・エリア・アトラクションのマスタを DB に登録できます。
+（全体の流れは **「マスタデータと画面の関係」** を参照。）
 
 1. `supabase/schema.sql` で `parks` / `areas` / `rides` テーブルを作成済みであること
-2. `npm run seed-master` を実行
+2. `scripts/seed-master-to-supabase.js` 内のマスタ定義を必要に応じて編集し、`npm run seed-master` を実行
 
-※ `park-data.js` を変更した場合は、`scripts/seed-master-to-supabase.js` 内のマスタ定義も同期してください。
+※ マスタの追加・変更は `scripts/seed-master-to-supabase.js` を編集してから seed を実行。upsert のため再実行しても一意制約違反にはなりません。
 
 ### 4. 履歴を確認する
 

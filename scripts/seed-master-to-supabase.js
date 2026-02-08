@@ -1,7 +1,7 @@
 /**
- * park-data.js のマスタデータを Supabase に登録するスクリプト
+ * パーク・エリア・アトラクションのマスタを Supabase に登録するスクリプト
  * 実行: node scripts/seed-master-to-supabase.js
- * ※ park-data.js と内容を変えた場合はこのファイルのマスタ定義も同期してください
+ * 画面（index.html / history.html）は master-from-supabase.js でこのマスタを参照します。
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
@@ -10,7 +10,7 @@ const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// park-data.js と同じマスタ定義（同期元: park-data.js）
+// マスタ定義（このファイルが登録元）
 const PARKS = {
     land: { id: 274, name: '東京ディズニーランド', icon: '🏰', folder: 'TDL' },
     sea: { id: 275, name: '東京ディズニーシー', icon: '🌋', folder: 'TDS' }
@@ -145,6 +145,7 @@ async function seed() {
         }
     }
 
+    // upsert により既存行は更新されるため、再実行しても一意制約違反にならない
     console.log('マスタデータを登録します...');
     const { error: e1 } = await supabase.from('parks').upsert(parksRows, { onConflict: 'park_id' });
     if (e1) {
