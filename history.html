@@ -359,6 +359,62 @@
             color: #fff;
         }
 
+        .correlation-section {
+            margin-top: 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: rgba(78, 205, 196, 0.12);
+            border: 1px solid rgba(78, 205, 196, 0.25);
+            font-size: 0.9rem;
+        }
+
+        .correlation-section-title {
+            font-weight: 600;
+            color: #4ecdc4;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .correlation-section-description {
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .correlation-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .correlation-item {
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .correlation-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .correlation-item.strong {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: rgba(78, 205, 196, 0.4);
+        }
+
+        .correlation-item.moderate {
+            background: rgba(78, 205, 196, 0.12);
+            border-color: rgba(78, 205, 196, 0.3);
+        }
+
+        .correlation-ride-name {
+            color: #fff;
+            font-weight: 500;
+        }
+
         /* 読み込み中：画面全体を暗くし、中央に表示（リアルタイム画面と同様） */
         .loading {
             position: fixed;
@@ -1942,17 +1998,20 @@
         const parkParam = urlParams.get('park');
         const rideParam = urlParams.get('ride');
 
+        /** マスタからアトラクション名を取得。無い場合は originalName を返す */
         function getRideName(rideId, originalName) {
             // park-data.js の統一構造 { area, name } から名前を取得
             const rideInfo = currentPark === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
             return rideInfo?.name || originalName;
         }
 
+        /** マスタからアトラクションのエリアキーを取得。無い場合は 'other' */
         function getRideArea(rideId) {
             const rideInfo = currentPark === 'land' ? TDL_RIDE_INFO[rideId] : TDS_RIDE_INFO[rideId];
             return rideInfo?.area || 'other';
         }
 
+        /** 現在パークのエリア一覧（TDL_AREAS / TDS_AREAS）を返す */
         function getAreas() {
             return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
@@ -1960,6 +2019,7 @@
         // 初期化（マスタ取得後に currentPark を設定してから init 続行）
         document.addEventListener('DOMContentLoaded', init);
 
+        /** ページ初期化：マスタ取得、パーク設定、日付取得・UIバインドを行う */
         async function init() {
             await loadMasterFromSupabase();
             if (parkParam && PARKS[parkParam]) {
@@ -2016,6 +2076,7 @@
             }
         }
 
+        /** Supabase REST API 用のリクエストヘッダーを返す */
         function getSupabaseHeaders() {
             return {
                 'apikey': window.SUPABASE_ANON_KEY || '',
@@ -2024,6 +2085,7 @@
             };
         }
 
+        /** 現在パークの date_events を取得し dateEventsList に格納する */
         async function loadDateEvents() {
             if (!currentPark) { dateEventsList = []; return; }
             const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
@@ -2081,6 +2143,7 @@
             return out;
         }
 
+        /** イベント管理オーバーレイを開く。selectedDate を渡すと開始・終了日にセットする */
         function openEventManageOverlay(selectedDate) {
             const overlay = document.getElementById('eventManageOverlay');
             if (!overlay) return;
@@ -2096,12 +2159,14 @@
             overlay.style.display = 'flex';
         }
 
+        /** イベント管理オーバーレイを閉じる（背景クリック時） */
         function closeEventManageOverlay(ev) {
             if (ev != null && ev.target !== ev.currentTarget) return;
             const overlay = document.getElementById('eventManageOverlay');
             if (overlay) overlay.style.display = 'none';
         }
 
+        /** イベント管理画面の登録済みイベント一覧を描画する */
         function renderEventManageList() {
             const ul = document.getElementById('eventManageList');
             if (!ul) return;
@@ -2119,6 +2184,7 @@
             });
         }
 
+        /** イベント追加フォームの内容を Supabase に登録し、一覧を更新する */
         async function submitAddEvent() {
             const label = (document.getElementById('eventAddLabel').value || '').trim();
             const start = (document.getElementById('eventAddStart').value || '').trim();
@@ -2153,6 +2219,7 @@
             }
         }
 
+        /** 指定IDのイベントを Supabase から削除し、一覧を更新する */
         async function deleteEventById(id) {
             if (!id || !confirm('このイベントを削除しますか？')) return;
             const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
@@ -2170,6 +2237,7 @@
             }
         }
 
+        /** 日付選択のオプションラベルをイベント付きの表示に更新する */
         function refreshDateSelectOptionLabels() {
             if (currentPeriod !== 'day') return;
             const dateSelect = document.getElementById('dateSelect');
@@ -2179,6 +2247,7 @@
             }
         }
 
+        /** Supabase から取得可能な日付一覧を取得し、日付選択UIを構築する */
         async function loadAvailableDatesFromSupabase() {
             const parkInfo = PARKS[currentPark];
             const content = document.getElementById('content');
@@ -2215,6 +2284,7 @@
             }
         }
 
+        /** 指定パーク・日付の待ち時間スナップショットを Supabase から取得する */
         async function fetchSupabaseDataForDate(parkId, dateStr) {
             if (!dateStr || !parkId) return null;
             const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
@@ -2239,6 +2309,7 @@
             }
         }
 
+        /** 日付文字列を「○月○日(曜)」形式で表示用に整形する */
         function formatDate(dateStr) {
             const date = new Date(dateStr);
             const options = { month: 'long', day: 'numeric', weekday: 'short' };
@@ -2260,6 +2331,7 @@
             return [...ridesMap.entries()].sort((a, b) => a[1].localeCompare(b[1], 'ja'));
         }
 
+        /** 全アトラクション一覧・グラフ・ヒートマップ・カレンダーを描画する（フィルタ・検索適用） */
         function showAllRides() {
             const content = document.getElementById('content');
             const recordsToUse = getDisplayedRecords();
@@ -2499,6 +2571,7 @@
             });
         }
 
+        /** 全体の待ち時間推移グラフ（日/週/月/年に対応）を Chart.js で描画する */
         function renderOverviewChart(rideCards) {
             const ctx = document.getElementById('overviewChart');
             if (!ctx) return;
@@ -2880,6 +2953,7 @@
             `;
         }
 
+        /** 日単位の待ち時間ヒートマップ（9〜21時・30分刻み）を描画する */
         function renderHeatmapSection(rideCards) {
             if (!rideCards || rideCards.length === 0 || !loadedData || getDisplayedRecords().length === 0) {
                 return '';
@@ -2948,6 +3022,7 @@
             `;
         }
 
+        /** 月単位のカレンダー（日付ごとの混み具合）を描画する */
         function renderMonthlyCalendar() {
             if (!loadedData || loadedData.period !== 'month') return '';
 
@@ -3042,6 +3117,7 @@
             `;
         }
 
+        /** 年単位のカレンダー（月ごとの混み具合）を描画する */
         function renderYearlyCalendar() {
             if (!loadedData || loadedData.period !== 'year') return '';
 
@@ -3145,7 +3221,7 @@
             `;
         }
 
-        // 週カレンダー（全アトラクション用）
+        /** 週単位のカレンダー（日曜始まり7日分の混み具合）を描画する */
         function renderWeeklyCalendar() {
             if (!loadedData || loadedData.period !== 'week') return '';
 
@@ -3225,7 +3301,7 @@
             `;
         }
 
-        // 個別アトラクション用週カレンダー
+        /** 単一アトラクションの週カレンダー（曜日別の平均待ち時間）を描画する */
         function renderSingleRideWeeklyCalendar(rideId, rideData) {
             if (!loadedData || loadedData.period !== 'week' || !rideData || rideData.length === 0) return '';
 
@@ -3301,6 +3377,7 @@
 
         // ── 曜日×時間帯マトリクス ──
 
+        /** 曜日×時間帯の集計行列を構築する（dataIterator は { dow, hourIdx, wait } のイテレータ） */
         function buildDayTimeMatrix(dataIterator) {
             // 7曜日 x 13時間帯 (9〜21時) の集計用マトリクス
             const matrix = Array.from({ length: 7 }, () =>
@@ -3316,6 +3393,7 @@
             return matrix;
         }
 
+        /** 曜日×時間帯の行列を表形式HTMLで描画する。options.onlyDow で特定曜日のみ表示可能 */
         function renderDayTimeMatrixHtml(matrix, title, options) {
             const onlyDow = options && options.onlyDow !== undefined ? options.onlyDow : null;
             const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
@@ -3384,6 +3462,7 @@
             `;
         }
 
+        /** 全アトラクションの曜日×時間帯マトリクスを描画する */
         function renderDayTimeMatrix(filteredCards) {
             if (!filteredCards || filteredCards.length === 0) return '';
 
@@ -3413,6 +3492,7 @@
             return renderDayTimeMatrixHtml(matrix, title, { onlyDow });
         }
 
+        /** 単一アトラクションの曜日×時間帯マトリクスを描画する */
         function renderSingleRideDayTimeMatrix(rideId, rideName, rideData) {
             if (!rideData || rideData.length === 0) return '';
 
@@ -3438,7 +3518,7 @@
             return renderDayTimeMatrixHtml(matrix, title, { onlyDow });
         }
 
-        // 個別アトラクション用ヒートマップ（日単位）
+        /** 単一アトラクションの日単位ヒートマップ（9〜21時）を描画する */
         function renderSingleRideHeatmap(rideId, rideName, rideData) {
             if (!rideData || rideData.length === 0 || currentPeriod !== 'day') {
                 return '';
@@ -3501,7 +3581,7 @@
             `;
         }
 
-        // 個別アトラクション用月カレンダー
+        /** 単一アトラクションの月カレンダー（日付別の平均待ち時間）を描画する */
         function renderSingleRideMonthlyCalendar(rideId, rideData) {
             if (!loadedData || loadedData.period !== 'month' || !rideData || rideData.length === 0) return '';
 
@@ -3589,7 +3669,7 @@
             `;
         }
 
-        // 個別アトラクション用年カレンダー
+        /** 単一アトラクションの年カレンダー（月別の平均待ち時間）を描画する */
         function renderSingleRideYearlyCalendar(rideId, rideData) {
             if (!loadedData || loadedData.period !== 'year' || !rideData || rideData.length === 0) return '';
 
@@ -3687,6 +3767,7 @@
             `;
         }
 
+        /** エリア別にアトラクションカード群を描画する */
         function renderAreaSections(rideCards, areas) {
             if (!rideCards || rideCards.length === 0) {
                 return '<div class="no-rides">該当するアトラクションがありません</div>';
@@ -3703,6 +3784,7 @@
             `;
         }
 
+        /** 1件のアトラクションカード（履歴一覧用）のHTMLを生成する */
         function renderRideCard(ride) {
             const cardClass = ride.waits.length === 0 ? 'closed' : '';
             const avgClass = getWaitClass(ride.avgWait);
@@ -3773,6 +3855,38 @@
             `;
         }
 
+        /**
+         * 相関分析結果のHTMLを生成する
+         * @param {Array<{rideId: string, rideName: string, correlation: number}>} correlations - 相関結果の配列
+         * @param {string} primaryRideName - 基準となるアトラクション名
+         * @returns {string} HTML文字列（相関がない場合は空文字）
+         */
+        function renderCorrelationHtml(correlations, primaryRideName) {
+            if (!correlations || correlations.length === 0) {
+                return '';
+            }
+
+            const itemsHtml = correlations.map(corr => {
+                // 相関係数の強さに応じてクラスを付与
+                const strengthClass = corr.correlation <= -0.5 ? 'strong' : 'moderate';
+                return `
+                    <div class="correlation-item ${strengthClass}">
+                        <span class="correlation-ride-name">${escapeHtml(corr.rideName)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="correlation-section">
+                    <div class="correlation-section-title">📊 相関分析（過去1か月の同じ曜日）</div>
+                    <div class="correlation-section-description">${escapeHtml(primaryRideName)}が混むと、以下のアトラクションが空きやすい傾向があります：</div>
+                    <div class="correlation-items">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         function showRideDetail(rideId) {
             // スクロールを一番上に戻す
             window.scrollTo(0, 0);
@@ -3821,6 +3935,7 @@
                         </div>
                     </div>
                     ${bestTimeSlotsHtml}
+                    <div id="correlationSection"></div>
                 </div>
                 <div class="sparkline-detail" id="detailSparklineSection" style="display:none;">
                     <div class="sparkline-title">📈 同じ時間帯の過去${SPARKLINE_WEEKS}週間の推移</div>
@@ -3871,8 +3986,19 @@
             setTimeout(() => scrollHeatmapToCurrentTime(content), 0);
             // 同じ時間帯の過去○週間スパークラインを非同期で描画
             loadDetailSparkline(rideId);
+            // 相関分析を非同期で計算・表示
+            computeRideCorrelations(rideId, currentPark).then(correlations => {
+                const section = document.getElementById('correlationSection');
+                if (section) {
+                    const html = renderCorrelationHtml(correlations, rideName);
+                    section.innerHTML = html;
+                }
+            }).catch(err => {
+                console.warn('Failed to compute correlations', err);
+            });
         }
 
+        /** 読み込み済みデータから指定アトラクションの時系列データを集約して返す */
         function collectRideData(rideId) {
             const rideData = [];
             let rideName = '';
@@ -3898,6 +4024,120 @@
             return { rideName, data: rideData };
         }
 
+        /**
+         * 選択したアトラクションと他の全アトラクションとの待ち時間の相関（負の相関）を計算する
+         * 過去約1か月（5週間）の同じ曜日のスナップショットデータからピアソン相関係数を計算
+         * @param {string|number} primaryRideId - 基準となるアトラクションID
+         * @param {string} parkId - パークID ('land' or 'sea')
+         * @returns {Promise<Array<{rideId: string, rideName: string, correlation: number}>>} 負の相関が強いアトラクションの配列（相関係数の昇順）
+         */
+        async function computeRideCorrelations(primaryRideId, parkId) {
+            if (!USE_SUPABASE || !primaryRideId || !parkId) {
+                return [];
+            }
+
+            const primaryKey = String(primaryRideId);
+            const todayStr = getTodayJstDateStr();
+            const [tYear, tMonth, tDay] = todayStr.split('-').map(n => parseInt(n, 10));
+            const baseDate = new Date(tYear, tMonth - 1, tDay);
+            const MAX_WEEKS = 5; // 過去約1か月の同じ曜日を対象
+
+            // 各アトラクションごとの待ち時間ペアを記録: rideId -> [primaryWait, otherWait][]
+            const pairsByRide = new Map();
+
+            // 過去5週間の同じ曜日のスナップショットを取得
+            for (let weekOffset = 1; weekOffset <= MAX_WEEKS; weekOffset++) {
+                const target = new Date(baseDate.getTime() - weekOffset * 7 * 86400000);
+                const y = target.getFullYear();
+                const m = String(target.getMonth() + 1).padStart(2, '0');
+                const d = String(target.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+
+                try {
+                    const data = await fetchSupabaseDataForDate(parkId, dateStr);
+                    if (!data || !Array.isArray(data.records)) continue;
+
+                    for (const record of data.records) {
+                        const ridesAtTime = record.rides || [];
+                        const primaryRide = ridesAtTime.find(r => String(r.id) === primaryKey);
+                        
+                        // 基準アトラクションが運営中かつ待ち時間 > 0 の場合のみ処理
+                        if (!primaryRide || !primaryRide.is_open || !primaryRide.wait_time || primaryRide.wait_time <= 0) {
+                            continue;
+                        }
+
+                        const primaryWait = primaryRide.wait_time;
+
+                        // 他の各アトラクションとのペアを記録
+                        for (const otherRide of ridesAtTime) {
+                            const otherKey = String(otherRide.id);
+                            if (otherKey === primaryKey) continue; // 自分自身は除外
+                            if (!otherRide.is_open || !otherRide.wait_time || otherRide.wait_time <= 0) continue;
+
+                            if (!pairsByRide.has(otherKey)) {
+                                pairsByRide.set(otherKey, []);
+                            }
+                            pairsByRide.get(otherKey).push([primaryWait, otherRide.wait_time]);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to fetch correlation data for', dateStr, e);
+                    continue;
+                }
+            }
+
+            // ピアソン相関係数を計算
+            const correlations = [];
+            const MIN_PAIRS = 10; // データが少ない場合は除外
+
+            pairsByRide.forEach((pairs, rideId) => {
+                if (pairs.length < MIN_PAIRS) return;
+
+                const n = pairs.length;
+                const primaryValues = pairs.map(p => p[0]);
+                const otherValues = pairs.map(p => p[1]);
+
+                // 平均値を計算
+                const primaryMean = primaryValues.reduce((a, b) => a + b, 0) / n;
+                const otherMean = otherValues.reduce((a, b) => a + b, 0) / n;
+
+                // 偏差の積和と分散を計算
+                let covariance = 0;
+                let primaryVariance = 0;
+                let otherVariance = 0;
+
+                for (let i = 0; i < n; i++) {
+                    const primaryDev = primaryValues[i] - primaryMean;
+                    const otherDev = otherValues[i] - otherMean;
+                    covariance += primaryDev * otherDev;
+                    primaryVariance += primaryDev * primaryDev;
+                    otherVariance += otherDev * otherDev;
+                }
+
+                // ピアソン相関係数を計算
+                const denominator = Math.sqrt(primaryVariance * otherVariance);
+                if (denominator === 0) return;
+
+                const correlation = covariance / denominator;
+
+                // 負の相関が強い（-0.3以下）場合のみ追加
+                if (correlation < -0.3) {
+                    const rideName = getRideName(rideId, '');
+                    correlations.push({
+                        rideId,
+                        rideName,
+                        correlation
+                    });
+                }
+            });
+
+            // 相関係数の昇順（負の相関が強い順）でソート
+            correlations.sort((a, b) => a.correlation - b.correlation);
+
+            return correlations;
+        }
+
+        /** 詳細画面の比較用UI（他アトラクション選択・日付比較など）を設定する */
         function setupCompareControls(primaryRideId, primaryRideName, primaryRideData) {
             const select = document.getElementById('compareSelect');
             const chipsContainer = document.getElementById('compareChips');
@@ -3957,6 +4197,7 @@
             });
         }
 
+        /** 詳細画面の待ち時間グラフ（日/週/月/年・比較線対応）を Chart.js で描画する */
         function renderChart(rideName, rideData, primaryRideId) {
             const ctx = document.getElementById('waitTimeChart');
             if (!ctx) return;
@@ -4179,6 +4420,7 @@
             });
         }
 
+        /** 詳細画面の時系列テーブル（日付・時刻・待ち時間）を描画する */
         function renderTable(rideData) {
             const tbody = document.querySelector('#dataTable tbody');
             if (!tbody) return;
@@ -4217,6 +4459,7 @@
             showAllRides();
         }
 
+        /** 文字列をHTMLエスケープして返す */
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -4224,6 +4467,7 @@
         }
 
         // ── 前回の来園日と比較 ──
+        /** 現在表示中の日付（日ビュー時は selectedValue 等）。YYYY-MM-DD または null */
         function getCurrentViewingDate() {
             if (!loadedData) return null;
             if (loadedData.dateRange && loadedData.dateRange.length > 0) return loadedData.dateRange[0];
@@ -4232,10 +4476,12 @@
             return null;
         }
 
+        /** 指定年・月の日数を返す（month は 1〜12 の文字列または数値） */
         function getDaysInMonth(year, month) {
             return new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
         }
 
+        /** 日付比較用の日選択肢を、選択中の年・月に合わせて更新する */
         function updateCompareDayOptions() {
             const yearSelect = document.getElementById('compareYear');
             const monthSelect = document.getElementById('compareMonth');
@@ -4256,6 +4502,7 @@
             }
         }
 
+        /** 現在の日本時間の年・月・日を返す（{ year, month, day }） */
         function getJstDate() {
             const now = new Date();
             const ymd = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
@@ -4263,6 +4510,7 @@
             return { year: parseInt(y, 10), month: m, day: d };
         }
 
+        /** 日付比較モーダルを開き、年・月・日の選択UIを表示する */
         function openCompareModal() {
             if (currentPeriod !== 'day' || !loadedData) return;
             const jst = getJstDate();
@@ -4302,10 +4550,12 @@
             document.getElementById('compareOverlay').style.display = 'flex';
         }
 
+        /** 日付比較モーダルを閉じる */
         function closeCompareModal() {
             document.getElementById('compareOverlay').style.display = 'none';
         }
 
+        /** モーダル背景クリックで比較モーダルを閉じる */
         function closeCompareOverlay(event) {
             if (event.target === document.getElementById('compareOverlay')) {
                 closeCompareModal();
@@ -4436,6 +4686,7 @@
         }
 
         /** 一覧表示後に、各カード用のスパークラインデータを取得して描画する */
+        /** 一覧の各カードに、同じ曜日の過去数週間のスパークラインを非同期で描画する */
         async function loadAndDrawListSparklines() {
             const content = document.getElementById('content');
             if (!content || !loadedData || !USE_SUPABASE || availableDates.length === 0) return;
@@ -4470,6 +4721,7 @@
         }
 
         /** 詳細画面用：1アトラクションの「同じ時間帯の過去○週間」を取得して描画 */
+        /** 詳細画面のスパークライン（同じ曜日・同時間帯の過去推移）を取得・描画する */
         async function loadDetailSparkline(rideId) {
             const section = document.getElementById('detailSparklineSection');
             const canvasWrap = document.getElementById('detailSparklineCanvas');
@@ -4511,6 +4763,7 @@
             overlay.style.display = 'none';
         }
 
+        /** 土日 vs 平日の比較モーダルを開き、両方の平均待ち時間を計算して表示する */
         async function openWeekendWeekdayModal() {
             const body = document.getElementById('weekendWeekdayModalBody');
             if (!body) return;
@@ -4689,12 +4942,14 @@
             `;
         }
 
+        /** 指定日の履歴データを取得する（Supabase またはローカル） */
         async function fetchHistoryDataForDate(dateStr) {
             if (!dateStr || !currentPark) return null;
             if (USE_SUPABASE) return await fetchSupabaseDataForDate(currentPark, dateStr);
             return null;
         }
 
+        /** 1日分の records からアトラクション別・パーク全体の待ち時間統計を計算する */
         function computeDayStats(records) {
             const rideWaits = new Map();
             let parkSum = 0;
@@ -4719,6 +4974,7 @@
             return { rideAvg, parkAvg };
         }
 
+        /** 比較モーダルの年・月・日入力から YYYY-MM-DD を組み立てて返す */
         function getCompareDateFromInputs() {
             const y = document.getElementById('compareYear');
             const m = document.getElementById('compareMonth');
@@ -4727,6 +4983,7 @@
             return `${y.value}-${String(m.value).padStart(2, '0')}-${String(d.value).padStart(2, '0')}`;
         }
 
+        /** 選択した「前回の来園日」と表示中の日付の待ち時間を比較し、結果を表示する */
         async function runCompare() {
             const resultEl = document.getElementById('compareResult');
             const btnEl = document.getElementById('compareRunBtn') || document.getElementById('compareBtn');
@@ -4861,7 +5118,7 @@
             }
         }
 
-        // グラフの点クリック時ポップアップを表示
+        /** グラフの点クリック時に、そのポイントの候補アトラクションをポップアップで表示する */
         function showPointPopup(candidates, event) {
             // 既存のポップアップがあれば削除
             const existing = document.getElementById('pointPopupOverlay');
@@ -5092,6 +5349,7 @@
 
         }
 
+        /** 期間（day/week/month/year）に応じて日付ラベルを整形する（イベント表示用） */
         function formatDateForPeriod(dateStr, period) {
             const date = new Date(dateStr);
             if (period === 'day') {
@@ -5100,6 +5358,7 @@
             return dateStr;
         }
 
+        /** 週カレンダー用の日付ラベル（例: 2/5(木)）を返す */
         function formatWeekDateLabel(dateStr) {
             const date = new Date(dateStr);
             const month = date.getMonth() + 1;
@@ -5108,12 +5367,14 @@
             return `${month}/${day}(${weekday})`;
         }
 
+        /** YYYY-MM-DD をローカル日付（時刻0:00）に変換する */
         function parseDateStringToLocalDate(dateStr) {
             // "YYYY-MM-DD" をローカルタイムの Date に安全に変換（タイムゾーンずれ防止）
             const [y, m, d] = dateStr.split('-').map(Number);
             return new Date(y, m - 1, d);
         }
 
+        /** 訪問サマリー（データ件数・時間帯・イベント情報）の表示用オブジェクトを計算する */
         function computeVisitSummary() {
             if (!loadedData || !loadedData.records || getDisplayedRecords().length === 0) return null;
 
@@ -5192,6 +5453,7 @@
             return null;
         }
 
+        /** ローカルストレージからお気に入りアトラクションID一覧を読み込む */
         function loadFavoriteRides() {
             try {
                 const raw = localStorage.getItem('tdr_wait_favorites');
@@ -5205,6 +5467,7 @@
             }
         }
 
+        /** お気に入りアトラクションID一覧をローカルストレージに保存する */
         function saveFavoriteRides() {
             try {
                 const arr = Array.from(favoriteRideIds);
@@ -5214,6 +5477,7 @@
             }
         }
 
+        /** お気に入りの追加/解除をトグルし、保存する */
         function toggleFavoriteRide(rideId) {
             const key = String(rideId);
             if (favoriteRideIds.has(key)) {
@@ -5224,6 +5488,7 @@
             saveFavoriteRides();
         }
 
+        /** 週選択用のオプション（日曜始まりの週のラベル一覧）を返す */
         function getWeekOptions() {
             const weeks = [];
             const seenWeeks = new Set();
@@ -5248,6 +5513,7 @@
             return weeks;
         }
 
+        /** 月選択用のオプション（YYYY-MM と表示ラベル）を返す */
         function getMonthOptions() {
             const months = [];
             const seenMonths = new Set();
@@ -5267,6 +5533,7 @@
             return months;
         }
 
+        /** 年選択用のオプション（利用可能な年のリスト）を返す */
         function getYearOptions() {
             const years = new Set();
             for (const dateStr of availableDates) {

@@ -2095,6 +2095,7 @@
             restoredPlannerFromUrl = true;
         }
 
+        /** パークを選択しメイン画面に切り替え、待ち時間取得・自動更新を開始する */
         function selectPark(park) {
             const parkInfo = PARKS[park];
             if (!parkInfo) return;
@@ -2119,6 +2120,7 @@
             });
         }
 
+        /** 表示をリセット（読み込み中表示、フィルター・エリア・お気に入り・検索をクリア） */
         function resetDisplay() {
             document.getElementById('lastUpdated').textContent = '読み込み中...';
             // 混雑スコア・エリアタブは非表示にせずそのまま（取得完了後に更新される）
@@ -2146,6 +2148,7 @@
             if (searchInput) searchInput.value = '';
         }
 
+        /** パーク選択画面に戻り、自動更新を停止する */
         function goBack() {
             document.getElementById('parkSelectScreen').style.display = 'flex';
             document.getElementById('mainScreen').classList.remove('active');
@@ -2161,12 +2164,14 @@
             resetDisplay();
         }
 
+        /** 履歴画面（history.html）へ遷移する（現在のパークをクエリで渡す） */
         function goToHistory() {
             if (currentPark) {
                 window.location.href = `history.html?park=${currentPark}`;
             }
         }
 
+        /** 現在パークのアトラクション情報（エリア・名前）を rideId で取得する */
         function getRideInfo(rideId) {
             if (currentPark === 'land') {
                 return TDL_RIDE_INFO[rideId];
@@ -2175,10 +2180,12 @@
             }
         }
 
+        /** 現在パークのエリア一覧（TDL_AREAS / TDS_AREAS）を返す */
         function getAreas() {
             return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
 
+        /** 日本時間の今日の日付を YYYY-MM-DD で返す（UTC オフセットベース） */
         function getTodayDateString() {
             const now = new Date();
             // 日本時間で日付を取得
@@ -2302,6 +2309,7 @@
             return { rides, lastUpdated };
         }
 
+        /** 待ち時間データを取得し、エリアタブ・一覧・最終更新・混雑メーター・ベスト3を描画する */
         async function fetchQueueTimes() {
             try {
                 const parkInfo = PARKS[currentPark];
@@ -2354,6 +2362,7 @@
             }
         }
 
+        /** ヘッダーに最終更新日時（日本時間）を表示する */
         function updateLastUpdated() {
             if (ridesData.length > 0 && ridesData[0].last_updated) {
                 const date = new Date(ridesData[0].last_updated);
@@ -2370,6 +2379,7 @@
             }
         }
 
+        /** エリアタブを描画し、クリックでエリアフィルタをトグルする */
         function renderAreaTabs() {
             const tabsContainer = document.getElementById('areaTabs');
             const areas = getAreas();
@@ -2431,11 +2441,13 @@
             });
         }
 
+        /** 待ち時間に応じた表示用CSSクラスを返す（park-data.js の共通ロジックを利用） */
         function getWaitClass(waitTime) {
             // park-data.js で定義した共通ロジックを利用
             return getWaitClassGlobal(waitTime);
         }
 
+        /** 運営中を優先し、待ち時間の長い順にソートした配列を返す */
         function sortRides(rides) {
             return [...rides].sort((a, b) => {
                 if (!a.is_open) return 1;
@@ -2444,6 +2456,7 @@
             });
         }
 
+        /** ステータス（運営中/休止中）・お気に入り・名前検索でフィルタした配列を返す */
         function filterRides(rides) {
             let filtered = [...rides];
             
@@ -2467,6 +2480,7 @@
             return filtered;
         }
 
+        /** 1件のアトラクションカードのHTMLを生成する（待ち時間・お気に入り・チャンスバッジ含む） */
         function renderRideCard(ride) {
             const waitClass = ride.is_open ? getWaitClass(ride.wait_time) : '';
             const statusClass = ride.is_open ? 'open' : 'closed';
@@ -2510,6 +2524,7 @@
             return `<div class="best-time-badge">${escapeHtml(text)}</div>`;
         }
 
+        /** フィルタ・ソートしてアトラクション一覧を描画し、お気に入り・カードクリックのイベントを付与する */
         function renderRides() {
             const container = document.getElementById('ridesContainer');
             
@@ -2555,6 +2570,7 @@
             });
         }
 
+        /** 文字列をHTMLエスケープして返す */
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -2749,6 +2765,7 @@
         let plannerSelectedIds = new Set();
         const PLANNER_HISTORY_KEY = 'tdr_planner_history';
 
+        /** ローカルストレージから指定パークの回り順プランナー履歴を取得する */
         function getPlannerHistory(park) {
             try {
                 const raw = localStorage.getItem(PLANNER_HISTORY_KEY);
@@ -2763,6 +2780,7 @@
             }
         }
 
+        /** 回り順プランナーの選択をローカルストレージに保存する */
         function savePlannerHistory(park, rideIds) {
             try {
                 if (!park || !rideIds || rideIds.length < 2) return;
@@ -2776,6 +2794,7 @@
             }
         }
 
+        /** 保存済みの回り順プランを復元し、ルートを再生成する */
         function restorePlannerHistory() {
             const history = currentPark ? getPlannerHistory(currentPark) : null;
             if (!history) return;
@@ -2788,6 +2807,7 @@
             if (plannerSelectedIds.size >= 2) generateRoute();
         }
 
+        /** 回り順プランナーオーバーレイを開く */
         function openPlanner() {
             if (ridesData.length === 0) return;
             const overlay = document.getElementById('plannerOverlay');
@@ -2797,17 +2817,20 @@
             renderPlannerRideList();
         }
 
+        /** 回り順プランナーオーバーレイを閉じる */
         function closePlanner() {
             document.getElementById('plannerOverlay').style.display = 'none';
             document.body.style.overflow = '';
         }
 
+        /** オーバーレイの背景クリックでプランナーを閉じる */
         function closePlannerOverlay(event) {
             if (event.target === document.getElementById('plannerOverlay')) {
                 closePlanner();
             }
         }
 
+        /** プランナー内のアトラクション一覧（エリア別・前回プラン復元ボタン含む）を描画する */
         function renderPlannerRideList() {
             const body = document.getElementById('plannerBody');
             const areas = getAreas();
@@ -2871,6 +2894,7 @@
             updatePlannerCount();
         }
 
+        /** プランナーでアトラクションの選択/解除をトグルし、カウントを更新する */
         function togglePlannerRide(id) {
             const key = String(id);
             if (plannerSelectedIds.has(key)) {
@@ -2890,6 +2914,7 @@
             updatePlannerCount();
         }
 
+        /** 運営中のアトラクションをすべて選択する */
         function selectAllPlannerRides() {
             ridesData.filter(r => r.is_open && r.wait_time >= 0).forEach(r => {
                 plannerSelectedIds.add(String(r.id));
@@ -2897,22 +2922,26 @@
             renderPlannerRideList();
         }
 
+        /** プランナーの選択をすべて解除する */
         function clearPlannerRides() {
             plannerSelectedIds.clear();
             renderPlannerRideList();
         }
 
+        /** プランナーの選択件数を表示し、2件未満のときはルート生成ボタンを無効にする */
         function updatePlannerCount() {
             const count = plannerSelectedIds.size;
             document.getElementById('plannerCount').textContent = count;
             document.getElementById('plannerGenerateBtn').disabled = count < 2;
         }
 
+        /** プランナーの並び順モード（エリア順 or 待ち時間順）を返す */
         function getPlannerOrderMode() {
             const active = document.querySelector('.planner-order-btn.active');
             return (active && active.dataset.order) === 'area' ? 'area' : 'wait';
         }
 
+        /** 選択アトラクションからおすすめ回り順を計算し、結果を表示して履歴に保存する */
         function generateRoute() {
             const selectedRides = ridesData.filter(r =>
                 plannerSelectedIds.has(String(r.id)) && r.is_open
@@ -3043,6 +3072,7 @@
             return html;
         }
 
+        /** 作戦ボードオーバーレイを開き、混み具合・ベスト3・回り順を表示する */
         function openStrategyBoard() {
             const overlay = document.getElementById('strategyBoardOverlay');
             const content = document.getElementById('strategyBoardContent');
@@ -3103,15 +3133,18 @@
             overlay.style.display = 'flex';
         }
 
+        /** 作戦ボードオーバーレイを閉じる */
         function closeStrategyBoard() {
             const overlay = document.getElementById('strategyBoardOverlay');
             if (overlay) overlay.style.display = 'none';
         }
 
+        /** 作戦ボードの背景クリックでオーバーレイを閉じる */
         function closeStrategyBoardOverlay(event) {
             if (event.target.id === 'strategyBoardOverlay') closeStrategyBoard();
         }
 
+        /** 作戦ボードの内容を html2canvas で画像化してダウンロードする */
         function saveStrategyBoardAsImage() {
             const content = document.getElementById('strategyBoardContent');
             if (!content) return;
@@ -3153,6 +3186,7 @@
             }
         }
 
+        /** 現在のパーク・プランナー選択を反映したURLをクリップボードにコピーする */
         function copyStrategyBoardShareLink() {
             const base = (location.origin && location.pathname) ? (location.origin + location.pathname) : location.href.split('?')[0];
             const params = new URLSearchParams();
@@ -3172,6 +3206,7 @@
             }
         }
 
+        /** クリップボードAPIが使えない場合、textarea でURLをコピーするフォールバック */
         function fallbackCopyShareLink(url) {
             const ta = document.createElement('textarea');
             ta.value = url;
@@ -3196,6 +3231,7 @@
             return Math.round(Number(n) / 5) * 5;
         }
 
+        /** 混雑スコア（0〜100）と平均・最大待ち時間などを計算する。histStats があれば過去比較でスコア化 */
         function computeCongestionScore(rides, histStats) {
             const openRides = rides.filter(r => r.is_open && r.wait_time > 0);
             if (openRides.length === 0) {
@@ -3215,6 +3251,7 @@
             return { score, avgWait: roundTo5(avgWait), maxWait, openCount: openRides.length, totalCount: rides.length };
         }
 
+        /** 混雑スコアに応じた表示用ラベル・色・絵文字を返す */
         function getCongestionLevel(score) {
             if (score <= 25) return { label: '空いている', color: '#4ecdc4', emoji: '😊' };
             if (score <= 50) return { label: 'やや混雑', color: '#f9ca24', emoji: '😐' };
@@ -3222,6 +3259,7 @@
             return { label: '激混み', color: '#ff6b6b', emoji: '🔥' };
         }
 
+        /** 混雑メーター（スコア・レベル・過去比較コメント・統計）を描画する */
         function renderCongestionMeter() {
             const meter = document.getElementById('congestionMeter');
             const statsEl = document.getElementById('meterStats');
@@ -3340,6 +3378,7 @@
             section.style.display = 'block';
         }
 
+        /** ローカルストレージからお気に入りアトラクションID一覧を読み込む */
         function loadFavoriteRides() {
             try {
                 const raw = localStorage.getItem('tdr_wait_favorites');
@@ -3353,6 +3392,7 @@
             }
         }
 
+        /** お気に入りアトラクションID一覧をローカルストレージに保存する */
         function saveFavoriteRides() {
             try {
                 const arr = Array.from(favoriteRideIds);
@@ -3362,6 +3402,7 @@
             }
         }
 
+        /** お気に入りの追加/解除をトグルし、保存する */
         function toggleFavoriteRide(rideId) {
             const key = String(rideId);
             if (favoriteRideIds.has(key)) {
@@ -3414,10 +3455,12 @@
         let pullCurrentY = 0;
         let isPullRefreshing = false;
 
+        /** 現在の縦スクロール位置（px）を返す */
         function getScrollTop() {
             return window.scrollY ?? document.documentElement.scrollTop;
         }
 
+        /** プルで更新：インジケーターを「更新中」にし、fetchQueueTimes 実行後にリセットする */
         async function runPullRefresh() {
             const wrapper = document.getElementById('pullRefreshWrapper');
             const indicator = document.getElementById('pullRefreshIndicator');
@@ -3445,6 +3488,7 @@
             }
         }
 
+        /** プル距離に応じてインジケーターの位置と「離して更新」表示を更新する */
         function updatePullIndicator(pullDistance) {
             const wrapper = document.getElementById('pullRefreshWrapper');
             const indicator = document.getElementById('pullRefreshIndicator');
@@ -3455,6 +3499,7 @@
             indicator.classList.toggle('ready', damped >= PULL_THRESHOLD);
         }
 
+        /** プル更新インジケーターを初期状態に戻す */
         function resetPullIndicator() {
             const wrapper = document.getElementById('pullRefreshWrapper');
             const indicator = document.getElementById('pullRefreshIndicator');
@@ -3468,6 +3513,7 @@
             if (text) text.textContent = '引いて更新';
         }
 
+        /** メイン画面でプルダウンによる更新（touch/mouse）のイベントを設定する */
         function setupPullRefresh() {
             const mainScreen = document.getElementById('mainScreen');
             if (!mainScreen) return;

@@ -6,6 +6,10 @@
 (function () {
     'use strict';
 
+    /**
+     * Supabase REST API 用のリクエストヘッダー（apikey, Authorization, Accept）を返す。
+     * @returns {{ apikey: string, Authorization: string, Accept: string }}
+     */
     function getHeaders() {
         const key = typeof window !== 'undefined' && window.SUPABASE_ANON_KEY ? window.SUPABASE_ANON_KEY : '';
         return {
