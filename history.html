@@ -59,6 +59,59 @@
             gap: 10px;
         }
 
+        .header-park-row-history {
+            display: flex;
+            gap: 10px;
+            margin-left: 12px;
+        }
+
+        /* ランド／シー切り替えボタン（リアルタイム画面と同じデザイン） */
+        .park-switch-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .park-switch-btn.land {
+            background: linear-gradient(135deg, rgba(233,30,99,0.25) 0%, rgba(156,39,176,0.25) 100%);
+            border: 2px solid rgba(233,30,99,0.4);
+            color: #fff;
+        }
+
+        .park-switch-btn.land:hover {
+            border-color: #e91e63;
+            box-shadow: 0 4px 15px rgba(233,30,99,0.3);
+        }
+
+        .park-switch-btn.land.active {
+            background: linear-gradient(135deg, #e91e63, #9c27b0);
+            border-color: #e91e63;
+        }
+
+        .park-switch-btn.sea {
+            background: linear-gradient(135deg, rgba(33,150,243,0.25) 0%, rgba(0,188,212,0.25) 100%);
+            border: 2px solid rgba(33,150,243,0.4);
+            color: #fff;
+        }
+
+        .park-switch-btn.sea:hover {
+            border-color: #2196f3;
+            box-shadow: 0 4px 15px rgba(33,150,243,0.3);
+        }
+
+        .park-switch-btn.sea.active {
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+            border-color: #2196f3;
+        }
+
         .back-btn,
         .compare-header-btn {
             box-sizing: border-box;
@@ -66,22 +119,33 @@
             padding: 10px 20px;
             border: none;
             border-radius: 25px;
+            color: #fff;
             font-size: 0.9rem;
             font-weight: 700;
-            line-height: 1.25;
-            display: inline-flex;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
         }
         .back-btn {
             background: rgba(255,255,255,0.1);
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
         }
         .back-btn:hover {
             background: rgba(255,255,255,0.2);
+        }
+        .back-btn-icon {
+            margin-right: 6px;
+            display: none; /* PC ではアイコン非表示 */
+        }
+        /* 戻るテキストの表示切り替え（PC/スマホ） */
+        .back-btn-text-desktop {
+            display: inline;
+        }
+        .back-btn-text-mobile {
+            display: none;
         }
 
         .compare-header-btn {
@@ -91,9 +155,15 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        /* ヘッダーのボタン内アイコン（絵文字）が iOS で縦長にならないように共通制御 */
         .header-btn-emoji {
-            font-size: 1.1em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
             line-height: 1;
+            width: 1.4em;
+            height: 1.4em;
         }
         .header-btn-text {
             font-size: 0.95em;
@@ -102,25 +172,25 @@
             display: inline;
         }
         #compareBtn {
-            background: linear-gradient(135deg, rgba(78, 205, 196, 0.35), rgba(68, 160, 141, 0.35));
-            border: 1px solid rgba(78, 205, 196, 0.5);
+            background: linear-gradient(135deg, rgba(78,205,196,0.3), rgba(68,160,141,0.3));
+            border: none;
         }
         #compareBtn:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(78, 205, 196, 0.5), rgba(68, 160, 141, 0.5));
+            background: linear-gradient(135deg, rgba(78,205,196,0.5), rgba(68,160,141,0.5));
         }
         #weekendWeekdayBtn {
-            background: linear-gradient(135deg, rgba(249, 202, 36, 0.3), rgba(243, 156, 18, 0.3));
-            border: 1px solid rgba(249, 202, 36, 0.5);
+            background: linear-gradient(135deg, rgba(249,202,36,0.3), rgba(243,156,18,0.3));
+            border: none;
         }
         #weekendWeekdayBtn:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(249, 202, 36, 0.45), rgba(243, 156, 18, 0.45));
+            background: linear-gradient(135deg, rgba(249,202,36,0.45), rgba(243,156,18,0.45));
         }
         #eventManageBtn {
-            background: linear-gradient(135deg, rgba(156, 39, 176, 0.3), rgba(123, 31, 162, 0.3));
-            border: 1px solid rgba(156, 39, 176, 0.5);
+            background: linear-gradient(135deg, rgba(156,39,176,0.3), rgba(123,31,162,0.3));
+            border: none;
         }
         #eventManageBtn:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(156, 39, 176, 0.45), rgba(123, 31, 162, 0.45));
+            background: linear-gradient(135deg, rgba(156,39,176,0.45), rgba(123,31,162,0.45));
         }
         .compare-header-btn:disabled {
             opacity: 0.7;
@@ -203,10 +273,19 @@
         @media (min-width: 769px) {
             .controls-row {
                 flex-wrap: nowrap;
+                justify-content: center; /* 行全体を中央寄せ */
             }
             .controls-center {
-                flex: 1;
+                flex: 0;
                 justify-content: center;
+                gap: 0;
+                flex-wrap: nowrap;
+            }
+            .controls-center select {
+                margin-left: 8px; /* 期間タブと日付選択が少し離れつつまとまって見える程度に調整 */
+                height: 44px;      /* 期間タブと高さを揃える */
+                padding-top: 10px;
+                padding-bottom: 10px;
             }
         }
 
@@ -268,6 +347,10 @@
             padding: 5px;
             border-radius: 30px;
             min-width: 0;
+            width: auto;              /* 中身の幅にフィット */
+            box-sizing: border-box;
+            margin: 0 auto;           /* 行の中央に配置 */
+            justify-content: center;  /* タブ自体も中央寄せ */
         }
 
         .period-tab {
@@ -1528,11 +1611,12 @@
                 align-items: center;
             }
 
+            /* スマホ時は「リアルタイム」「ランド」「シー」を同じ行で3分割 */
             .header-top-row {
-                flex-direction: column;
-                flex-wrap: wrap;
+                display: grid;
                 width: 100%;
-                justify-content: flex-start;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: auto auto;
                 gap: 10px;
             }
 
@@ -1541,19 +1625,51 @@
                 margin-bottom: 0;
                 width: 100%;
                 justify-content: center;
-                padding: 12px 16px;
+                padding: 8px 6px;
                 font-size: 0.9rem;
                 box-sizing: border-box;
+                grid-column: 1;
+                grid-row: 1;
+                height: 64px;
+                flex-direction: column;
+                gap: 2px;
+                border-radius: 12px;
+            }
+            .back-btn-icon {
+                display: inline; /* スマホではアイコン表示 */
+            }
+            .back-btn-text-desktop {
+                display: none;
+            }
+            .back-btn-text-mobile {
+                display: inline;
+            }
+
+            .header-park-row-history {
+                display: contents;
+            }
+
+            .header-park-row-history .park-switch-btn {
+                width: 100%;
+                min-width: 0;
+                height: 64px;
+                padding: 8px 6px;
+                font-size: 0.8rem;
+                border-radius: 12px;
+                flex-direction: column;
+                gap: 2px;
             }
 
             .header-top-row2 {
                 width: 100%;
-                display: flex;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
                 gap: 10px;
+                grid-column: 1 / -1;
+                grid-row: 2;
             }
 
             .header-top-row2 .compare-header-btn {
-                flex: 1 1 0;
                 min-width: 0;
                 height: 64px;
                 padding: 8px 6px;
@@ -1562,6 +1678,7 @@
                 align-items: center;
                 flex-direction: column;
                 gap: 2px;
+                border-radius: 12px;
             }
             .header-top-row2 .header-btn-emoji {
                 display: block;
@@ -1599,10 +1716,12 @@
                 display: contents;
             }
             .controls-center .period-tabs {
-                grid-column: 2;
+                grid-column: 1 / -1;
                 grid-row: 1;
                 min-width: 0;
-                width: 100%;
+                width: auto;
+                justify-content: center;
+                margin: 0 auto;
             }
             .controls-center select {
                 grid-column: 1 / -1;
@@ -1888,7 +2007,11 @@
     <div class="container">
         <header>
             <div class="header-top-row">
-                <a href="index.html" class="back-btn">⬅️ リアルタイム</a>
+                <a href="index.html" class="back-btn"><span class="back-btn-icon">⬅️</span><span class="back-btn-text back-btn-text-desktop">リアルタイム</span><span class="back-btn-text back-btn-text-mobile">戻る</span></a>
+                <div class="header-park-row-history">
+                    <button type="button" class="park-switch-btn land" id="historyParkSwitchLand" data-park="land">🏰 ランド</button>
+                    <button type="button" class="park-switch-btn sea" id="historyParkSwitchSea" data-park="sea">🌋 シー</button>
+                </div>
                 <div class="header-top-row2">
                     <button type="button" class="compare-header-btn" id="compareBtn" style="display:none;"><span class="header-btn-emoji">📅</span><span class="header-btn-text">比較</span></button>
                     <button type="button" class="compare-header-btn" id="weekendWeekdayBtn" style="display:none;"><span class="header-btn-emoji">📊</span><span class="header-btn-text">週末/平日</span></button>
@@ -2027,6 +2150,32 @@
             } else {
                 currentPark = 'land';
             }
+
+            // パーク切り替えボタン（履歴画面用）に現在のパーク状態を反映
+            const historyParkSwitchLand = document.getElementById('historyParkSwitchLand');
+            const historyParkSwitchSea = document.getElementById('historyParkSwitchSea');
+            if (historyParkSwitchLand && historyParkSwitchSea) {
+                const updateHistoryParkButtons = () => {
+                    historyParkSwitchLand.classList.toggle('active', currentPark === 'land');
+                    historyParkSwitchSea.classList.toggle('active', currentPark === 'sea');
+                };
+                historyParkSwitchLand.addEventListener('click', () => {
+                    if (currentPark === 'land') return;
+                    currentPark = 'land';
+                    const search = new URLSearchParams(window.location.search);
+                    search.set('park', 'land');
+                    window.location.search = search.toString();
+                });
+                historyParkSwitchSea.addEventListener('click', () => {
+                    if (currentPark === 'sea') return;
+                    currentPark = 'sea';
+                    const search = new URLSearchParams(window.location.search);
+                    search.set('park', 'sea');
+                    window.location.search = search.toString();
+                });
+                updateHistoryParkButtons();
+            }
+
             const parkInfo = PARKS[currentPark];
             if (!parkInfo) {
                 document.getElementById('content').innerHTML = '<div class="no-data"><h2>マスタを読み込めませんでした</h2><p>Supabase の設定と parks / areas / rides の登録を確認してください。</p></div>';

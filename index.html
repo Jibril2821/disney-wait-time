@@ -1011,9 +1011,16 @@
                 font-weight: 700;
             }
 
+            /* ボタン内アイコン（絵文字）が iOS で縦に伸びすぎないように共通制御 */
             .header-btn-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
                 flex-shrink: 0;
                 font-size: 1.1rem;
+                line-height: 1;
+                width: 1.4em;
+                height: 1.4em;
             }
 
             .rides-grid {
