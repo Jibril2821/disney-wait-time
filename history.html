@@ -3253,14 +3253,11 @@
                 const disabledClass = loadedData.dateRange.includes(dateStr) && hasData ? '' : 'disabled';
                 const label = hasData ? `${disp}分` : '-';
 
-                const hasEvent = getEventsForDate(dateStr).length > 0;
-                const eventBadge = hasEvent ? '<span class="calendar-day-event-badge" title="イベント日">🎪</span>' : '';
                 const cellHtml = `
                     <div class="calendar-day ${waitClass || ''} ${disabledClass}" ${hasData ? `onclick="jumpToDay('${dateStr}')"` : ''}>
                         <div class="calendar-day-header">
                             <span class="calendar-day-date">${day}</span>
                             <span class="calendar-day-weekday">${weekdays[weekday]}</span>
-                            ${eventBadge}
                         </div>
                         <div class="calendar-day-value">${label}</div>
                     </div>
@@ -3346,15 +3343,12 @@
                     const waitClass = hasData ? getWaitClass(disp) : '';
                     const disabledClass = loadedData.dateRange.includes(dateStr) && hasData ? '' : 'disabled';
                     const label = hasData ? `${disp}分` : '-';
-                    const hasEvent = getEventsForDate(dateStr).length > 0;
-                    const eventBadge = hasEvent ? '<span class="calendar-day-event-badge" title="イベント日">🎪</span>' : '';
 
                     const cellHtml = `
                         <div class="calendar-day ${waitClass || ''} ${disabledClass}" ${hasData ? `onclick="jumpToDay('${dateStr}')"` : ''}>
                             <div class="calendar-day-header">
                                 <span class="calendar-day-date">${day}</span>
                                 <span class="calendar-day-weekday">${weekdays[weekday]}</span>
-                                ${eventBadge}
                             </div>
                             <div class="calendar-day-value">${label}</div>
                         </div>
