@@ -112,9 +112,9 @@ async function collectData() {
     const timeStr = getJapanTime(now);
     const timestampStr = getJapanTimestamp(now);
     
-    console.log(`\n========================================`);
+    console.log(`========================================`);
     console.log(`[${now.toLocaleString('ja-JP')}] データ収集開始`);
-    console.log(`========================================\n`);
+    console.log(`========================================`);
 
     for (const [parkId, park] of Object.entries(PARKS)) {
         console.log(`📍 ${park.name} のデータを取得中...`);
