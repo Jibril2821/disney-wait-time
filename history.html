@@ -6353,13 +6353,16 @@
 
             try {
                 // ローカル開発と GitHub Pages でリダイレクト先を出し分ける
-                let redirectTo = window.location.origin + '/index.html';
+                let redirectTo;
                 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    // ローカル: 従来どおり /index.html に戻す
-                    redirectTo = window.location.origin + '/index.html';
+                    // ローカル: ルート (http://localhost:3000) に戻す
+                    redirectTo = window.location.origin;
                 } else if (window.location.origin.includes('github.io')) {
                     // GitHub Pages: リポジトリルートに戻す
                     redirectTo = window.location.origin + '/disney-wait-time/';
+                } else {
+                    // それ以外のホストでは従来通り index.html に戻す
+                    redirectTo = window.location.origin + '/index.html';
                 }
 
                 const { error } = await client.auth.signInWithOAuth({
