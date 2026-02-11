@@ -29,6 +29,55 @@
             overflow-x: hidden;
         }
 
+        /* 画面全体ローディング用オーバーレイ（履歴画面用） */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent),
+                        linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: #fff;
+        }
+
+        #loadingOverlay.hidden {
+            display: none;
+        }
+
+        .loading-overlay-content {
+            text-align: center;
+        }
+
+        .loading-overlay-image {
+            width: 140px;
+            max-width: 60vw;
+            height: auto;
+            display: block;
+            margin: 0 auto 16px;
+            animation: loading-bounce 1.2s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+
+        .loading-overlay-text {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes loading-bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-24px);
+            }
+            60% {
+                transform: translateY(6px);
+            }
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -510,36 +559,7 @@
             font-weight: 500;
         }
 
-        /* 読み込み中：画面全体を暗くし、中央に表示（リアルタイム画面と同様） */
-        .loading {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .loading p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 1.05rem;
-        }
-
-        .spinner {
-            width: 56px;
-            height: 56px;
-            border: 4px solid rgba(255, 255, 255, 0.15);
-            border-top-color: #4ecdc4;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            flex-shrink: 0;
-        }
+        /* 旧ローディングオーバーレイ（.loading）は使用しない */
 
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -1981,6 +2001,67 @@
         .event-manage-list li button { padding: 6px 12px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.85rem; }
         .event-manage-list li .event-item-delete { margin-left: auto; background: rgba(255,100,100,0.3); color: #fff; }
         .event-item-delete:hover { background: rgba(255,100,100,0.5); }
+
+        /* お気に入り機能用：ログイン必須モーダル（履歴画面） */
+        .fav-login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .fav-login-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 420px;
+            padding: 22px 24px 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .fav-login-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fav-login-title span.icon {
+            font-size: 1.4rem;
+        }
+        .fav-login-message {
+            font-size: 0.9rem;
+            color: #ddd;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .fav-login-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .fav-login-close-btn,
+        .fav-login-go-login-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .fav-login-close-btn {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .fav-login-go-login-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-weight: 600;
+        }
         @media (max-width: 768px) {
             .event-manage-modal .event-manage-list li {
                 display: grid;
@@ -2012,13 +2093,254 @@
         .day-view-event-line .today-events-item-label { font-weight: 600; }
         .day-view-event-line .today-events-item-period { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
         .event-manage-list .event-manage-empty { color: #a0a0a0; list-style: none; }
+
+        .auth-status-chip {
+            padding: 10px 14px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: rgba(255,255,255,0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            max-width: 260px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .auth-status-chip span {
+            opacity: 0.9;
+        }
+        .auth-status-chip strong {
+            font-weight: 700;
+            color: #fff;
+        }
+        .auth-user-icon {
+            font-size: 1.1rem;
+        }
+        .auth-user-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .auth-user-name {
+            font-weight: 600;
+            color: #fff;
+        }
+        .auth-role-badge {
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            background: #ffb74d;
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+        .auth-small-btn {
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #fff;
+            background: rgba(255,255,255,0.12);
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+        .auth-small-btn:hover {
+            background: rgba(255,255,255,0.22);
+            transform: translateY(-1px);
+        }
+
+        /* ログインボタン専用の強調色（履歴画面） */
+        .auth-login-btn {
+            background: linear-gradient(135deg, #4ecdc4, #1dd1a1);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.6);
+        }
+        .auth-login-btn:hover {
+            background: linear-gradient(135deg, #5ff0de, #1dd1a1);
+        }
+
+        .auth-mobile-bar {
+            display: none;
+            /* 画面全体の横幅いっぱいに見えるように、body の padding(20px)を打ち消す */
+            width: calc(100% + 40px);
+            margin: 0 -20px 0 -20px;
+            padding: 8px 16px 0;
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-mobile-bar {
+                display: flex;
+            }
+            .header-top-row2 .auth-status-chip,
+            .header-top-row2 .auth-small-btn {
+                display: none;
+            }
+        }
+
+        /* 認証画面 */
+        .auth-screen {
+            min-height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(15, 22, 40, 0.95);
+            border-radius: 18px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .auth-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+        }
+        .auth-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1.4rem;
+            line-height: 1.6;
+        }
+        .auth-field {
+            margin-bottom: 0.9rem;
+        }
+        .auth-label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .auth-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(10, 15, 30, 0.9);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .auth-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.3);
+        }
+        .auth-actions {
+            margin-top: 1.1rem;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .auth-button {
+            flex: 1;
+            border: none;
+            border-radius: 999px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+        .auth-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        .auth-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .auth-status {
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .auth-status.error {
+            color: #ff6b6b;
+        }
+        .auth-status.success {
+            color: #4ecdc4;
+        }
+        .auth-note {
+            margin-top: 0.9rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.55);
+            line-height: 1.6;
+        }
+        .auth-note code {
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
     </style>
     <script src="park-data.js"></script>
     <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="master-from-supabase.js"></script>
 </head>
 <body>
-    <div class="container">
+    <!-- 画面全体ローディングオーバーレイ -->
+    <div id="loadingOverlay">
+        <div class="loading-overlay-content">
+            <img src="loading.jpg" alt="読み込み中" class="loading-overlay-image">
+            <p class="loading-overlay-text">読み込み中です...</p>
+        </div>
+    </div>
+
+    <!-- スマホ用ログイン状態バー -->
+    <div class="auth-mobile-bar" id="historyAuthMobileBar">
+        <div class="auth-status-chip" id="historyAuthStatusChipMobile">
+            <span>未ログイン</span>
+        </div>
+        <button type="button" class="auth-small-btn auth-login-btn" id="historyGoogleLoginBtnMobile">
+            <span>ログイン</span>
+        </button>
+        <button type="button" class="auth-small-btn" id="historyLogoutBtnMobile" style="display:none;">
+            <span>ログアウト</span>
+        </button>
+    </div>
+
+    <!-- お気に入り機能：ログイン必須モーダル（履歴画面） -->
+    <div id="favLoginOverlay" class="fav-login-overlay" onclick="hideFavLoginModal()">
+        <div class="fav-login-modal" onclick="event.stopPropagation()">
+            <div class="fav-login-title">
+                <span class="icon">🔑</span>
+                <span>ログインが必要です</span>
+            </div>
+            <div class="fav-login-message">
+                お気に入り機能を使うには、Google アカウントでログインしてください。<br>
+                ログインすると、端末をまたいでお気に入りを共有できます。
+            </div>
+            <div class="fav-login-actions">
+                <button type="button" class="fav-login-close-btn" onclick="hideFavLoginModal()">閉じる</button>
+                <button type="button" class="fav-login-go-login-btn" onclick="loginFromFavModal()">ログインする</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="historyMainContainer" style="display:none;">
         <header>
             <div class="header-top-row">
                 <a href="index.html" class="back-btn"><span class="back-btn-icon">⬅️</span><span class="back-btn-text back-btn-text-desktop">リアルタイム</span><span class="back-btn-text back-btn-text-mobile">戻る</span></a>
@@ -2030,6 +2352,15 @@
                     <button type="button" class="compare-header-btn" id="compareBtn" style="display:none;"><span class="header-btn-emoji">📅</span><span class="header-btn-text">比較</span></button>
                     <button type="button" class="compare-header-btn" id="weekendWeekdayBtn" style="display:none;"><span class="header-btn-emoji">📊</span><span class="header-btn-text">週末/平日</span></button>
                     <button type="button" class="compare-header-btn" id="eventManageBtn" style="display:none;"><span class="header-btn-emoji">🎪</span><span class="header-btn-text"><span class="header-btn-line">イベント</span><span class="header-btn-line">管理</span></span></button>
+                    <div class="auth-status-chip" id="historyAuthStatusChipDesktop">
+                        <span>未ログイン</span>
+                    </div>
+                    <button type="button" class="auth-small-btn auth-login-btn" id="historyGoogleLoginBtnDesktop">
+                        <span>ログイン</span>
+                    </button>
+                    <button type="button" class="auth-small-btn" id="historyLogoutBtnDesktop" style="display:none;">
+                        <span>ログアウト</span>
+                    </button>
                 </div>
             </div>
             <h1>📊 <span class="title-text">待ち時間履歴</span></h1>
@@ -2054,12 +2385,7 @@
             </div>
         </div>
 
-        <div id="content">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>データを読み込み中...</p>
-            </div>
-        </div>
+        <div id="content"></div>
     </div>
 
     <!-- 前回の来園日と比較モーダル（回り順プランナーと同様） -->
@@ -2130,6 +2456,7 @@
         let compareRideIds = new Set(); // 詳細グラフの比較対象ID群（文字列）
         let currentDetailRideId = null; // 現在の詳細表示中アトラクションID
         let dateEventsList = []; // { id, event_label, start_date, end_date } の配列（1レコード1イベント、期間保持）
+        let isHistoryEventAdmin = false; // Supabase 上の event_admins テーブルに登録された管理者かどうか
 
         const urlParams = new URLSearchParams(window.location.search);
         const parkParam = urlParams.get('park');
@@ -2153,8 +2480,23 @@
             return currentPark === 'land' ? TDL_AREAS : TDS_AREAS;
         }
 
+        function showLoadingOverlay() {
+            const el = document.getElementById('loadingOverlay');
+            if (el) el.classList.remove('hidden');
+        }
+
+        function hideLoadingOverlay() {
+            const el = document.getElementById('loadingOverlay');
+            if (el) el.classList.add('hidden');
+        }
+
         // 初期化（マスタ取得後に currentPark を設定してから init 続行）
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+            showLoadingOverlay();
+            init().finally(() => {
+                hideLoadingOverlay();
+            });
+        });
 
         /** ページ初期化：マスタ取得、パーク設定、日付取得・UIバインドを行う */
         async function init() {
@@ -2217,7 +2559,7 @@
 
             const eventManageBtn = document.getElementById('eventManageBtn');
             if (eventManageBtn) {
-                eventManageBtn.style.display = USE_SUPABASE ? '' : 'none';
+                eventManageBtn.style.display = 'none'; // 初期状態では非表示（管理者判定後に更新）
                 eventManageBtn.addEventListener('click', () => openEventManageOverlay());
             }
             document.getElementById('eventManageModalClose').addEventListener('click', closeEventManageOverlay);
@@ -2239,7 +2581,7 @@
             }
         }
 
-        /** Supabase REST API 用のリクエストヘッダーを返す */
+        /** Supabase REST API 用のリクエストヘッダーを返す（履歴データ取得など一般公開向け） */
         function getSupabaseHeaders() {
             return {
                 'apikey': window.SUPABASE_ANON_KEY || '',
@@ -2248,16 +2590,70 @@
             };
         }
 
-        /** 現在パークの date_events を取得し dateEventsList に格納する */
+        /** 現在ログイン中ユーザーがイベント管理者かどうかを Supabase で判定し、グローバル状態とボタン表示を更新する */
+        async function refreshHistoryEventAdminState() {
+            const client = getHistorySupabaseClient();
+            if (!client) {
+                isHistoryEventAdmin = false;
+                updateEventManageButtonVisibility();
+                return;
+            }
+            try {
+                const { data: userData } = await client.auth.getUser();
+                const user = userData && userData.user;
+                if (!user) {
+                    isHistoryEventAdmin = false;
+                    updateEventManageButtonVisibility();
+                    return;
+                }
+                const { data, error } = await client
+                    .from('event_admins')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .limit(1)
+                    .maybeSingle();
+                if (error) {
+                    console.warn('event_admins check error', error);
+                    isHistoryEventAdmin = false;
+                } else {
+                    isHistoryEventAdmin = !!data;
+                }
+            } catch (e) {
+                console.warn('refreshHistoryEventAdminState error', e);
+                isHistoryEventAdmin = false;
+            } finally {
+                updateEventManageButtonVisibility();
+            }
+        }
+
+        /** イベント管理ボタンの表示・非表示を更新する */
+        function updateEventManageButtonVisibility() {
+            const eventManageBtn = document.getElementById('eventManageBtn');
+            if (!eventManageBtn) return;
+            if (!USE_SUPABASE) {
+                eventManageBtn.style.display = 'none';
+                return;
+            }
+            eventManageBtn.style.display = isHistoryEventAdmin ? '' : 'none';
+        }
+
+        /** 現在パークの date_events を取得し dateEventsList に格納する（閲覧用。管理者以外も取得可能な RLS を想定） */
         async function loadDateEvents() {
             if (!currentPark) { dateEventsList = []; return; }
-            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
+            const client = getHistorySupabaseClient();
+            if (!client) { dateEventsList = []; return; }
             try {
-                const url = `${baseUrl}/rest/v1/date_events?park_id=eq.${encodeURIComponent(currentPark)}&select=id,park_id,event_label,start_date,end_date&order=start_date.desc`;
-                const response = await fetch(url, { method: 'GET', headers: getSupabaseHeaders(), cache: 'no-store' });
-                if (!response.ok) return;
-                const rows = await response.json();
-                dateEventsList = Array.isArray(rows) ? rows : [];
+                const { data, error } = await client
+                    .from('date_events')
+                    .select('id,park_id,event_label,start_date,end_date')
+                    .eq('park_id', currentPark)
+                    .order('start_date', { ascending: false });
+                if (error) {
+                    console.warn('date_events fetch failed', error);
+                    dateEventsList = [];
+                    return;
+                }
+                dateEventsList = Array.isArray(data) ? data : [];
             } catch (e) {
                 console.warn('date_events fetch failed', e);
                 dateEventsList = [];
@@ -2306,8 +2702,12 @@
             return out;
         }
 
-        /** イベント管理オーバーレイを開く。selectedDate を渡すと開始・終了日にセットする */
+        /** イベント管理オーバーレイを開く。selectedDate を渡すと開始・終了日にセットする（イベント管理者のみ） */
         function openEventManageOverlay(selectedDate) {
+            if (!isHistoryEventAdmin) {
+                alert('この機能はイベント管理者のみ利用できます。');
+                return;
+            }
             const overlay = document.getElementById('eventManageOverlay');
             if (!overlay) return;
             if (selectedDate) {
@@ -2347,8 +2747,12 @@
             });
         }
 
-        /** イベント追加フォームの内容を Supabase に登録し、一覧を更新する */
+        /** イベント追加フォームの内容を Supabase に登録し、一覧を更新する（イベント管理者のみ） */
         async function submitAddEvent() {
+            if (!isHistoryEventAdmin) {
+                alert('この機能はイベント管理者のみ利用できます。');
+                return;
+            }
             const label = (document.getElementById('eventAddLabel').value || '').trim();
             const start = (document.getElementById('eventAddStart').value || '').trim();
             const end = (document.getElementById('eventAddEnd').value || '').trim();
@@ -2360,15 +2764,21 @@
                 alert('開始日は終了日以前にしてください。');
                 return;
             }
-            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
-            const url = `${baseUrl}/rest/v1/date_events`;
+            const client = getHistorySupabaseClient();
+            if (!client) {
+                alert('Supabase クライアントが初期化されていません。supabase-config.js を確認してください。');
+                return;
+            }
             try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { ...getSupabaseHeaders(), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-                    body: JSON.stringify({ park_id: currentPark, event_label: label, start_date: start, end_date: end })
-                });
-                if (!res.ok) throw new Error(await res.text());
+                const { error } = await client
+                    .from('date_events')
+                    .insert({
+                        park_id: currentPark,
+                        event_label: label,
+                        start_date: start,
+                        end_date: end
+                    });
+                if (error) throw error;
                 await loadDateEvents();
                 renderEventManageList();
                 document.getElementById('eventAddLabel').value = '';
@@ -2382,14 +2792,24 @@
             }
         }
 
-        /** 指定IDのイベントを Supabase から削除し、一覧を更新する */
+        /** 指定IDのイベントを Supabase から削除し、一覧を更新する（イベント管理者のみ） */
         async function deleteEventById(id) {
+            if (!isHistoryEventAdmin) {
+                alert('この機能はイベント管理者のみ利用できます。');
+                return;
+            }
             if (!id || !confirm('このイベントを削除しますか？')) return;
-            const baseUrl = (window.SUPABASE_URL || '').replace(/\/$/, '');
-            const url = `${baseUrl}/rest/v1/date_events?id=eq.${encodeURIComponent(id)}`;
+            const client = getHistorySupabaseClient();
+            if (!client) {
+                alert('Supabase クライアントが初期化されていません。supabase-config.js を確認してください。');
+                return;
+            }
             try {
-                const res = await fetch(url, { method: 'DELETE', headers: getSupabaseHeaders() });
-                if (!res.ok) throw new Error(await res.text());
+                const { error } = await client
+                    .from('date_events')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
                 await loadDateEvents();
                 renderEventManageList();
                 refreshDateSelectOptionLabels();
@@ -2655,10 +3075,28 @@
             // 同じ時間帯の過去○週間スパークラインを非同期で取得・描画
             loadAndDrawListSparklines();
 
-            // お気に入りトグルボタンのイベントリスナー
+            // お気に入りトグルボタンのイベントリスナー（ログイン必須）
             const favToggleBtn = document.getElementById('favToggleBtn');
             if (favToggleBtn) {
-                favToggleBtn.addEventListener('click', () => {
+                favToggleBtn.addEventListener('click', async () => {
+                    const client = typeof getHistorySupabaseClient === 'function' ? getHistorySupabaseClient() : null;
+                    if (!client) {
+                        showFavLoginModal('Supabase の設定が行われていないため、お気に入り機能は利用できません。<br>管理者にお問い合わせください。');
+                        return;
+                    }
+                    try {
+                        const { data } = await client.auth.getUser();
+                        const user = data && data.user;
+                        if (!user) {
+                            showFavLoginModal();
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to check auth state for favorites toggle (history)', e);
+                        showFavLoginModal('現在、お気に入り機能を利用できません。<br>時間をおいて再度お試しください。');
+                        return;
+                    }
+
                     showFavoritesOnly = !showFavoritesOnly;
                     showAllRides();
                 });
@@ -5164,9 +5602,8 @@
             }
             if (btnEl) {
                 btnEl.disabled = true;
-                btnEl.textContent = '読み込み中...';
             }
-            resultEl.innerHTML = '<div class="loading"><div class="spinner"></div><p>比較データを取得中...</p></div>';
+            resultEl.innerHTML = '';
             try {
                 const compareData = await fetchHistoryDataForDate(compareDate);
                 if (!compareData || !compareData.records.length) {
@@ -5440,12 +5877,7 @@
             const dateSelect = document.getElementById('dateSelect');
             const content = document.getElementById('content');
             
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>データを読み込み中...</p>
-                </div>
-            `;
+            content.innerHTML = '';
 
             if (currentPeriod === 'day') {
                 // 日単位: 利用可能な日付リスト
@@ -5610,38 +6042,136 @@
             return null;
         }
 
-        /** ローカルストレージからお気に入りアトラクションID一覧を読み込む */
-        function loadFavoriteRides() {
+        /**
+         * お気に入りアトラクションID一覧を読み込む
+         * - ログインしていない場合は「お気に入り機能は使用不可」とし、何も復元しない
+         * - ログイン済みなら Supabase の ride_favorites テーブルから取得
+         */
+        async function loadFavoriteRides() {
+            favoriteRideIds = new Set();
             try {
-                const raw = localStorage.getItem('tdr_wait_favorites');
-                if (!raw) return;
-                const arr = JSON.parse(raw);
-                if (Array.isArray(arr)) {
-                    favoriteRideIds = new Set(arr.map(id => String(id)));
+                const client = typeof getHistorySupabaseClient === 'function' ? getHistorySupabaseClient() : null;
+                if (!client) return;
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン時は何も復元しない（お気に入り機能は使用不可）
+                    return;
+                }
+
+                const { data: rows, error } = await client
+                    .from('ride_favorites')
+                    .select('ride_id')
+                    .eq('user_id', user.id);
+                if (error) {
+                    console.warn('Failed to load favorites from Supabase (history)', error);
+                    return;
+                }
+                if (Array.isArray(rows)) {
+                    favoriteRideIds = new Set(rows.map(r => String(r.ride_id)));
                 }
             } catch (e) {
-                console.warn('Failed to load favorites', e);
+                console.warn('Failed to load favorites from Supabase (history)', e);
             }
         }
 
-        /** お気に入りアトラクションID一覧をローカルストレージに保存する */
-        function saveFavoriteRides() {
+        /**
+         * お気に入りアトラクションID一覧を保存する
+         * - ログインしていない場合は何もしない（使用不可）
+         * - ログイン済みなら Supabase の ride_favorites テーブルに保存
+         */
+        async function saveFavoriteRides() {
+            const client = typeof getHistorySupabaseClient === 'function' ? getHistorySupabaseClient() : null;
+            if (!client) return;
+
             try {
-                const arr = Array.from(favoriteRideIds);
-                localStorage.setItem('tdr_wait_favorites', JSON.stringify(arr));
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン時は保存しない
+                    return;
+                }
+
+                const arr = Array.from(favoriteRideIds).map(id => String(id));
+
+                // シンプルに「そのユーザーのレコードを全削除 → 現在の一覧を insert」
+                const { error: delError } = await client
+                    .from('ride_favorites')
+                    .delete()
+                    .eq('user_id', user.id);
+                if (delError) {
+                    console.warn('Failed to delete favorites on Supabase (history)', delError);
+                }
+
+                if (arr.length > 0) {
+                    const rows = arr.map(rideId => ({
+                        user_id: user.id,
+                        ride_id: String(rideId)
+                    }));
+                    const { error: insError } = await client
+                        .from('ride_favorites')
+                        .insert(rows);
+                    if (insError) {
+                        console.warn('Failed to save favorites to Supabase (history)', insError);
+                    }
+                }
             } catch (e) {
-                console.warn('Failed to save favorites', e);
+                console.warn('Failed to save favorites to Supabase (history)', e);
             }
         }
 
-        /** お気に入りの追加/解除をトグルし、保存する */
-        function toggleFavoriteRide(rideId) {
+        function showFavLoginModal(messageOverride) {
+            const overlay = document.getElementById('favLoginOverlay');
+            const msgEl = document.querySelector('#favLoginOverlay .fav-login-message');
+            if (msgEl && messageOverride) {
+                msgEl.innerHTML = messageOverride;
+            } else if (msgEl) {
+                msgEl.innerHTML = 'お気に入り機能を使うには、Google アカウントでログインしてください。<br>ログインすると、端末をまたいでお気に入りを共有できます。';
+            }
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function hideFavLoginModal() {
+            const overlay = document.getElementById('favLoginOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        async function loginFromFavModal() {
+            hideFavLoginModal();
+            // 履歴画面の「Googleでログイン」と同じ処理を呼び出す
+            if (typeof handleHistoryGoogleLoginClick === 'function') {
+                await handleHistoryGoogleLoginClick();
+            }
+        }
+
+        /** お気に入りの追加/解除をトグルし、保存する（未ログインならモーダル表示して何もしない） */
+        async function toggleFavoriteRide(rideId) {
+            const client = typeof getHistorySupabaseClient === 'function' ? getHistorySupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('Supabase の設定が行われていないため、お気に入り機能は利用できません。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    showFavLoginModal();
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for favorites (history)', e);
+                showFavLoginModal('現在、お気に入り機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+
             const key = String(rideId);
             if (favoriteRideIds.has(key)) {
                 favoriteRideIds.delete(key);
             } else {
                 favoriteRideIds.add(key);
             }
+            // 非同期で保存（結果は待たずに UI を先に更新）
             saveFavoriteRides();
         }
 
@@ -5699,17 +6229,224 @@
             return [...years].sort().reverse();
         }
 
+        // --- ここから Supabase Auth（history.html 用） ---
+
+        let historySupabaseClient = null;
+
+        function getHistorySupabaseClient() {
+            if (historySupabaseClient) return historySupabaseClient;
+            if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || typeof window.supabase === 'undefined') {
+                console.warn('Supabase Auth が正しく設定されていません。supabase-config.js と CDN スクリプトを確認してください。');
+                return null;
+            }
+            const { createClient } = window.supabase;
+            historySupabaseClient = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            return historySupabaseClient;
+        }
+
+        async function updateHistoryAuthUI() {
+            const mainContainer = document.getElementById('historyMainContainer');
+            const chipDesktop = document.getElementById('historyAuthStatusChipDesktop');
+            const loginBtnDesktop = document.getElementById('historyGoogleLoginBtnDesktop');
+            const logoutBtnDesktop = document.getElementById('historyLogoutBtnDesktop');
+            const chipMobile = document.getElementById('historyAuthStatusChipMobile');
+            const loginBtnMobile = document.getElementById('historyGoogleLoginBtnMobile');
+            const logoutBtnMobile = document.getElementById('historyLogoutBtnMobile');
+
+            if (!mainContainer) return;
+
+            const client = getHistorySupabaseClient();
+            if (!client) {
+                // 認証クライアントが作れない場合は index.html と同様に「認証未設定」表示
+                mainContainer.style.display = '';
+                if (chipDesktop) chipDesktop.innerHTML = '<span>認証未設定</span>';
+                if (chipMobile) chipMobile.innerHTML = '<span>認証未設定</span>';
+                if (loginBtnDesktop) loginBtnDesktop.style.display = 'none';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                if (loginBtnMobile) loginBtnMobile.style.display = 'none';
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+                return;
+            }
+
+            try {
+                const { data, error } = await client.auth.getUser();
+                if (error) {
+                    console.error('getUser error', error);
+                }
+                if (data && data.user) {
+                    const user = data.user;
+                    // 先に管理者フラグを更新してからバッジの表示を決める
+                    await refreshHistoryEventAdminState();
+                    mainContainer.style.display = '';
+                    const meta = user.user_metadata || {};
+                    const avatarUrl = meta.avatar_url || meta.picture || null;
+                    const rawName = (meta.full_name || meta.name)
+                        || (user.email ? user.email.split('@')[0] : 'ログイン中');
+                    const safeName = escapeHtml(rawName);
+                    const badgeHtml = isHistoryEventAdmin
+                        ? '<span class="auth-role-badge">管理者</span>'
+                        : '';
+                    const iconHtml = avatarUrl
+                        ? `<img src="${escapeHtml(avatarUrl)}" class="auth-user-avatar" alt="profile" />`
+                        : '<span class="auth-user-icon">👤</span>';
+                    const html = `${iconHtml}<span class="auth-user-name">${safeName}</span>${badgeHtml}`;
+                    if (chipDesktop) {
+                        chipDesktop.innerHTML = html;
+                        chipDesktop.style.display = '';
+                    }
+                    if (chipMobile) {
+                        chipMobile.innerHTML = html;
+                        chipMobile.style.display = '';
+                    }
+                    if (loginBtnDesktop) loginBtnDesktop.style.display = 'none';
+                    if (logoutBtnDesktop) logoutBtnDesktop.style.display = '';
+                    if (loginBtnMobile) loginBtnMobile.style.display = 'none';
+                    if (logoutBtnMobile) logoutBtnMobile.style.display = '';
+                } else {
+                    // ログアウト状態ではお気に入り情報をリセット
+                    favoriteRideIds = new Set();
+                    showFavoritesOnly = false;
+                    mainContainer.style.display = '';
+                    if (chipDesktop) {
+                        chipDesktop.innerHTML = '';
+                        chipDesktop.style.display = 'none';
+                    }
+                    if (chipMobile) {
+                        chipMobile.innerHTML = '';
+                        chipMobile.style.display = 'none';
+                    }
+                    if (loginBtnDesktop) loginBtnDesktop.style.display = '';
+                    if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                    if (loginBtnMobile) loginBtnMobile.style.display = '';
+                    if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+                    // ログアウト状態ではイベント管理者フラグをクリア
+                    isHistoryEventAdmin = false;
+                    updateEventManageButtonVisibility();
+                }
+            } catch (err) {
+                console.error('updateHistoryAuthUI error', err);
+                mainContainer.style.display = '';
+                if (chipDesktop) chipDesktop.innerHTML = '<span>認証状態の確認に失敗しました</span>';
+                if (chipMobile) chipMobile.innerHTML = '<span>認証状態の確認に失敗しました</span>';
+                if (loginBtnDesktop) loginBtnDesktop.style.display = '';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                if (loginBtnMobile) loginBtnMobile.style.display = '';
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+            }
+        }
+
+        async function handleHistoryGoogleLoginClick() {
+            const statusEl = document.getElementById('historyAuthStatus'); // なくてもよい（存在する場合のみメッセージ表示）
+            const loginBtnDesktop = document.getElementById('historyGoogleLoginBtnDesktop');
+            const loginBtnMobile = document.getElementById('historyGoogleLoginBtnMobile');
+
+            const client = getHistorySupabaseClient();
+            if (!client) return;
+
+            if (loginBtnDesktop) loginBtnDesktop.disabled = true;
+            if (loginBtnMobile) loginBtnMobile.disabled = true;
+            if (statusEl) {
+                statusEl.textContent = 'Google のログイン画面にリダイレクトします...';
+                statusEl.classList.remove('error');
+                statusEl.classList.remove('success');
+            }
+
+            try {
+                const { error } = await client.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        // ログイン完了後は index.html（ランド/シー選択画面）へ遷移させる
+                        redirectTo: window.location.origin + '/index.html',
+                        queryParams: { prompt: 'select_account' }
+                    }
+                });
+                if (error) {
+                    console.error('signInWithOAuth (google) error', error);
+                    if (statusEl) {
+                        statusEl.textContent = error.message || 'Google ログインに失敗しました。';
+                        statusEl.classList.remove('success');
+                        statusEl.classList.add('error');
+                    }
+                    if (loginBtnDesktop) loginBtnDesktop.disabled = false;
+                    if (loginBtnMobile) loginBtnMobile.disabled = false;
+                    return;
+                }
+                // 通常はここで Supabase によりリダイレクトされる
+            } catch (err) {
+                console.error('handleHistoryGoogleLoginClick error', err);
+                if (statusEl) {
+                    statusEl.textContent = '予期しないエラーが発生しました。時間をおいて再度お試しください。';
+                    statusEl.classList.remove('success');
+                    statusEl.classList.add('error');
+                }
+                if (loginBtnDesktop) loginBtnDesktop.disabled = false;
+                if (loginBtnMobile) loginBtnMobile.disabled = false;
+            }
+        }
+
+        async function handleHistoryLogoutClick() {
+            const client = getHistorySupabaseClient();
+            if (!client) return;
+            const logoutBtnDesktop = document.getElementById('historyLogoutBtnDesktop');
+            const logoutBtnMobile = document.getElementById('historyLogoutBtnMobile');
+            if (logoutBtnDesktop) logoutBtnDesktop.disabled = true;
+            if (logoutBtnMobile) logoutBtnMobile.disabled = true;
+            try {
+                await client.auth.signOut();
+            } catch (e) {
+                console.error('handleHistoryLogoutClick error', e);
+            } finally {
+                // ログアウトしたらお気に入り状態をリセット
+                favoriteRideIds = new Set();
+                showFavoritesOnly = false;
+                if (logoutBtnDesktop) logoutBtnDesktop.disabled = false;
+                if (logoutBtnMobile) logoutBtnMobile.disabled = false;
+                updateHistoryAuthUI();
+                // ログアウトしたらトップのランド/シー選択画面（index.html）へ戻す
+                window.location.href = 'index.html';
+            }
+        }
+
+        function handleHistoryBackWithoutLogin() {
+            const params = new URLSearchParams(window.location.search);
+            const park = params.get('park');
+            if (park) {
+                window.location.href = `index.html?park=${encodeURIComponent(park)}`;
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const googleBtnDesktop = document.getElementById('historyGoogleLoginBtnDesktop');
+            const googleBtnMobile = document.getElementById('historyGoogleLoginBtnMobile');
+            const logoutBtnDesktop = document.getElementById('historyLogoutBtnDesktop');
+            const logoutBtnMobile = document.getElementById('historyLogoutBtnMobile');
+            const backWithoutLoginBtn = document.getElementById('historyBackWithoutLoginButton');
+            if (googleBtnDesktop) {
+                googleBtnDesktop.addEventListener('click', handleHistoryGoogleLoginClick);
+            }
+            if (googleBtnMobile) {
+                googleBtnMobile.addEventListener('click', handleHistoryGoogleLoginClick);
+            }
+            if (logoutBtnDesktop) {
+                logoutBtnDesktop.addEventListener('click', handleHistoryLogoutClick);
+            }
+            if (logoutBtnMobile) {
+                logoutBtnMobile.addEventListener('click', handleHistoryLogoutClick);
+            }
+            if (backWithoutLoginBtn) {
+                backWithoutLoginBtn.addEventListener('click', handleHistoryBackWithoutLogin);
+            }
+            updateHistoryAuthUI();
+        });
+
         // 期間に応じたデータを読み込み
         async function loadPeriodData(value) {
             const parkInfo = PARKS[currentPark];
             const content = document.getElementById('content');
             
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>データを読み込み中...</p>
-                </div>
-            `;
+            content.innerHTML = '';
 
             try {
                 let datesToLoad = [];

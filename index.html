@@ -57,13 +57,54 @@
             text-align: center;
             max-width: 22em;
         }
-        .park-master-loading {
-            color: rgba(255,255,255,0.7);
+
+        /* 画面全体ローディング用オーバーレイ */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent),
+                        linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: #fff;
+        }
+
+        #loadingOverlay.hidden {
+            display: none;
+        }
+
+        .loading-overlay-content {
             text-align: center;
-            margin-top: 1rem;
-            margin-left: auto;
-            margin-right: auto;
-            margin-bottom: clamp(2.75rem, 7vw, 4.5rem);
+        }
+
+        .loading-overlay-image {
+            width: 140px;
+            max-width: 60vw;
+            height: auto;
+            display: block;
+            margin: 0 auto 16px;
+            animation: loading-bounce 1.2s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+
+        .loading-overlay-text {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes loading-bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-24px);
+            }
+            60% {
+                transform: translateY(6px);
+            }
         }
 
         .park-cards {
@@ -283,6 +324,88 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+        .auth-status-chip {
+            padding: 10px 14px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: rgba(255,255,255,0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            max-width: 260px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .auth-status-chip span {
+            opacity: 0.9;
+        }
+        .auth-status-chip strong {
+            font-weight: 700;
+            color: #fff;
+        }
+        .auth-user-icon {
+            font-size: 1.1rem;
+        }
+        .auth-user-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .auth-user-name {
+            font-weight: 600;
+            color: #fff;
+        }
+        .auth-role-badge {
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            background: #ffb74d;
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+        .auth-small-btn {
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #fff;
+            background: rgba(255,255,255,0.12);
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+        .auth-small-btn:hover {
+            background: rgba(255,255,255,0.22);
+            transform: translateY(-1px);
+        }
+
+        /* ログインボタン専用の強調色 */
+        .auth-login-btn {
+            background: linear-gradient(135deg, #4ecdc4, #1dd1a1);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.6);
+        }
+        .auth-login-btn:hover {
+            background: linear-gradient(135deg, #5ff0de, #1dd1a1);
+        }
+
+        .auth-mobile-bar {
+            display: none;
+            width: 100%;
+            padding: 8px 16px 0;
+            box-sizing: border-box;
+            display: none;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
         }
 
         .header-btn-text-short {
@@ -829,40 +952,7 @@
 
         /* 待ち時間の色スタイルは park-data.js から動的に注入されます */
 
-        /* 待ち時間取得中：画面全体を暗くし、中央に表示 */
-        .loading {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .loading p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 1.05rem;
-        }
-
-        .spinner {
-            width: 56px;
-            height: 56px;
-            border: 4px solid rgba(255, 255, 255, 0.15);
-            border-top-color: #4ecdc4;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            flex-shrink: 0;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        /* 待ち時間の色スタイルは park-data.js から動的に注入されます */
 
         .error {
             text-align: center;
@@ -1184,6 +1274,8 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
             flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
         }
 
         .meter-title {
@@ -1249,6 +1341,36 @@
             color: #ccc;
             margin-top: 10px;
             min-height: 1.2em;
+        }
+
+        /* 混雑スコア（未ログイン時）のブラー＆オーバーレイ */
+        .congestion-meter.blurred::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            backdrop-filter: blur(18px);
+            background: radial-gradient(circle at top, rgba(0,0,0,0.35), rgba(0,0,0,0.8));
+            z-index: 1;
+        }
+        .congestion-meter-blur-message {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .congestion-meter-blur-message-main {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .congestion-meter-blur-message-sub {
+            font-size: 0.75rem;
+            color: #ccc;
         }
 
         .meter-stats {
@@ -1413,6 +1535,67 @@
             flex-direction: column;
             border: 1px solid rgba(255,255,255,0.15);
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* お気に入り機能用：ログイン必須モーダル */
+        .fav-login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .fav-login-modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 420px;
+            padding: 22px 24px 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .fav-login-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fav-login-title span.icon {
+            font-size: 1.4rem;
+        }
+        .fav-login-message {
+            font-size: 0.9rem;
+            color: #ddd;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .fav-login-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .fav-login-close-btn,
+        .fav-login-go-login-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .fav-login-close-btn {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .fav-login-go-login-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: #fff;
+            font-weight: 600;
         }
         .strategy-board-header {
             padding: 18px 20px;
@@ -1887,18 +2070,49 @@
                 height: 100vh;
             }
         }
+
+        @media (max-width: 768px) {
+            .auth-mobile-bar {
+                display: flex;
+            }
+            .header-actions-row .auth-status-chip,
+            .header-actions-row .auth-small-btn {
+                display: none;
+            }
+        }
     </style>
     <script src="park-data.js"></script>
     <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="master-from-supabase.js"></script>
 </head>
 <body>
+    <!-- 画面全体ローディングオーバーレイ -->
+    <div id="loadingOverlay" class="hidden">
+        <div class="loading-overlay-content">
+            <img src="loading.jpg" alt="読み込み中" class="loading-overlay-image">
+            <p class="loading-overlay-text">読み込み中です...</p>
+        </div>
+    </div>
+
+    <!-- スマホ用ログイン状態バー -->
+    <div class="auth-mobile-bar" id="indexAuthMobileBar">
+        <div class="auth-status-chip" id="indexAuthStatusChipMobile">
+            <span>未ログイン</span>
+        </div>
+        <button type="button" class="auth-small-btn auth-login-btn" id="indexGoogleLoginBtnMobile">
+            <span>ログイン</span>
+        </button>
+        <button type="button" class="auth-small-btn" id="indexLogoutBtnMobile" style="display:none;">
+            <span>ログアウト</span>
+        </button>
+    </div>
+
     <!-- パーク選択画面 -->
     <div class="park-select-screen" id="parkSelectScreen">
         <h1 class="park-select-title">🎢 東京ディズニーリゾート</h1>
         <p class="park-select-subtitle">待ち時間を確認するパークを選択してください</p>
-        <p id="parkMasterLoading" class="park-master-loading">マスタを読み込み中...</p>
-        <div class="park-cards" id="parkCards" style="display: none;">
+        <div class="park-cards" id="parkCards">
             <div class="park-card land" onclick="selectPark('land')">
                 <div class="park-icon">🏰</div>
                 <h2 class="park-name">東京ディズニーランド</h2>
@@ -1943,6 +2157,15 @@
                             <span class="header-btn-text">履歴を見る</span>
                             <span class="header-btn-text-short">履歴</span>
                         </a>
+                        <div class="auth-status-chip" id="indexAuthStatusChip">
+                            <span>未ログイン</span>
+                        </div>
+                        <button type="button" class="auth-small-btn auth-login-btn" id="indexGoogleLoginBtn">
+                            <span>ログイン</span>
+                        </button>
+                        <button type="button" class="auth-small-btn" id="indexLogoutBtn" style="display:none;">
+                            <span>ログアウト</span>
+                        </button>
                     </div>
                 </div>
                 <div class="header-main">
@@ -2017,12 +2240,7 @@
                 </div>
             </div>
 
-            <div id="ridesContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>待ち時間を取得中...</p>
-                </div>
-            </div>
+            <div id="ridesContainer"></div>
         </div>
         </div>
     </div>
@@ -2039,6 +2257,24 @@
                 <button type="button" class="strategy-board-footer-btn" id="strategyBoardSaveImage">画像で保存</button>
                 <button type="button" class="strategy-board-footer-btn" id="strategyBoardShareLink">リンクで共有</button>
                 <button type="button" class="strategy-board-footer-btn strategy-board-close-btn" onclick="closeStrategyBoard()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- お気に入り機能：ログイン必須モーダル -->
+    <div id="favLoginOverlay" class="fav-login-overlay" onclick="hideFavLoginModal()">
+        <div class="fav-login-modal" onclick="event.stopPropagation()">
+            <div class="fav-login-title">
+                <span class="icon">🔑</span>
+                <span>ログインが必要です</span>
+            </div>
+            <div class="fav-login-message">
+                お気に入り機能を使うには、Google アカウントでログインしてください。<br>
+                ログインすると、端末をまたいでお気に入りを共有できます。
+            </div>
+            <div class="fav-login-actions">
+                <button type="button" class="fav-login-close-btn" onclick="hideFavLoginModal()">閉じる</button>
+                <button type="button" class="fav-login-go-login-btn" onclick="loginFromFavModal()">ログインする</button>
             </div>
         </div>
     </div>
@@ -2088,6 +2324,16 @@
         let rideNameSearchQuery = '';     // アトラクション名の部分一致検索
         let restoredPlannerFromUrl = false;
 
+        function showLoadingOverlay() {
+            const el = document.getElementById('loadingOverlay');
+            if (el) el.classList.remove('hidden');
+        }
+
+        function hideLoadingOverlay() {
+            const el = document.getElementById('loadingOverlay');
+            if (el) el.classList.add('hidden');
+        }
+
         /** URL の rides= からプランナー選択を復元（初回のみ） */
         function restorePlannerSelectionFromUrl() {
             if (restoredPlannerFromUrl || !ridesData.length) return;
@@ -2103,9 +2349,13 @@
         }
 
         /** パークを選択しメイン画面に切り替え、待ち時間取得・自動更新を開始する */
-        function selectPark(park) {
+        async function selectPark(park) {
             const parkInfo = PARKS[park];
             if (!parkInfo) return;
+
+            // 画面遷移開始時にローディング表示
+            showLoadingOverlay();
+
             currentPark = park;
             document.getElementById('parkSelectScreen').style.display = 'none';
             document.getElementById('mainScreen').classList.add('active');
@@ -2113,32 +2363,38 @@
             
             // 表示をリセット
             resetDisplay();
-            
-            loadTodayEvents();
-            fetchQueueTimes();
-            
-            // 自動更新設定
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            autoRefreshInterval = setInterval(fetchQueueTimes, 5 * 60 * 1000);
 
-            // ランド/シーボタンの選択状態
-            document.querySelectorAll('.park-switch-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.park === park);
-            });
+            // 以前の自動更新をクリア
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+
+            try {
+                // 今日のイベントと待ち時間の取得・描画が完了するまで待つ
+                await Promise.all([
+                    loadTodayEvents(),
+                    fetchQueueTimes()
+                ]);
+
+                // 自動更新設定（初回描画完了後に開始）
+                autoRefreshInterval = setInterval(fetchQueueTimes, 5 * 60 * 1000);
+
+                // ランド/シーボタンの選択状態
+                document.querySelectorAll('.park-switch-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.park === park);
+                });
+            } finally {
+                // 成功・失敗にかかわらずローディングは必ず消す
+                hideLoadingOverlay();
+            }
         }
 
-        /** 表示をリセット（読み込み中表示、フィルター・エリア・お気に入り・検索をクリア） */
+        /** 表示をリセット（フィルター・エリア・お気に入り・検索をクリア） */
         function resetDisplay() {
-            document.getElementById('lastUpdated').textContent = '読み込み中...';
-            // 混雑スコア・エリアタブは非表示にせずそのまま（取得完了後に更新される）
-            // コンテンツを読み込み中表示に
-            document.getElementById('ridesContainer').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>待ち時間を取得中...</p>
-                </div>
-            `;
-            
+            document.getElementById('lastUpdated').textContent = '';
+            document.getElementById('ridesContainer').innerHTML = '';
+
             // フィルターとエリアをリセット
             selectedAreas = [];
             currentFilter = 'all';
@@ -2171,9 +2427,32 @@
             resetDisplay();
         }
 
-        /** 履歴画面（history.html）へ遷移する（現在のパークをクエリで渡す） */
-        function goToHistory() {
+        /** 履歴画面（history.html）へ遷移する（現在のパークをクエリで渡す）
+         *  未ログイン時はログインモーダルを表示して遷移しない
+         */
+        async function goToHistory() {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('履歴機能を使うには Supabase の設定が必要です。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン → お気に入りと同じログイン必須モーダルを表示
+                    showFavLoginModal('待ち時間履歴を見るにはログインが必要です。<br>「ログイン」ボタンからログインしてください。');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for history navigation', e);
+                showFavLoginModal('現在、履歴機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+ 
             if (currentPark) {
+                showLoadingOverlay();
                 window.location.href = `history.html?park=${currentPark}`;
             }
         }
@@ -2366,6 +2645,180 @@
                         <p style="margin-top: 10px; font-size: 0.9rem;">Supabase を使用する場合は supabase-config.js に設定し、データが登録されているか確認してください。</p>
                     </div>
                 `;
+            }
+        }
+
+        // --- index.html 用 Supabase Auth（Google ログイン / ログアウト） ---
+
+        let indexSupabaseClient = null;
+
+        function getIndexSupabaseClient() {
+            if (indexSupabaseClient) return indexSupabaseClient;
+            if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || typeof window.supabase === 'undefined') {
+                console.warn('Supabase Auth (index) が正しく設定されていません。');
+                return null;
+            }
+            const { createClient } = window.supabase;
+            indexSupabaseClient = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+            return indexSupabaseClient;
+        }
+
+        let isIndexEventAdmin = false; // event_admins に登録されている管理者かどうか
+        let isIndexLoggedIn = false;   // Supabase Auth でログイン済みかどうか
+
+        async function refreshIndexEventAdminState(client, user) {
+            if (!client || !user) {
+                isIndexEventAdmin = false;
+                return;
+            }
+            try {
+                const { data, error } = await client
+                    .from('event_admins')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .limit(1)
+                    .maybeSingle();
+                if (error) {
+                    console.warn('event_admins check error (index)', error);
+                    isIndexEventAdmin = false;
+                } else {
+                    isIndexEventAdmin = !!data;
+                }
+            } catch (e) {
+                console.warn('refreshIndexEventAdminState error', e);
+                isIndexEventAdmin = false;
+            }
+        }
+
+        async function updateIndexAuthUI() {
+            const chipDesktop = document.getElementById('indexAuthStatusChip');
+            const loginBtnDesktop = document.getElementById('indexGoogleLoginBtn');
+            const logoutBtnDesktop = document.getElementById('indexLogoutBtn');
+            const chipMobile = document.getElementById('indexAuthStatusChipMobile');
+            const loginBtnMobile = document.getElementById('indexGoogleLoginBtnMobile');
+            const logoutBtnMobile = document.getElementById('indexLogoutBtnMobile');
+
+            const client = getIndexSupabaseClient();
+            if (!client) {
+                if (chipDesktop) chipDesktop.innerHTML = '<span>認証未設定</span>';
+                if (chipMobile) chipMobile.innerHTML = '<span>認証未設定</span>';
+                if (loginBtnDesktop) loginBtnDesktop.style.display = 'none';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                if (loginBtnMobile) loginBtnMobile.style.display = 'none';
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                if (data && data.user) {
+                    isIndexLoggedIn = true;
+                    const user = data.user;
+                    // 管理者判定を更新
+                    await refreshIndexEventAdminState(client, user);
+                    const meta = user.user_metadata || {};
+                    const avatarUrl = meta.avatar_url || meta.picture || null;
+                    const rawName = (meta.full_name || meta.name)
+                        || (user.email ? user.email.split('@')[0] : 'ログイン中');
+                    const safeName = escapeHtml(rawName);
+                    const badgeHtml = isIndexEventAdmin
+                        ? '<span class="auth-role-badge">管理者</span>'
+                        : '';
+                    const iconHtml = avatarUrl
+                        ? `<img src="${escapeHtml(avatarUrl)}" class="auth-user-avatar" alt="profile" />`
+                        : '<span class="auth-user-icon">👤</span>';
+                    const html = `${iconHtml}<span class="auth-user-name">${safeName}</span>${badgeHtml}`;
+                    if (chipDesktop) {
+                        chipDesktop.innerHTML = html;
+                        chipDesktop.style.display = '';
+                    }
+                    if (chipMobile) {
+                        chipMobile.innerHTML = html;
+                        chipMobile.style.display = '';
+                    }
+                    if (loginBtnDesktop) loginBtnDesktop.style.display = 'none';
+                    if (logoutBtnDesktop) logoutBtnDesktop.style.display = '';
+                    if (loginBtnMobile) loginBtnMobile.style.display = 'none';
+                    if (logoutBtnMobile) logoutBtnMobile.style.display = '';
+                } else {
+                    // ログアウト状態ではお気に入り情報をリセットし、ステータス表示は非表示にする
+                    isIndexLoggedIn = false;
+                    favoriteRideIds = new Set();
+                    showFavoritesOnly = false;
+                    if (chipDesktop) {
+                        chipDesktop.innerHTML = '';
+                        chipDesktop.style.display = 'none';
+                    }
+                    if (chipMobile) {
+                        chipMobile.innerHTML = '';
+                        chipMobile.style.display = 'none';
+                    }
+                    if (loginBtnDesktop) loginBtnDesktop.style.display = '';
+                    if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                    if (loginBtnMobile) loginBtnMobile.style.display = '';
+                    if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('updateIndexAuthUI error', e);
+                if (chipDesktop) chipDesktop.innerHTML = '<span>認証状態の確認に失敗しました</span>';
+                if (chipMobile) chipMobile.innerHTML = '<span>認証状態の確認に失敗しました</span>';
+                if (loginBtnDesktop) loginBtnDesktop.style.display = '';
+                if (logoutBtnDesktop) logoutBtnDesktop.style.display = 'none';
+                if (loginBtnMobile) loginBtnMobile.style.display = '';
+                if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+            }
+        }
+
+        async function handleIndexGoogleLogin() {
+            const client = getIndexSupabaseClient();
+            if (!client) return;
+            const loginBtn = document.getElementById('indexGoogleLoginBtn');
+            const loginBtnMobile = document.getElementById('indexGoogleLoginBtnMobile');
+            if (loginBtn) loginBtn.disabled = true;
+            if (loginBtnMobile) loginBtnMobile.disabled = true;
+            try {
+                const { error } = await client.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { 
+                        // GitHub Pages などで /disney-wait-time/index.html のようなパスでホストしている想定
+                        redirectTo: window.location.origin + '/index.html',
+                        queryParams: { prompt: 'select_account' }
+                    }
+                });
+                if (error) {
+                    console.error('index Google login error', error);
+                    alert(error.message || 'Google ログインに失敗しました。');
+                    if (loginBtn) loginBtn.disabled = false;
+                    if (loginBtnMobile) loginBtnMobile.disabled = false;
+                }
+            } catch (e) {
+                console.error('handleIndexGoogleLogin error', e);
+                alert('予期しないエラーが発生しました。時間をおいて再度お試しください。');
+                if (loginBtn) loginBtn.disabled = false;
+                if (loginBtnMobile) loginBtnMobile.disabled = false;
+            }
+        }
+
+        async function handleIndexLogout() {
+            const client = getIndexSupabaseClient();
+            if (!client) return;
+            const logoutBtn = document.getElementById('indexLogoutBtn');
+            const logoutBtnMobile = document.getElementById('indexLogoutBtnMobile');
+            if (logoutBtn) logoutBtn.disabled = true;
+            if (logoutBtnMobile) logoutBtnMobile.disabled = true;
+            try {
+                await client.auth.signOut();
+            } catch (e) {
+                console.error('handleIndexLogout error', e);
+            } finally {
+                // ログアウトしたらお気に入り状態をリセット
+                favoriteRideIds = new Set();
+                showFavoritesOnly = false;
+                if (logoutBtn) logoutBtn.disabled = false;
+                if (logoutBtnMobile) logoutBtnMobile.disabled = false;
+                updateIndexAuthUI();
+                // ログアウトしたらランド/シー選択画面に戻す
+                goBack();
             }
         }
 
@@ -2814,8 +3267,27 @@
             if (plannerSelectedIds.size >= 2) generateRoute();
         }
 
-        /** 回り順プランナーオーバーレイを開く */
-        function openPlanner() {
+        /** 回り順プランナーオーバーレイを開く（未ログイン時はログインモーダル） */
+        async function openPlanner() {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('回り順プランナー機能を使うには Supabase の設定が必要です。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    showFavLoginModal('回り順プランナーを使うにはログインが必要です。<br>「ログイン」ボタンからログインしてください。');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for planner', e);
+                showFavLoginModal('現在、回り順プランナー機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+
             if (ridesData.length === 0) return;
             const overlay = document.getElementById('plannerOverlay');
             plannerSelectedIds = new Set();
@@ -3079,8 +3551,27 @@
             return html;
         }
 
-        /** 作戦ボードオーバーレイを開き、混み具合・ベスト3・回り順を表示する */
-        function openStrategyBoard() {
+        /** 作戦ボードオーバーレイを開き、混み具合・ベスト3・回り順を表示する（未ログイン時はログインモーダル） */
+        async function openStrategyBoard() {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('作戦ボード機能を使うには Supabase の設定が必要です。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    showFavLoginModal('作戦ボードを使うにはログインが必要です。<br>「ログイン」ボタンからログインしてください。');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for strategy board', e);
+                showFavLoginModal('現在、作戦ボード機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+
             const overlay = document.getElementById('strategyBoardOverlay');
             const content = document.getElementById('strategyBoardContent');
             if (!overlay || !content) return;
@@ -3279,28 +3770,51 @@
             const histStats = (historicalParkMin != null && historicalParkMax != null)
                 ? { min: historicalParkMin, max: historicalParkMax } : null;
             const result = computeCongestionScore(ridesData, histStats);
-            const level = getCongestionLevel(result.score);
+
+            // 表示用のスコア・レベル（未ログイン時は仮の 50 固定）
+            const displayScore = isIndexLoggedIn ? result.score : 50;
+            const displayLevel = getCongestionLevel(displayScore);
 
             meter.style.display = 'block';
+
+            // ログインしていない場合は値をぼかして「ログインすると確認可能」と表示
+            meter.classList.toggle('blurred', !isIndexLoggedIn);
+            let blurMessageEl = document.getElementById('congestionBlurMessage');
+            if (!isIndexLoggedIn) {
+                if (!blurMessageEl) {
+                    blurMessageEl = document.createElement('div');
+                    blurMessageEl.id = 'congestionBlurMessage';
+                    blurMessageEl.className = 'congestion-meter-blur-message';
+                    blurMessageEl.innerHTML = `
+                        <div class="congestion-meter-blur-message-main">ログインすると混雑スコアを確認できます</div>
+                        <div class="congestion-meter-blur-message-sub">混雑の度合い（0〜100）と詳細コメントを表示します</div>
+                    `;
+                    meter.appendChild(blurMessageEl);
+                }
+            } else if (blurMessageEl) {
+                blurMessageEl.remove();
+            }
 
             const titleNoteEl = document.getElementById('meterTitleNote');
             if (titleNoteEl) {
                 titleNoteEl.textContent = histStats ? '（過去1か月の同じ曜日・同時間帯と比較）' : '';
             }
 
-            // スコア表示
+            // スコア表示（未ログイン時は仮の 50 を表示、ブラー越し）
             const scoreEl = document.getElementById('meterScoreValue');
-            scoreEl.textContent = result.score;
-            scoreEl.style.color = level.color;
+            scoreEl.textContent = displayScore;
+            scoreEl.style.color = displayLevel.color;
 
             // レベルラベル
             const labelEl = document.getElementById('meterLabel');
-            labelEl.innerHTML = `<span class="meter-label-emoji">${level.emoji}</span>${level.label}`;
-            labelEl.style.color = level.color;
+            labelEl.innerHTML = `<span class="meter-label-emoji">${displayLevel.emoji}</span>${displayLevel.label}`;
+            labelEl.style.color = displayLevel.color;
 
-            // 過去平均との比較コメント
+            // 過去平均との比較コメント（未ログイン時は簡易メッセージ）
             const commentEl = document.getElementById('meterComment');
-            if (historicalParkAvg !== null && result.avgWait > 0) {
+            if (!isIndexLoggedIn) {
+                commentEl.textContent = 'ログインすると「普段より空いている／混んでいる」などの詳細コメントを表示します';
+            } else if (historicalParkAvg !== null && result.avgWait > 0) {
                 const diff = result.avgWait - historicalParkAvg;
                 const ratio = result.avgWait / historicalParkAvg;
                 if (ratio < 0.8) {
@@ -3317,20 +3831,37 @@
             }
 
             // 統計値
-            document.getElementById('meterStats').innerHTML = `
-                <div class="meter-stat">
-                    <div class="meter-stat-value">${result.openCount}<span class="meter-stat-unit"> / ${result.totalCount}</span></div>
-                    <div class="meter-stat-label">運営中</div>
-                </div>
-                <div class="meter-stat">
-                    <div class="meter-stat-value">${result.avgWait}<span class="meter-stat-unit">分</span></div>
-                    <div class="meter-stat-label">平均待ち時間</div>
-                </div>
-                <div class="meter-stat">
-                    <div class="meter-stat-value">${result.maxWait}<span class="meter-stat-unit">分</span></div>
-                    <div class="meter-stat-label">最長待ち時間</div>
-                </div>
-            `;
+            if (!isIndexLoggedIn) {
+                document.getElementById('meterStats').innerHTML = `
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">--</div>
+                        <div class="meter-stat-label">運営中</div>
+                    </div>
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">--</div>
+                        <div class="meter-stat-label">平均待ち時間</div>
+                    </div>
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">--</div>
+                        <div class="meter-stat-label">最長待ち時間</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('meterStats').innerHTML = `
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">${result.openCount}<span class="meter-stat-unit"> / ${result.totalCount}</span></div>
+                        <div class="meter-stat-label">運営中</div>
+                    </div>
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">${result.avgWait}<span class="meter-stat-unit">分</span></div>
+                        <div class="meter-stat-label">平均待ち時間</div>
+                    </div>
+                    <div class="meter-stat">
+                        <div class="meter-stat-value">${result.maxWait}<span class="meter-stat-unit">分</span></div>
+                        <div class="meter-stat-label">最長待ち時間</div>
+                    </div>
+                `;
+            }
 
             // ゲージアニメーション
             const arc = document.getElementById('meterArc');
@@ -3385,42 +3916,140 @@
             section.style.display = 'block';
         }
 
-        /** ローカルストレージからお気に入りアトラクションID一覧を読み込む */
-        function loadFavoriteRides() {
+        /**
+         * お気に入りアトラクションID一覧を読み込む
+         * - ログインしていない場合は「お気に入り機能は使用不可」とし、何も復元しない
+         * - ログイン済みなら Supabase の ride_favorites テーブルから取得
+         */
+        async function loadFavoriteRides() {
+            favoriteRideIds = new Set();
             try {
-                const raw = localStorage.getItem('tdr_wait_favorites');
-                if (!raw) return;
-                const arr = JSON.parse(raw);
-                if (Array.isArray(arr)) {
-                    favoriteRideIds = new Set(arr.map(id => String(id)));
+                const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+                if (!client) return;
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン時は何も復元しない（お気に入り機能は使用不可）
+                    return;
+                }
+
+                const { data: rows, error } = await client
+                    .from('ride_favorites')
+                    .select('ride_id')
+                    .eq('user_id', user.id);
+                if (error) {
+                    console.warn('Failed to load favorites from Supabase', error);
+                    return;
+                }
+                if (Array.isArray(rows)) {
+                    favoriteRideIds = new Set(rows.map(r => String(r.ride_id)));
                 }
             } catch (e) {
-                console.warn('Failed to load favorites', e);
+                console.warn('Failed to load favorites from Supabase', e);
             }
         }
 
-        /** お気に入りアトラクションID一覧をローカルストレージに保存する */
-        function saveFavoriteRides() {
+        /**
+         * お気に入りアトラクションID一覧を保存する
+         * - ログインしていない場合は何もしない（使用不可）
+         * - ログイン済みなら Supabase の ride_favorites テーブルに保存
+         */
+        async function saveFavoriteRides() {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) return;
+
             try {
-                const arr = Array.from(favoriteRideIds);
-                localStorage.setItem('tdr_wait_favorites', JSON.stringify(arr));
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン時は保存しない
+                    return;
+                }
+
+                const arr = Array.from(favoriteRideIds).map(id => String(id));
+
+                // シンプルに「そのユーザーのレコードを全削除 → 現在の一覧を insert」
+                const { error: delError } = await client
+                    .from('ride_favorites')
+                    .delete()
+                    .eq('user_id', user.id);
+                if (delError) {
+                    console.warn('Failed to delete favorites on Supabase', delError);
+                }
+
+                if (arr.length > 0) {
+                    const rows = arr.map(rideId => ({
+                        user_id: user.id,
+                        ride_id: String(rideId)
+                    }));
+                    const { error: insError } = await client
+                        .from('ride_favorites')
+                        .insert(rows);
+                    if (insError) {
+                        console.warn('Failed to save favorites to Supabase', insError);
+                    }
+                }
             } catch (e) {
-                console.warn('Failed to save favorites', e);
+                console.warn('Failed to save favorites to Supabase', e);
             }
         }
 
-        /** お気に入りの追加/解除をトグルし、保存する */
-        function toggleFavoriteRide(rideId) {
+        function showFavLoginModal(messageOverride) {
+            const overlay = document.getElementById('favLoginOverlay');
+            const msgEl = document.querySelector('#favLoginOverlay .fav-login-message');
+            if (msgEl && messageOverride) {
+                msgEl.innerHTML = messageOverride;
+            } else if (msgEl) {
+                msgEl.innerHTML = 'お気に入り機能を使うには、Google アカウントでログインしてください。<br>ログインすると、端末をまたいでお気に入りを共有できます。';
+            }
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function hideFavLoginModal() {
+            const overlay = document.getElementById('favLoginOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        async function loginFromFavModal() {
+            hideFavLoginModal();
+            // 画面上部の「Googleでログイン」と同じ処理を呼び出す
+            if (typeof handleIndexGoogleLogin === 'function') {
+                await handleIndexGoogleLogin();
+            }
+        }
+
+        /** お気に入りの追加/解除をトグルし、保存する（未ログインならモーダル表示して何もしない） */
+        async function toggleFavoriteRide(rideId) {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('Supabase の設定が行われていないため、お気に入り機能は利用できません。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    showFavLoginModal();
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for favorites', e);
+                showFavLoginModal('現在、お気に入り機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+
             const key = String(rideId);
             if (favoriteRideIds.has(key)) {
                 favoriteRideIds.delete(key);
             } else {
                 favoriteRideIds.add(key);
             }
+            // 非同期で保存（結果は待たずに UI を先に更新）
             saveFavoriteRides();
         }
 
-        // お気に入り情報をローカルストレージから復元
+        // お気に入り情報を Supabase から復元（未ログイン時は常に空）
         loadFavoriteRides();
 
         // イベントリスナー設定
@@ -3443,7 +4072,26 @@
 
         const favToggleBtn = document.getElementById('favToggleBtn');
         if (favToggleBtn) {
-            favToggleBtn.addEventListener('click', () => {
+            favToggleBtn.addEventListener('click', async () => {
+                // お気に入りフィルタも「ログイン必須」とする
+                const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+                if (!client) {
+                    showFavLoginModal('Supabase の設定が行われていないため、お気に入り機能は利用できません。<br>管理者にお問い合わせください。');
+                    return;
+                }
+                try {
+                    const { data } = await client.auth.getUser();
+                    const user = data && data.user;
+                    if (!user) {
+                        showFavLoginModal();
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Failed to check auth state for favorites toggle', e);
+                    showFavLoginModal('現在、お気に入り機能を利用できません。<br>時間をおいて再度お試しください。');
+                    return;
+                }
+
                 showFavoritesOnly = !showFavoritesOnly;
                 favToggleBtn.classList.toggle('active', showFavoritesOnly);
                 renderRides();
@@ -3569,10 +4217,15 @@
         // マスタ取得後にパーク選択UIを表示し、URLパラメータからパークを自動選択（履歴ページから戻った時用）
         document.addEventListener('DOMContentLoaded', async function () {
             await loadMasterFromSupabase();
-            const loadingEl = document.getElementById('parkMasterLoading');
-            const cardsEl = document.getElementById('parkCards');
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (cardsEl) cardsEl.style.display = '';
+            updateIndexAuthUI();
+            const loginBtn = document.getElementById('indexGoogleLoginBtn');
+            const logoutBtn = document.getElementById('indexLogoutBtn');
+            const loginBtnMobile = document.getElementById('indexGoogleLoginBtnMobile');
+            const logoutBtnMobile = document.getElementById('indexLogoutBtnMobile');
+            if (loginBtn) loginBtn.addEventListener('click', handleIndexGoogleLogin);
+            if (logoutBtn) logoutBtn.addEventListener('click', handleIndexLogout);
+            if (loginBtnMobile) loginBtnMobile.addEventListener('click', handleIndexGoogleLogin);
+            if (logoutBtnMobile) logoutBtnMobile.addEventListener('click', handleIndexLogout);
             const urlParams = new URLSearchParams(window.location.search);
             const parkParam = urlParams.get('park');
             if (parkParam && PARKS[parkParam]) {
