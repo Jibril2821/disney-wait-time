@@ -272,10 +272,22 @@
 
         @media (min-width: 769px) {
             .controls-row {
-                flex-wrap: nowrap;
-                justify-content: center; /* 行全体を中央寄せ */
+                display: grid;
+                grid-template-columns: auto 1fr;
+                grid-template-rows: auto;
+                gap: 16px;
+                align-items: center;
+                justify-content: center;
+                max-width: max-content;
+                margin: 0 auto;
+            }
+            .controls-back-btn {
+                grid-column: 1;
+                grid-row: 1;
             }
             .controls-center {
+                grid-column: 2;
+                grid-row: 1;
                 flex: 0;
                 justify-content: center;
                 gap: 0;
@@ -1704,7 +1716,7 @@
 
             .controls-row {
                 display: grid;
-                grid-template-columns: auto auto;
+                grid-template-columns: auto 1fr;
                 grid-template-rows: auto auto;
                 gap: 10px;
             }
@@ -1716,12 +1728,14 @@
                 display: contents;
             }
             .controls-center .period-tabs {
-                grid-column: 1 / -1;
+                grid-column: 2;
                 grid-row: 1;
                 min-width: 0;
-                width: auto;
+                width: fit-content;
+                max-width: 100%;
                 justify-content: center;
-                margin: 0 auto;
+                justify-self: center;
+                margin: 0;
             }
             .controls-center select {
                 grid-column: 1 / -1;
