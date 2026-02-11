@@ -2777,11 +2777,20 @@
             if (loginBtn) loginBtn.disabled = true;
             if (loginBtnMobile) loginBtnMobile.disabled = true;
             try {
+                // ローカル開発と GitHub Pages でリダイレクト先を出し分ける
+                let redirectTo = window.location.origin + '/index.html';
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // ローカル: 従来どおり /index.html に戻す（npm run dev 等でプロキシしている想定）
+                    redirectTo = window.location.origin + '/index.html';
+                } else if (window.location.origin.includes('github.io')) {
+                    // GitHub Pages: リポジトリルートに戻す
+                    redirectTo = window.location.origin + '/disney-wait-time/';
+                }
+
                 const { error } = await client.auth.signInWithOAuth({
                     provider: 'google',
                     options: { 
-                        // GitHub Pages などで /disney-wait-time/index.html のようなパスでホストしている想定
-                        redirectTo: window.location.origin + '/index.html',
+                        redirectTo,
                         queryParams: { prompt: 'select_account' }
                     }
                 });

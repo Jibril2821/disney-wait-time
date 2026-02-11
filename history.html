@@ -6352,11 +6352,21 @@
             }
 
             try {
+                // ローカル開発と GitHub Pages でリダイレクト先を出し分ける
+                let redirectTo = window.location.origin + '/index.html';
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // ローカル: 従来どおり /index.html に戻す
+                    redirectTo = window.location.origin + '/index.html';
+                } else if (window.location.origin.includes('github.io')) {
+                    // GitHub Pages: リポジトリルートに戻す
+                    redirectTo = window.location.origin + '/disney-wait-time/';
+                }
+
                 const { error } = await client.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        // ログイン完了後は index.html（ランド/シー選択画面）へ遷移させる
-                        redirectTo: window.location.origin + '/index.html',
+                        // ログイン完了後にトップ画面へ遷移させる
+                        redirectTo,
                         queryParams: { prompt: 'select_account' }
                     }
                 });
