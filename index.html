@@ -38,6 +38,11 @@
             padding: clamp(24px, 5vw, 48px) 20px;
         }
 
+        /* クエリパラメータでパーク指定がある場合は、初期表示でパーク選択画面を非表示にする */
+        html.has-initial-park #parkSelectScreen {
+            display: none;
+        }
+
         .park-select-title {
             font-size: clamp(1.75rem, 5vw, 2.5rem);
             margin-bottom: 0.5em;
@@ -2094,6 +2099,25 @@
             <p class="loading-overlay-text">読み込み中です...</p>
         </div>
     </div>
+    <script>
+        // 履歴画面などから「?park=land」等で戻ってきた場合、
+        // 初期描画時からローディングオーバーレイを表示し、ランド/シー選択画面を見せないようにする
+        (function () {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var initialPark = params.get('park');
+                if (initialPark === 'land' || initialPark === 'sea') {
+                    document.documentElement.classList.add('has-initial-park');
+                    var overlay = document.getElementById('loadingOverlay');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                // 失敗しても致命的ではないので黙って無視
+            }
+        })();
+    </script>
 
     <!-- スマホ用ログイン状態バー -->
     <div class="auth-mobile-bar" id="indexAuthMobileBar">
@@ -2454,6 +2478,36 @@
             if (currentPark) {
                 showLoadingOverlay();
                 window.location.href = `history.html?park=${currentPark}`;
+            }
+        }
+
+        /** アトラクションカードから履歴画面へ遷移する
+         *  未ログイン時はログインモーダルを表示して遷移しない
+         */
+        async function goToRideHistory(rideId) {
+            const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+            if (!client) {
+                showFavLoginModal('履歴機能を使うには Supabase の設定が必要です。<br>管理者にお問い合わせください。');
+                return;
+            }
+
+            try {
+                const { data } = await client.auth.getUser();
+                const user = data && data.user;
+                if (!user) {
+                    // 未ログイン → 履歴用のログイン必須メッセージを表示
+                    showFavLoginModal('待ち時間履歴を見るにはログインが必要です。<br>「ログイン」ボタンからログインしてください。');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed to check auth state for ride history navigation', e);
+                showFavLoginModal('現在、履歴機能を利用できません。<br>時間をおいて再度お試しください。');
+                return;
+            }
+
+            if (currentPark && rideId) {
+                showLoadingOverlay();
+                window.location.href = `history.html?park=${currentPark}&ride=${rideId}`;
             }
         }
 
@@ -3034,11 +3088,11 @@
                 });
             });
             
-            // カードクリックで履歴画面に遷移
+            // カードクリックで履歴画面に遷移（未ログイン時はログインモーダル）
             container.querySelectorAll('.ride-card').forEach(card => {
-                card.addEventListener('click', () => {
+                card.addEventListener('click', async () => {
                     const rideId = card.dataset.rideId;
-                    window.location.href = `history.html?park=${currentPark}&ride=${rideId}`;
+                    await goToRideHistory(rideId);
                 });
             });
         }
@@ -3169,16 +3223,41 @@
             }
 
             // おすすめ時間帯（上位3つ）を計算
+            // 朝一番は待ち時間が短くなりがちなので、
+            // 「そのアトラクションで一番早い時間帯から一定時間（例: 2時間）は候補から除外」
+            // することで、朝一バイアスを弱める。
             const TOP_N_HOURS = 3;
+            const MORNING_EXCLUDE_HOURS = 1; // その日の最初の時間帯から何時間分を除外するか
+
             rideHourAggregates.forEach((hourMap, rideId) => {
                 const entries = [];
+                let minHour = null;
+
+                // まずは各時間帯の平均待ち時間と、そのアトラクションの最も早い時間帯を求める
                 hourMap.forEach((slot, hour) => {
                     if (slot.count >= 1) {
                         entries.push({ hour, avg: slot.sum / slot.count });
+                        if (minHour === null || hour < minHour) {
+                            minHour = hour;
+                        }
                     }
                 });
-                entries.sort((a, b) => a.avg - b.avg);
-                const topHours = entries.slice(0, TOP_N_HOURS).map(e => e.hour).sort((a, b) => a - b);
+
+                if (entries.length === 0) return;
+
+                // 一番早い時間帯から一定時間（MORNING_EXCLUDE_HOURS）を「朝」とみなし、候補から外す
+                let candidateEntries = entries;
+                if (minHour !== null) {
+                    const morningThreshold = minHour + MORNING_EXCLUDE_HOURS;
+                    const filtered = entries.filter(e => e.hour >= morningThreshold);
+                    // もし朝を除外しすぎて何も残らない場合は、従来どおり全時間帯から選ぶ
+                    if (filtered.length > 0) {
+                        candidateEntries = filtered;
+                    }
+                }
+
+                candidateEntries.sort((a, b) => a.avg - b.avg);
+                const topHours = candidateEntries.slice(0, TOP_N_HOURS).map(e => e.hour).sort((a, b) => a - b);
                 if (topHours.length > 0) {
                     rideBestTimeSlots.set(rideId, topHours);
                 }
