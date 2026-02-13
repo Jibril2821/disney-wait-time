@@ -268,12 +268,13 @@
         #compareBtn:hover:not(:disabled) {
             background: linear-gradient(135deg, rgba(78,205,196,0.5), rgba(68,160,141,0.5));
         }
-        #weekendWeekdayBtn {
-            background: linear-gradient(135deg, rgba(249,202,36,0.3), rgba(243,156,18,0.3));
+        /* イベントカレンダー: 比較ボタンと色が被らないようにオレンジ系に変更 */
+        #eventCalendarBtn {
+            background: linear-gradient(135deg, rgba(255,152,0,0.35), rgba(255,193,7,0.3));
             border: none;
         }
-        #weekendWeekdayBtn:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(249,202,36,0.45), rgba(243,156,18,0.45));
+        #eventCalendarBtn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(255,152,0,0.55), rgba(255,193,7,0.5));
         }
         #eventManageBtn {
             background: linear-gradient(135deg, rgba(156,39,176,0.3), rgba(123,31,162,0.3));
@@ -1835,7 +1836,7 @@
             }
         }
 
-        /* PC表示時: 比較・週末/平日ボタンを右寄せ / 名前で検索・お気に入りを横並びに */
+        /* PC表示時: 比較ボタンを右寄せ / 名前で検索・お気に入りを横並びに */
         @media (min-width: 769px) {
             .header-top-row {
                 justify-content: space-between;
@@ -2005,6 +2006,19 @@
         .event-manage-list li button { padding: 6px 12px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.85rem; }
         .event-manage-list li .event-item-delete { margin-left: auto; background: rgba(255,100,100,0.3); color: #fff; }
         .event-item-delete:hover { background: rgba(255,100,100,0.5); }
+        .event-manage-form-park { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .event-manage-form-park-label { color: #a0a0a0; font-size: 0.9rem; }
+        .event-manage-form-park-btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s, border-color 0.2s; }
+        .event-manage-form-park-btn input { position: absolute; opacity: 0; pointer-events: none; }
+        .event-manage-form-park-btn.land { background: linear-gradient(135deg, rgba(233,30,99,0.25) 0%, rgba(156,39,176,0.25) 100%); border-color: rgba(233,30,99,0.5); color: #e91e63; }
+        .event-manage-form-park-btn.land:hover { border-color: #e91e63; }
+        .event-manage-form-park-btn.land:has(input:checked) { background: linear-gradient(135deg, #e91e63, #9c27b0); border-color: #e91e63; color: #fff; }
+        .event-manage-form-park-btn.sea { background: linear-gradient(135deg, rgba(33,150,243,0.25) 0%, rgba(0,188,212,0.25) 100%); border-color: rgba(33,150,243,0.5); color: #2196f3; }
+        .event-manage-form-park-btn.sea:hover { border-color: #2196f3; }
+        .event-manage-form-park-btn.sea:has(input:checked) { background: linear-gradient(135deg, #2196f3, #00bcd4); border-color: #2196f3; color: #fff; }
+        .event-item-park-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-right: 8px; }
+        .event-item-park-badge.land { background: rgba(233,30,99,0.25); color: #e91e63; }
+        .event-item-park-badge.sea { background: rgba(33,150,243,0.25); color: #2196f3; }
 
         /* お気に入り機能用：ログイン必須モーダル（履歴画面） */
         .fav-login-overlay {
@@ -2097,6 +2111,293 @@
         .day-view-event-line .today-events-item-label { font-weight: 600; }
         .day-view-event-line .today-events-item-period { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
         .event-manage-list .event-manage-empty { color: #a0a0a0; list-style: none; }
+
+        /* イベントカレンダーモーダル（Googleカレンダー風）・画面サイズに応じて中央配置 */
+        #eventCalendarOverlay {
+            align-items: center;
+            justify-content: center;
+            padding: max(16px, 2vh) 20px;
+            box-sizing: border-box;
+        }
+        #eventCalendarOverlay .compare-modal {
+            margin: 0 auto;
+            max-height: min(90vh, calc(100vh - 32px));
+        }
+        .event-calendar-modal .compare-modal-body { max-height: min(80vh, calc(100vh - 120px)); overflow-y: auto; overflow-x: hidden; padding: 16px; min-width: 0; }
+        .event-calendar-modal.compare-modal {
+            overflow: hidden;
+        }
+        .event-calendar-modal .gc-calendar-wrap {
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            /* 月で週数が5/6と変わってもモーダル上部の位置がずれないよう、常に6週分の高さを確保 */
+            min-height: 916px; /* 曜日行〜40px + 6週×(40+28+28+28+22)px = 40+876 */
+        }
+        @media (max-width: 768px) {
+            .event-calendar-modal .gc-calendar-wrap {
+                /* スマホ時はイベント2行: 曜日40px + 6週×(40+28+28+22)px = 40+708 */
+                min-height: 748px;
+            }
+        }
+        .event-calendar-modal .gc-grid {
+            grid-template-columns: repeat(7, var(--event-calendar-day-width, minmax(0, 1fr)));
+        }
+        .event-calendar-modal .gc-weekday-row {
+            grid-template-columns: repeat(7, var(--event-calendar-day-width, minmax(0, 1fr)));
+        }
+        /* イベント詳細モーダル（カレンダーの上に重ねて表示） */
+        .event-detail-overlay {
+            z-index: 1001;
+        }
+        .event-detail-modal .compare-modal-body {
+            padding: 20px 25px;
+            min-width: 280px;
+        }
+        .event-detail-modal .event-detail-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+        .event-detail-modal .event-detail-period {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.8);
+        }
+        .event-detail-modal .event-detail-period span {
+            color: rgba(255,255,255,0.6);
+        }
+        .event-detail-modal .event-detail-day-empty {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+        }
+        .event-detail-modal .event-detail-day-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .event-detail-modal .event-detail-day-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .event-detail-modal .event-detail-day-item:hover {
+            background: rgba(255,255,255,0.12);
+        }
+        .event-detail-modal .event-detail-day-item-name {
+            display: block;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        .event-detail-modal .event-detail-day-item-period {
+            display: block;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .gc-calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+        .gc-calendar-nav .gc-month-label {
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: #fff;
+            letter-spacing: 0.02em;
+            text-align: center;
+        }
+        .gc-calendar-nav .gc-nav-prev {
+            flex-shrink: 0;
+        }
+        .gc-calendar-nav .gc-nav-next {
+            flex-shrink: 0;
+        }
+        .gc-calendar-nav button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.28), rgba(255,255,255,0.05));
+            color: rgba(255,255,255,0.92);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.18);
+            backdrop-filter: blur(6px);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+        .gc-calendar-nav button:hover {
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.38), rgba(255,255,255,0.12));
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+            transform: translateY(-1px) scale(1.03);
+            border-color: rgba(255,255,255,0.28);
+        }
+        .gc-calendar-nav button:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), rgba(255,255,255,0.04));
+        }
+        .gc-calendar-wrap {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+            width: 100%;
+            min-width: 0;
+        }
+        .gc-weekday-row {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .gc-weekday-cell {
+            padding: 10px 4px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .gc-weekday-cell:first-child { color: rgba(244,67,54,0.9); }
+        .gc-weekday-cell:last-child { color: rgba(33,150,243,0.9); }
+        .gc-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            width: 100%;
+            min-width: 0;
+        }
+        .gc-grid .gc-day-cell {
+            grid-row: span 1;
+            height: 40px;
+            min-height: 40px;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 4px 4px 2px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+            background: rgba(26,26,46,0.4);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .gc-grid .gc-day-cell:nth-child(7n) { border-right: none; }
+        .gc-grid .gc-day-cell.gc-other-month {
+            background: rgba(15,23,42,0.5);
+            opacity: 0.6;
+        }
+        .gc-day-number {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .gc-day-cell.gc-today .gc-day-number {
+            background: #1a73e8;
+            color: #fff;
+            font-weight: 600;
+        }
+        .gc-day-cell.gc-other-month .gc-day-number {
+            color: rgba(255,255,255,0.5);
+        }
+        .gc-day-cell.gc-sunday .gc-day-number {
+            color: rgba(244,67,54,0.95);
+        }
+        .gc-day-cell.gc-sunday.gc-today .gc-day-number {
+            background: rgba(244,67,54,0.9);
+            color: #fff;
+        }
+        .gc-day-cell.gc-saturday .gc-day-number {
+            color: rgba(33,150,243,0.95);
+        }
+        .gc-day-cell.gc-saturday.gc-today .gc-day-number {
+            background: rgba(33,150,243,0.9);
+            color: #fff;
+        }
+        .gc-event-bar {
+            grid-row: span 1;
+            height: 28px;
+            min-height: 28px;
+            margin: 0 2px 4px;
+            padding: 0 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: left;
+            font-size: 0.7rem;
+            border-left: 3px solid #1a73e8;
+            background: rgba(26,115,232,0.15);
+            color: rgba(255,255,255,0.95);
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .gc-event-bar:hover {
+            filter: brightness(1.15);
+        }
+        .gc-event-bar.gc-color-1 { border-left-color: #0f9d58; background: rgba(15,157,88,0.15); }
+        .gc-event-bar.gc-color-2 { border-left-color: #9c27b0; background: rgba(156,39,176,0.15); }
+        .gc-event-bar.gc-color-3 { border-left-color: #ea4335; background: rgba(234,67,53,0.15); }
+        .gc-event-bar.gc-color-4 { border-left-color: #f9ab00; background: rgba(249,171,0,0.15); }
+        .gc-event-bar.gc-color-5 { border-left-color: #00acc1; background: rgba(0,172,193,0.15); }
+        .gc-event-bar.gc-color-6 { border-left-color: #e91e63; background: rgba(233,30,99,0.15); }
+        .gc-empty-cell { min-height: 100px; }
+        .gc-more-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(26,26,46,0.25);
+        }
+        .gc-more-cell-empty { background: rgba(15,23,42,0.4); }
+        .gc-more-link {
+            appearance: none;
+            border: none;
+            background: transparent;
+            color: rgba(33,150,243,0.95);
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .gc-more-link:hover {
+            background: rgba(33,150,243,0.2);
+            color: #fff;
+        }
+        @media (max-width: 600px) {
+            .gc-grid .gc-day-cell { height: 34px; min-height: 34px; padding: 2px; }
+            .gc-day-number { width: 28px; height: 28px; font-size: 0.9rem; }
+            .gc-event-bar { height: 24px; min-height: 24px; font-size: 0.65rem; padding: 0 6px; }
+            .gc-weekday-cell { font-size: 0.65rem; padding: 6px 2px; }
+        }
 
         .auth-status-chip {
             padding: 10px 14px;
@@ -2354,7 +2655,7 @@
                 </div>
                 <div class="header-top-row2">
                     <button type="button" class="compare-header-btn" id="compareBtn" style="display:none;"><span class="header-btn-emoji">📅</span><span class="header-btn-text">比較</span></button>
-                    <button type="button" class="compare-header-btn" id="weekendWeekdayBtn" style="display:none;"><span class="header-btn-emoji">📊</span><span class="header-btn-text">週末/平日</span></button>
+                    <button type="button" class="compare-header-btn" id="eventCalendarBtn" style="display:none;"><span class="header-btn-emoji">📆</span><span class="header-btn-text"><span class="header-btn-line">イベント</span><span class="header-btn-line">カレンダー</span></span></button>
                     <button type="button" class="compare-header-btn" id="eventManageBtn" style="display:none;"><span class="header-btn-emoji">🎪</span><span class="header-btn-text"><span class="header-btn-line">イベント</span><span class="header-btn-line">管理</span></span></button>
                     <div class="auth-status-chip" id="historyAuthStatusChipDesktop">
                         <span>未ログイン</span>
@@ -2413,14 +2714,25 @@
         </div>
     </div>
 
-    <!-- 週末/平日比較モーダル -->
-    <div class="compare-overlay" id="weekendWeekdayOverlay" style="display:none;" onclick="closeWeekendWeekdayOverlay(event)">
-        <div class="compare-modal">
+    <!-- イベントカレンダーモーダル -->
+    <div class="compare-overlay" id="eventCalendarOverlay" style="display:none;" onclick="closeEventCalendarOverlay(event)">
+        <div class="compare-modal event-calendar-modal" onclick="event.stopPropagation()">
             <div class="compare-modal-header">
-                <div class="compare-modal-title">📊 週末 vs 平日</div>
-                <button type="button" class="compare-modal-close" id="weekendWeekdayModalClose">✕</button>
+                <div class="compare-modal-title">📅 イベントカレンダー</div>
+                <button type="button" class="compare-modal-close" id="eventCalendarModalClose">✕</button>
             </div>
-            <div class="compare-modal-body" id="weekendWeekdayModalBody"></div>
+            <div class="compare-modal-body" id="eventCalendarModalBody"></div>
+        </div>
+    </div>
+
+    <!-- イベント詳細モーダル（カレンダー上でイベントクリック時に表示） -->
+    <div class="compare-overlay event-detail-overlay" id="eventDetailOverlay" style="display:none;" onclick="closeEventDetailOverlay(event)">
+        <div class="compare-modal event-detail-modal" onclick="event.stopPropagation()">
+            <div class="compare-modal-header">
+                <div class="compare-modal-title">🎪 イベント詳細</div>
+                <button type="button" class="compare-modal-close" id="eventDetailModalClose">✕</button>
+            </div>
+            <div class="compare-modal-body" id="eventDetailModalBody"></div>
         </div>
     </div>
 
@@ -2435,7 +2747,12 @@
                 <div class="event-manage-add">
                     <h4>イベントを追加</h4>
                     <div class="event-manage-form">
-                        <input type="text" id="eventAddLabel" placeholder="イベント名（例: クリスマス）" class="ride-search-input">
+                        <div class="event-manage-form-park">
+                            <span class="event-manage-form-park-label">パーク:</span>
+                            <label class="event-manage-form-park-btn land"><input type="radio" name="eventAddPark" value="land" id="eventAddParkLand"> ランド</label>
+                            <label class="event-manage-form-park-btn sea"><input type="radio" name="eventAddPark" value="sea" id="eventAddParkSea"> シー</label>
+                        </div>
+                        <input type="text" id="eventAddLabel" placeholder="イベント名" class="ride-search-input">
                         <div class="event-manage-form-dates">
                             <input type="date" id="eventAddStart" class="ride-search-input">
                             <span class="event-manage-form-sep">〜</span>
@@ -2574,13 +2891,40 @@
             }
             document.getElementById('compareModalClose').addEventListener('click', closeCompareModal);
 
-            const weekendWeekdayBtn = document.getElementById('weekendWeekdayBtn');
-            if (weekendWeekdayBtn) {
-                weekendWeekdayBtn.style.display = 'none';
-                weekendWeekdayBtn.addEventListener('click', openWeekendWeekdayModal);
+            const eventCalendarBtn = document.getElementById('eventCalendarBtn');
+            if (eventCalendarBtn) {
+                eventCalendarBtn.style.display = 'none';
+                eventCalendarBtn.addEventListener('click', openEventCalendarModal);
             }
-            const weekendWeekdayModalClose = document.getElementById('weekendWeekdayModalClose');
-            if (weekendWeekdayModalClose) weekendWeekdayModalClose.addEventListener('click', closeWeekendWeekdayOverlay);
+            const eventCalendarModalClose = document.getElementById('eventCalendarModalClose');
+            if (eventCalendarModalClose) eventCalendarModalClose.addEventListener('click', closeEventCalendarOverlay);
+            document.getElementById('eventCalendarOverlay').querySelector('.compare-modal').addEventListener('click', e => e.stopPropagation());
+            const eventCalendarModalBody = document.getElementById('eventCalendarModalBody');
+            if (eventCalendarModalBody) {
+                eventCalendarModalBody.addEventListener('click', (e) => {
+                    const bar = e.target.closest('.gc-event-bar');
+                    if (bar) {
+                        const label = bar.getAttribute('data-event-label');
+                        const startDate = bar.getAttribute('data-start-date');
+                        const endDate = bar.getAttribute('data-end-date');
+                        if (label != null) openEventDetailModal(label, startDate || '', endDate || '');
+                        return;
+                    }
+                    const moreLink = e.target.closest('.gc-more-link');
+                    if (moreLink) {
+                        const dateStr = moreLink.getAttribute('data-date');
+                        if (dateStr) openEventDetailModalForDay(dateStr);
+                    }
+                });
+            }
+            const eventDetailModalClose = document.getElementById('eventDetailModalClose');
+            if (eventDetailModalClose) eventDetailModalClose.addEventListener('click', closeEventDetailOverlay);
+            document.getElementById('eventDetailOverlay').querySelector('.compare-modal').addEventListener('click', e => e.stopPropagation());
+
+            window.addEventListener('resize', () => {
+                const calOverlay = document.getElementById('eventCalendarOverlay');
+                if (calOverlay && calOverlay.style.display === 'flex') updateEventCalendarSizes();
+            });
 
             const eventManageBtn = document.getElementById('eventManageBtn');
             if (eventManageBtn) {
@@ -2662,16 +3006,14 @@
             eventManageBtn.style.display = isHistoryEventAdmin ? '' : 'none';
         }
 
-        /** 現在パークの date_events を取得し dateEventsList に格納する（閲覧用。管理者以外も取得可能な RLS を想定） */
+        /** ランド・シー両方の date_events を取得し dateEventsList に格納する（閲覧・管理用。表示時は currentPark でフィルタ） */
         async function loadDateEvents() {
-            if (!currentPark) { dateEventsList = []; return; }
             const client = getHistorySupabaseClient();
             if (!client) { dateEventsList = []; return; }
             try {
                 const { data, error } = await client
                     .from('date_events')
                     .select('id,park_id,event_label,start_date,end_date')
-                    .eq('park_id', currentPark)
                     .order('start_date', { ascending: false });
                 if (error) {
                     console.warn('date_events fetch failed', error);
@@ -2691,18 +3033,20 @@
             return loadedData.records;
         }
 
-        /** 日付 D が start_date <= D <= end_date に含まれるイベントのラベル配列を返す */
+        /** 日付 D が start_date <= D <= end_date に含まれるイベントのラベル配列を返す（現在パークのみ） */
         function getEventsForDate(dateStr) {
             if (!dateStr || !dateEventsList.length) return [];
             return dateEventsList
-                .filter(e => e.start_date <= dateStr && dateStr <= e.end_date)
+                .filter(e => e.park_id === currentPark && e.start_date <= dateStr && dateStr <= e.end_date)
                 .map(e => e.event_label);
         }
 
-        /** 日付 D に含まれるイベントレコード（id 付き）を返す（削除用） */
+        /** 日付 D に含まれるイベントレコード（id 付き）を返す。表示順は開始日が早い順（現在パークのみ） */
         function getEventRecordsForDate(dateStr) {
             if (!dateStr || !dateEventsList.length) return [];
-            return dateEventsList.filter(e => e.start_date <= dateStr && dateStr <= e.end_date);
+            return dateEventsList
+                .filter(e => e.park_id === currentPark && e.start_date <= dateStr && dateStr <= e.end_date)
+                .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''));
         }
 
         /** 日本時間の今日を YYYY-MM-DD で返す */
@@ -2743,6 +3087,12 @@
                 document.getElementById('eventAddEnd').value = '';
             }
             document.getElementById('eventAddLabel').value = '';
+            const parkLand = document.getElementById('eventAddParkLand');
+            const parkSea = document.getElementById('eventAddParkSea');
+            if (parkLand && parkSea) {
+                parkLand.checked = currentPark === 'land';
+                parkSea.checked = currentPark === 'sea';
+            }
             renderEventManageList();
             overlay.style.display = 'flex';
         }
@@ -2760,13 +3110,17 @@
             if (!ul) return;
             ul.innerHTML = dateEventsList.length === 0
                 ? '<li class="event-manage-empty">登録済みイベントはありません。</li>'
-                : dateEventsList.map(ev => `
+                : dateEventsList.map(ev => {
+                    const parkBadge = ev.park_id === 'sea' ? 'シー' : 'ランド';
+                    const parkClass = ev.park_id === 'sea' ? 'sea' : 'land';
+                    return `
                     <li data-id="${escapeHtml(ev.id)}">
-                        <span class="event-item-label">${escapeHtml(ev.event_label)}</span>
+                        <span class="event-item-label"><span class="event-item-park-badge ${escapeHtml(parkClass)}">${escapeHtml(parkBadge)}</span> ${escapeHtml(ev.event_label)}</span>
                         <span class="event-item-dates">${escapeHtml(ev.start_date)} 〜 ${escapeHtml(ev.end_date)}</span>
                         <button type="button" class="event-item-delete" data-id="${escapeHtml(ev.id)}">削除</button>
                     </li>
-                `).join('');
+                `;
+                }).join('');
             ul.querySelectorAll('.event-item-delete').forEach(btn => {
                 btn.addEventListener('click', () => deleteEventById(btn.dataset.id));
             });
@@ -2778,9 +3132,15 @@
                 alert('この機能はイベント管理者のみ利用できます。');
                 return;
             }
+            const parkRadio = document.querySelector('input[name="eventAddPark"]:checked');
+            const parkId = parkRadio ? parkRadio.value : null;
             const label = (document.getElementById('eventAddLabel').value || '').trim();
             const start = (document.getElementById('eventAddStart').value || '').trim();
             const end = (document.getElementById('eventAddEnd').value || '').trim();
+            if (!parkId || parkId !== 'land' && parkId !== 'sea') {
+                alert('ランドまたはシーを選択してください。');
+                return;
+            }
             if (!label || !start || !end) {
                 alert('イベント名・開始日・終了日を入力してください。');
                 return;
@@ -2798,7 +3158,7 @@
                 const { error } = await client
                     .from('date_events')
                     .insert({
-                        park_id: currentPark,
+                        park_id: parkId,
                         event_label: label,
                         start_date: start,
                         end_date: end
@@ -3143,11 +3503,11 @@
                 });
             }
 
-            // 前回の来園日と比較・週末/平日（日ビューのみ）：ヘッダーボタンの表示切替
+            // 前回の来園日と比較・イベントカレンダー（日ビューのみ）：ヘッダーボタンの表示切替
             const compareBtn = document.getElementById('compareBtn');
             if (compareBtn) compareBtn.style.display = currentPeriod === 'day' ? '' : 'none';
-            const weekendWeekdayBtn = document.getElementById('weekendWeekdayBtn');
-            if (weekendWeekdayBtn) weekendWeekdayBtn.style.display = currentPeriod === 'day' ? '' : 'none';
+            const eventCalendarBtn = document.getElementById('eventCalendarBtn');
+            if (eventCalendarBtn) eventCalendarBtn.style.display = currentPeriod === 'day' ? '' : 'none';
 
             // エリアタブのイベントリスナー（複数選択対応）
             content.querySelectorAll('.area-tab').forEach(tab => {
@@ -5169,120 +5529,338 @@
             }
         }
 
-        // ── 週末 vs 平日比較 ──
-        /** dateStr (YYYY-MM-DD) の曜日を JST で取得。0=日, 6=土 */
-        function getDayOfWeekJst(dateStr) {
-            const d = new Date(dateStr + 'T12:00:00+09:00');
-            return d.getUTCDay();
-        }
+        // ── イベントカレンダー ──
+        let eventCalendarViewYear = null;
+        let eventCalendarViewMonth = null;
 
-        function closeWeekendWeekdayOverlay(event) {
-            const overlay = document.getElementById('weekendWeekdayOverlay');
+        function closeEventCalendarOverlay(event) {
+            const overlay = document.getElementById('eventCalendarOverlay');
             if (!overlay) return;
-            if (event && event.target !== overlay && !(event.target.closest && event.target.closest('#weekendWeekdayModalClose'))) return;
+            if (event && event.target !== overlay && !(event.target.closest && event.target.closest('#eventCalendarModalClose'))) return;
             overlay.style.display = 'none';
         }
 
-        /** 土日 vs 平日の比較モーダルを開き、両方の平均待ち時間を計算して表示する */
-        async function openWeekendWeekdayModal() {
-            const body = document.getElementById('weekendWeekdayModalBody');
-            if (!body) return;
-            body.innerHTML = '<div class="loading"><div class="spinner"></div><p>週末・平日のデータを取得中...</p></div>';
-            document.getElementById('weekendWeekdayOverlay').style.display = 'flex';
+        /** イベント詳細モーダルのタイトルを設定 */
+        function setEventDetailModalTitle(text) {
+            const el = document.querySelector('#eventDetailOverlay .compare-modal-title');
+            if (el) el.textContent = text;
+        }
 
-            const MAX_DAYS_EACH = 5;
-            const weekendDates = [];
-            const weekdayDates = [];
-            for (const dateStr of availableDates) {
-                const day = getDayOfWeekJst(dateStr);
-                if (day === 0 || day === 6) {
-                    if (weekendDates.length < MAX_DAYS_EACH) weekendDates.push(dateStr);
-                } else {
-                    if (weekdayDates.length < MAX_DAYS_EACH) weekdayDates.push(dateStr);
-                }
-                if (weekendDates.length >= MAX_DAYS_EACH && weekdayDates.length >= MAX_DAYS_EACH) break;
-            }
+        /** イベント詳細モーダルを開く（1件表示） */
+        function openEventDetailModal(label, startDate, endDate) {
+            const body = document.getElementById('eventDetailModalBody');
+            const overlay = document.getElementById('eventDetailOverlay');
+            if (!body || !overlay) return;
+            setEventDetailModalTitle('🎪 イベント詳細');
+            const fmt = (str) => {
+                if (!str || str.length < 10) return str || '—';
+                const [y, m, d] = str.slice(0, 10).split('-');
+                return `${y}年${parseInt(m, 10)}月${parseInt(d, 10)}日`;
+            };
+            const periodText = startDate && endDate
+                ? (startDate === endDate ? fmt(startDate) : `${fmt(startDate)} 〜 ${fmt(endDate)}`)
+                : (startDate ? fmt(startDate) : '—');
+            body.innerHTML = `
+                <div class="event-detail-name">${escapeHtml(label)}</div>
+                <div class="event-detail-period"><span>期間</span> ${escapeHtml(periodText)}</div>
+            `;
+            overlay.style.display = 'flex';
+        }
 
-            if (weekendDates.length === 0 || weekdayDates.length === 0) {
-                body.innerHTML = '<div class="compare-no-data">週末または平日のデータが足りません。もう少し履歴がたまると比較できます。</div>';
-                return;
-            }
-
-            try {
-                const fetchWeekend = weekendDates.map(d => fetchSupabaseDataForDate(currentPark, d));
-                const fetchWeekday = weekdayDates.map(d => fetchSupabaseDataForDate(currentPark, d));
-                const weekendResults = await Promise.all(fetchWeekend);
-                const weekdayResults = await Promise.all(fetchWeekday);
-
-                const weekendWaits = new Map(); // rideId -> [wait, ...]
-                const weekdayWaits = new Map();
-                for (const data of weekendResults) {
-                    if (!data || !data.records) continue;
-                    for (const record of data.records) {
-                        for (const ride of record.rides) {
-                            if (ride.is_open && ride.wait_time > 0) {
-                                const key = String(ride.id);
-                                if (!weekendWaits.has(key)) weekendWaits.set(key, []);
-                                weekendWaits.get(key).push(ride.wait_time);
-                            }
-                        }
-                    }
-                }
-                for (const data of weekdayResults) {
-                    if (!data || !data.records) continue;
-                    for (const record of data.records) {
-                        for (const ride of record.rides) {
-                            if (ride.is_open && ride.wait_time > 0) {
-                                const key = String(ride.id);
-                                if (!weekdayWaits.has(key)) weekdayWaits.set(key, []);
-                                weekdayWaits.get(key).push(ride.wait_time);
-                            }
-                        }
-                    }
-                }
-
-                const allRideIds = new Set([...weekendWaits.keys(), ...weekdayWaits.keys()]);
-                const rowData = [];
-                for (const rideId of allRideIds) {
-                    const name = getRideName(parseInt(rideId, 10), '');
-                    const wkWaits = weekendWaits.get(rideId) || [];
-                    const wdWaits = weekdayWaits.get(rideId) || [];
-                    const wkAvg = wkWaits.length > 0 ? roundTo5(wkWaits.reduce((a, b) => a + b, 0) / wkWaits.length) : null;
-                    const wkMax = wkWaits.length > 0 ? Math.max(...wkWaits) : null;
-                    const wdAvg = wdWaits.length > 0 ? roundTo5(wdWaits.reduce((a, b) => a + b, 0) / wdWaits.length) : null;
-                    const wdMax = wdWaits.length > 0 ? Math.max(...wdWaits) : null;
-                    rowData.push({
-                        name,
-                        weekendAvg: wkAvg,
-                        weekendMax: wkMax,
-                        weekdayAvg: wdAvg,
-                        weekdayMax: wdMax
-                    });
-                }
-                rowData.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-
-                const rows = rowData.map(r => {
-                    const wkAvgStr = r.weekendAvg != null ? r.weekendAvg + '分' : '-';
-                    const wkMaxStr = r.weekendMax != null ? r.weekendMax + '分' : '-';
-                    const wdAvgStr = r.weekdayAvg != null ? r.weekdayAvg + '分' : '-';
-                    const wdMaxStr = r.weekdayMax != null ? r.weekdayMax + '分' : '-';
-                    return `<tr><td class="compare-table-ride-name">${escapeHtml(r.name)}</td><td>${wkAvgStr}</td><td>${wkMaxStr}</td><td>${wdAvgStr}</td><td>${wdMaxStr}</td></tr>`;
-                });
-
-                const tableHtml = `
-                    <p class="compare-note">直近の週末${weekendDates.length}日分・平日${weekdayDates.length}日分のデータで比較しています。</p>
-                    <div class="compare-table-wrapper">
-                        <table class="compare-table">
-                            <thead><tr><th>アトラクション</th><th>週末 平均</th><th>週末 最大</th><th>平日 平均</th><th>平日 最大</th></tr></thead>
-                            <tbody>${rows.join('')}</tbody>
-                        </table>
-                    </div>
+        /** 指定日のイベント一覧を詳細モーダルで開く（+X件クリック用） */
+        function openEventDetailModalForDay(dateStr) {
+            const body = document.getElementById('eventDetailModalBody');
+            const overlay = document.getElementById('eventDetailOverlay');
+            if (!body || !overlay) return;
+            const events = getEventRecordsForDate(dateStr);
+            const fmt = (str) => {
+                if (!str || str.length < 10) return str || '—';
+                const [y, m, d] = str.slice(0, 10).split('-');
+                return `${y}年${parseInt(m, 10)}月${parseInt(d, 10)}日`;
+            };
+            const dateLabel = dateStr && dateStr.length >= 10
+                ? `${dateStr.slice(0, 4)}年${parseInt(dateStr.slice(5, 7), 10)}月${parseInt(dateStr.slice(8, 10), 10)}日`
+                : dateStr || '';
+            setEventDetailModalTitle(dateLabel ? dateLabel + ' のイベント' : '🎪 イベント一覧');
+            if (events.length === 0) {
+                body.innerHTML = '<p class="event-detail-day-empty">この日のイベントはありません。</p>';
+            } else {
+                body.innerHTML = `
+                    <ul class="event-detail-day-list">
+                        ${events.map(ev => {
+                            const periodText = ev.start_date && ev.end_date
+                                ? (ev.start_date === ev.end_date ? fmt(ev.start_date) : `${fmt(ev.start_date)} 〜 ${fmt(ev.end_date)}`)
+                                : (ev.start_date ? fmt(ev.start_date) : '—');
+                            const labelAttr = escapeHtml(ev.event_label).replace(/"/g, '&quot;');
+                            const startAttr = escapeHtml(ev.start_date || '').replace(/"/g, '&quot;');
+                            const endAttr = escapeHtml(ev.end_date || '').replace(/"/g, '&quot;');
+                            return `<li><button type="button" class="event-detail-day-item" data-event-label="${labelAttr}" data-start-date="${startAttr}" data-end-date="${endAttr}"><span class="event-detail-day-item-name">${escapeHtml(ev.event_label)}</span><span class="event-detail-day-item-period">${escapeHtml(periodText)}</span></button></li>`;
+                        }).join('')}
+                    </ul>
                 `;
-                body.innerHTML = tableHtml;
-            } catch (e) {
-                console.error(e);
-                body.innerHTML = '<div class="compare-no-data">比較の取得中にエラーが発生しました。</div>';
+                body.querySelectorAll('.event-detail-day-item').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const label = btn.getAttribute('data-event-label');
+                        const start = btn.getAttribute('data-start-date');
+                        const end = btn.getAttribute('data-end-date');
+                        if (label != null) openEventDetailModal(label, start || '', end || '');
+                    });
+                });
             }
+            overlay.style.display = 'flex';
+        }
+
+        function closeEventDetailOverlay(event) {
+            const overlay = document.getElementById('eventDetailOverlay');
+            if (!overlay) return;
+            if (event && event.target !== overlay && !(event.target.closest && event.target.closest('#eventDetailModalClose'))) return;
+            overlay.style.display = 'none';
+        }
+
+        /** カレンダー幅を、スクロールバー除く実際の body 幅に合わせて設定（モーダル幅いっぱいに表示） */
+        function updateEventCalendarSizes() {
+            const overlay = document.getElementById('eventCalendarOverlay');
+            const modal = overlay && overlay.querySelector('.event-calendar-modal');
+            const body = document.getElementById('eventCalendarModalBody');
+            if (!overlay || !modal || !body) return;
+
+            /* 先にモーダルを最大幅にしてから計測（初期表示で狭く測られないようにする） */
+            var vw = window.innerWidth;
+            var maxW = Math.min(vw - 40, Math.floor(vw * 0.95));
+            modal.style.width = (maxW > 0 ? maxW + 'px' : '95vw');
+            modal.style.maxWidth = '95vw';
+            void body.offsetHeight; /* リフローを起こしてから body 幅を計測 */
+
+            var minDayPx = 32;
+            var dayWidthPx;
+            var SAFETY = 28; /* 日幅を小さめに（スクロールバー・端数用の余裕） */
+
+            /* 表示済みなら body の実幅から SAFETY を引いて小さめに計算 */
+            if (body.clientWidth > 0) {
+                var usable = Math.max(0, body.clientWidth - SAFETY);
+                dayWidthPx = Math.max(minDayPx, Math.floor(usable / 7));
+            } else {
+                /* 非表示時は viewport から概算（resize 用） */
+                var vw = window.innerWidth;
+                var OVERLAY_PADDING_H = 40;
+                var BODY_PADDING_H = 32;
+                var MODAL_BORDER_H = 2;
+                var maxModalInner = Math.max(0, vw - OVERLAY_PADDING_H - MODAL_BORDER_H);
+                var gridAreaWidth = Math.max(0, maxModalInner - BODY_PADDING_H - SAFETY);
+                dayWidthPx = Math.max(minDayPx, Math.floor(gridAreaWidth / 7));
+            }
+
+            overlay.style.setProperty('--event-calendar-day-width', dayWidthPx + 'px');
+        }
+
+        /** イベントカレンダーモーダルを開く。現在月を表示し、日付クリックでその日にジャンプして閉じる */
+        async function openEventCalendarModal() {
+            await loadDateEvents();
+            const today = getTodayJstDateStr();
+            const [y, m] = today.split('-').map(Number);
+            eventCalendarViewYear = y;
+            eventCalendarViewMonth = m;
+            const body = document.getElementById('eventCalendarModalBody');
+            if (!body) return;
+            renderEventCalendarBody();
+            const overlay = document.getElementById('eventCalendarOverlay');
+            overlay.style.display = 'flex';
+            /* 初期表示時はモーダルが実幅でレイアウトされるまで待ってから計測（2フレーム待ちでスマホ幅誤検知を避ける） */
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    updateEventCalendarSizes();
+                });
+            });
+        }
+
+        function renderEventCalendarBody() {
+            const body = document.getElementById('eventCalendarModalBody');
+            if (!body || eventCalendarViewYear == null || eventCalendarViewMonth == null) return;
+
+            const year = eventCalendarViewYear;
+            const month = eventCalendarViewMonth;
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const todayStr = getTodayJstDateStr();
+
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            const firstWeekday = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+            const prevMonthLastDay = new Date(year, month - 1, 0).getDate();
+
+            const totalCells = 42;
+            const monthPadded = String(month).padStart(2, '0');
+            const cellData = [];
+            for (let i = 0; i < totalCells; i++) {
+                let dayNum, dateStr, isCurrentMonth, isToday;
+                if (i < firstWeekday) {
+                    dayNum = prevMonthLastDay - firstWeekday + 1 + i;
+                    const prevMonth = month === 1 ? 12 : month - 1;
+                    const prevYear = month === 1 ? year - 1 : year;
+                    const prevPadded = String(prevMonth).padStart(2, '0');
+                    const d = String(dayNum).padStart(2, '0');
+                    dateStr = `${prevYear}-${prevPadded}-${d}`;
+                    isCurrentMonth = false;
+                    isToday = dateStr === todayStr;
+                } else if (i - firstWeekday + 1 > totalDays) {
+                    dayNum = i - firstWeekday + 1 - totalDays;
+                    const nextMonth = month === 12 ? 1 : month + 1;
+                    const nextYear = month === 12 ? year + 1 : year;
+                    const nextPadded = String(nextMonth).padStart(2, '0');
+                    const d = String(dayNum).padStart(2, '0');
+                    dateStr = `${nextYear}-${nextPadded}-${d}`;
+                    isCurrentMonth = false;
+                    isToday = dateStr === todayStr;
+                } else {
+                    dayNum = i - firstWeekday + 1;
+                    const d = String(dayNum).padStart(2, '0');
+                    dateStr = `${year}-${monthPadded}-${d}`;
+                    isCurrentMonth = true;
+                    isToday = dateStr === todayStr;
+                }
+                cellData.push({ dateStr, dayNum, isCurrentMonth, isToday });
+            }
+            const dateStrForCell = cellData.map(c => c.dateStr);
+            const currentMonthFirst = `${year}-${monthPadded}-01`;
+            const currentMonthLast = `${year}-${monthPadded}-${String(totalDays).padStart(2, '0')}`;
+
+            // 週ごとに、その週の「当月の日付」に含まれるイベントだけ取得（同じイベントは続く日で1本バー）
+            const eventsInWeek = [];
+            for (let week = 0; week < 6; week++) {
+                const weekDates = dateStrForCell.slice(week * 7, week * 7 + 7);
+                const list = [];
+                (dateEventsList || []).filter(ev => ev.park_id === currentPark).forEach((ev, evIdx) => {
+                    const start = ev.start_date;
+                    const end = ev.end_date;
+                    let startCol = -1;
+                    let endCol = -1;
+                    for (let d = 0; d < 7; d++) {
+                        const dt = weekDates[d];
+                        const inEvent = dt >= start && dt <= end;
+                        const inCurrentMonth = dt >= currentMonthFirst && dt <= currentMonthLast;
+                        if (inEvent && inCurrentMonth) {
+                            if (startCol < 0) startCol = d;
+                            endCol = d;
+                        }
+                    }
+                    if (startCol >= 0 && endCol >= 0) {
+                        list.push({ ev, evIdx, startCol, endCol });
+                    }
+                });
+                list.sort((a, b) => (a.ev.start_date || '').localeCompare(b.ev.start_date || ''));
+                eventsInWeek.push(list);
+            }
+            // 当月の日付が1つもない週は表示しない
+            const hasCurrentMonthInWeek = (w) => cellData.slice(w * 7, w * 7 + 7).some(c => c.isCurrentMonth);
+            const keptWeeks = [0, 1, 2, 3, 4, 5].filter(w => hasCurrentMonthInWeek(w));
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const EVENT_ROWS_PER_WEEK = isMobile ? 2 : 3;
+            const MAX_EVENTS_VISIBLE_PER_DAY = isMobile ? 2 : 3;
+            const ROWS_PER_WEEK = 1 + EVENT_ROWS_PER_WEEK + 1;   /* 1=日付行, N=イベント行, 1=+X件行 */
+            const totalRows = keptWeeks.length * ROWS_PER_WEEK;
+            // 週 w の表示用 0-based 行オフセット（表示しない週は -1）
+            const displayRowOffset = (w) => {
+                const idx = keptWeeks.indexOf(w);
+                return idx >= 0 ? idx * ROWS_PER_WEEK : -1;
+            };
+            // 行の高さ: スマホは2行分（日付・イベント・イベント・+X件）、PCは3行分
+            const weekRowHeights = isMobile
+                ? ['40px', '28px', '28px', '22px']
+                : ['40px', '28px', '28px', '28px', '22px'];
+            const gridTemplateRowsFinal = Array(keptWeeks.length).fill(weekRowHeights).flat().join(' ');
+            // 日付セル: 表示する週のセルだけ出力
+            const dayCellsFixed = [];
+            for (let i = 0; i < 42; i++) {
+                const w = Math.floor(i / 7);
+                if (displayRowOffset(w) < 0) continue;
+                const c = cellData[i];
+                const col = i % 7;
+                const gridRow = displayRowOffset(w) + 1;
+                const gridCol = col + 1;
+                const sundayClass = col === 0 ? 'gc-sunday' : '';
+                const saturdayClass = col === 6 ? 'gc-saturday' : '';
+                const dayNumHtml = c.isCurrentMonth ? `<span class="gc-day-number">${c.dayNum}</span>` : '';
+                dayCellsFixed.push(`<div class="gc-day-cell ${!c.isCurrentMonth ? 'gc-other-month' : ''} ${c.isToday ? 'gc-today' : ''} ${sundayClass} ${saturdayClass}" data-date="${c.dateStr}" style="grid-row:${gridRow};grid-column:${gridCol};">
+                    ${dayNumHtml}
+                </div>`);
+            }
+            // イベントバー: 表示する週だけ出力（最大3本）
+            const eventBars = [];
+            for (let k = 0; k < keptWeeks.length; k++) {
+                const week = keptWeeks[k];
+                const baseRow = k * ROWS_PER_WEEK;
+                const weekEvents = eventsInWeek[week];
+                for (let j = 0; j < Math.min(weekEvents.length, EVENT_ROWS_PER_WEEK); j++) {
+                    const item = weekEvents[j];
+                    const { ev, evIdx, startCol, endCol } = item;
+                    const eventRow = baseRow + 1 + j + 1;
+                    const colorClass = 'gc-color-' + (evIdx % 7);
+                    const gridColStart = startCol + 1;
+                    const gridColEnd = endCol + 2;
+                    const labelAttr = escapeHtml(ev.event_label).replace(/"/g, '&quot;');
+                    eventBars.push(`<div class="gc-event-bar ${colorClass}" role="button" tabindex="0" data-event-label="${labelAttr}" data-start-date="${ev.start_date}" data-end-date="${ev.end_date}" title="${escapeHtml(ev.event_label)}" style="grid-row:${eventRow};grid-column:${gridColStart} / ${gridColEnd};">${escapeHtml(ev.event_label)}</div>`);
+                }
+            }
+            // +X件行: 各日の表示しきれなかったイベント数
+            const first3PerWeek = (w) => (eventsInWeek[w] || []).slice(0, MAX_EVENTS_VISIBLE_PER_DAY);
+            const moreCells = [];
+            for (let k = 0; k < keptWeeks.length; k++) {
+                const week = keptWeeks[k];
+                const baseRow = k * ROWS_PER_WEEK;
+                const weekFirst3 = first3PerWeek(week);
+                const moreRow = baseRow + ROWS_PER_WEEK;
+                for (let col = 0; col < 7; col++) {
+                    const cellIndex = week * 7 + col;
+                    const dateStr = dateStrForCell[cellIndex];
+                    const inCurrentMonth = dateStr >= currentMonthFirst && dateStr <= currentMonthLast;
+                    const eventsOnDay = (eventsInWeek[week] || []).filter(item => dateStr >= item.ev.start_date && dateStr <= item.ev.end_date);
+                    const visibleOnDay = weekFirst3.filter(item => dateStr >= item.ev.start_date && dateStr <= item.ev.end_date).length;
+                    const moreCount = eventsOnDay.length - visibleOnDay;
+                    const dateAttr = escapeHtml(dateStr).replace(/"/g, '&quot;');
+                    if (moreCount > 0 && inCurrentMonth) {
+                        moreCells.push(`<div class="gc-more-cell" style="grid-row:${moreRow};grid-column:${col + 1};"><button type="button" class="gc-more-link" data-date="${dateAttr}">+${moreCount}件</button></div>`);
+                    } else {
+                        moreCells.push(`<div class="gc-more-cell gc-more-cell-empty" style="grid-row:${moreRow};grid-column:${col + 1};"></div>`);
+                    }
+                }
+            }
+
+            const monthLabel = `${year}年${month}月`;
+            body.innerHTML = `
+                <div class="gc-calendar-nav">
+                    <button type="button" class="gc-nav-prev" id="eventCalendarPrevMonth" aria-label="前月">‹</button>
+                    <span class="gc-month-label">${monthLabel}</span>
+                    <button type="button" class="gc-nav-next" id="eventCalendarNextMonth" aria-label="次月">›</button>
+                </div>
+                <div class="gc-calendar-wrap">
+                    <div class="gc-weekday-row">
+                        ${weekdays.map(w => `<div class="gc-weekday-cell">${w}</div>`).join('')}
+                    </div>
+                    <div class="gc-grid" style="grid-template-rows: ${gridTemplateRowsFinal};">
+                        ${dayCellsFixed.join('')}
+                        ${eventBars.join('')}
+                        ${moreCells.join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('eventCalendarPrevMonth').addEventListener('click', () => {
+                if (eventCalendarViewMonth === 1) {
+                    eventCalendarViewYear -= 1;
+                    eventCalendarViewMonth = 12;
+                } else {
+                    eventCalendarViewMonth -= 1;
+                }
+                renderEventCalendarBody();
+            });
+            document.getElementById('eventCalendarNextMonth').addEventListener('click', () => {
+                if (eventCalendarViewMonth === 12) {
+                    eventCalendarViewYear += 1;
+                    eventCalendarViewMonth = 1;
+                } else {
+                    eventCalendarViewMonth += 1;
+                }
+                renderEventCalendarBody();
+            });
         }
 
         /** スマホ表示時、ヒートマップの横スクロールを現在時刻の列の位置に合わせる */

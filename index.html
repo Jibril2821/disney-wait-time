@@ -3972,38 +3972,21 @@
                 commentEl.textContent = '';
             }
 
-            // 統計値
-            if (!isIndexLoggedIn) {
-                document.getElementById('meterStats').innerHTML = `
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">--</div>
-                        <div class="meter-stat-label">運営中</div>
-                    </div>
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">--</div>
-                        <div class="meter-stat-label">平均待ち時間</div>
-                    </div>
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">--</div>
-                        <div class="meter-stat-label">最長待ち時間</div>
-                    </div>
-                `;
-            } else {
-                document.getElementById('meterStats').innerHTML = `
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">${result.openCount}<span class="meter-stat-unit"> / ${result.totalCount}</span></div>
-                        <div class="meter-stat-label">運営中</div>
-                    </div>
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">${result.avgWait}<span class="meter-stat-unit">分</span></div>
-                        <div class="meter-stat-label">平均待ち時間</div>
-                    </div>
-                    <div class="meter-stat">
-                        <div class="meter-stat-value">${result.maxWait}<span class="meter-stat-unit">分</span></div>
-                        <div class="meter-stat-label">最長待ち時間</div>
-                    </div>
-                `;
-            }
+            // 統計値（未ログイン時も「運営中」「平均待ち時間」「最長待ち時間」の表記と数値を表示）
+            document.getElementById('meterStats').innerHTML = `
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.openCount}<span class="meter-stat-unit"> / ${result.totalCount}</span></div>
+                    <div class="meter-stat-label">運営中</div>
+                </div>
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.avgWait}<span class="meter-stat-unit">分</span></div>
+                    <div class="meter-stat-label">平均待ち時間</div>
+                </div>
+                <div class="meter-stat">
+                    <div class="meter-stat-value">${result.maxWait}<span class="meter-stat-unit">分</span></div>
+                    <div class="meter-stat-label">最長待ち時間</div>
+                </div>
+            `;
 
             // ゲージアニメーション
             const arc = document.getElementById('meterArc');
