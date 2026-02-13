@@ -262,6 +262,14 @@
             margin-top: 15px;
         }
 
+        /* 混雑スコアと「今が狙い目！ベスト3」を縦に積む（PCで混雑スコアの「下」に表示） */
+        .header-meter-column {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            flex-shrink: 0;
+        }
+
         .header-title-block {
             text-align: center;
             flex: 1;
@@ -811,9 +819,13 @@
         }
 
         .ride-card {
+            display: grid;
+            grid-template-rows: auto 3.5rem auto; /* 名前 / 待ち時間（固定高で揃える）/ バッジ */
+            align-content: start;
+            gap: 0;
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
-            padding: 25px 25px 50px; /* 下側に「今がチャンス！」バッジ用のスペースを確保 */
+            padding: 25px;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
@@ -831,12 +843,28 @@
             opacity: 0.6;
         }
 
+        .ride-card-body {
+            grid-row: 1;
+            margin-bottom: 8px;
+        }
+
         .ride-name {
             font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 0;
             padding-right: 70px;
             line-height: 1.4;
+        }
+
+        .ride-card .wait-time-display {
+            grid-row: 2;
+            align-self: end;
+        }
+
+        .ride-card .ride-card-badges {
+            grid-row: 3;
+            padding-top: 12px;
+            margin-top: 0;
         }
 
         .ride-card-status-wrap {
@@ -876,10 +904,14 @@
             color: #ffd86b;
         }
 
+        .ride-card-badges {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
         .chance-badge {
-            position: absolute;
-            right: 20px;
-            bottom: 16px;
             padding: 6px 12px;
             border-radius: 16px;
             font-size: 0.75rem;
@@ -910,9 +942,6 @@
         }
 
         .best-time-badge {
-            position: absolute;
-            right: 20px;
-            bottom: 16px;
             padding: 6px 12px;
             border-radius: 16px;
             font-size: 0.75rem;
@@ -924,9 +953,6 @@
             gap: 4px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-
-        .ride-card .chance-badge + .best-time-badge,
-        .ride-card .best-time-badge + .chance-badge { bottom: 44px; }
 
         .ride-status.open {
             background: linear-gradient(135deg, #4ecdc4, #44a08d);
@@ -1410,6 +1436,9 @@
         }
 
         @media (max-width: 768px) {
+            .header-meter-column {
+                width: 100%;
+            }
             .congestion-meter {
                 width: 100%;
                 max-width: 100%;
@@ -2200,35 +2229,37 @@
                         <div class="today-events" id="todayEvents" style="display:none;"></div>
                         <div class="header-stats meter-stats" id="meterStats"></div>
                     </div>
-                    <div class="best3-section" id="best3Section" style="display:none;">
-                        <div class="best3-title">✨ 今が狙い目！ 今日のベスト3</div>
-                        <div class="best3-list" id="best3List"></div>
-                    </div>
-                    <div class="congestion-meter" id="congestionMeter" style="display:none;">
-                        <div class="meter-title">パーク混雑スコア<span class="meter-title-note" id="meterTitleNote"></span></div>
-                        <div class="meter-gauge">
-                            <svg viewBox="0 0 220 120">
-                                <defs>
-                                    <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#4ecdc4" />
-                                        <stop offset="35%" stop-color="#f9ca24" />
-                                        <stop offset="65%" stop-color="#e17055" />
-                                        <stop offset="100%" stop-color="#ff6b6b" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 20 105 A 90 90 0 0 1 200 105"
-                                      fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
-                                <path id="meterArc" d="M 20 105 A 90 90 0 0 1 200 105"
-                                      fill="none" stroke="url(#meterGradient)" stroke-width="14" stroke-linecap="round"
-                                      stroke-dasharray="283" stroke-dashoffset="283"/>
-                            </svg>
-                            <div class="meter-score">
-                                <span class="meter-score-value" id="meterScoreValue">0</span>
-                                <span class="meter-score-unit"> /100</span>
+                    <div class="header-meter-column">
+                        <div class="congestion-meter" id="congestionMeter" style="display:none;">
+                            <div class="meter-title">パーク混雑スコア<span class="meter-title-note" id="meterTitleNote"></span></div>
+                            <div class="meter-gauge">
+                                <svg viewBox="0 0 220 120">
+                                    <defs>
+                                        <linearGradient id="meterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#4ecdc4" />
+                                            <stop offset="35%" stop-color="#f9ca24" />
+                                            <stop offset="65%" stop-color="#e17055" />
+                                            <stop offset="100%" stop-color="#ff6b6b" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M 20 105 A 90 90 0 0 1 200 105"
+                                          fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+                                    <path id="meterArc" d="M 20 105 A 90 90 0 0 1 200 105"
+                                          fill="none" stroke="url(#meterGradient)" stroke-width="14" stroke-linecap="round"
+                                          stroke-dasharray="283" stroke-dashoffset="283"/>
+                                </svg>
+                                <div class="meter-score">
+                                    <span class="meter-score-value" id="meterScoreValue">0</span>
+                                    <span class="meter-score-unit"> /100</span>
+                                </div>
                             </div>
+                            <div class="meter-label" id="meterLabel"></div>
+                            <div class="meter-comment" id="meterComment"></div>
                         </div>
-                        <div class="meter-label" id="meterLabel"></div>
-                        <div class="meter-comment" id="meterComment"></div>
+                        <div class="best3-section" id="best3Section" style="display:none;">
+                            <div class="best3-title">✨ 今が狙い目！ 今日のベスト3</div>
+                            <div class="best3-list" id="best3List"></div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -3025,20 +3056,25 @@
                             ★
                         </button>
                     </div>
-                    <h3 class="ride-name">${escapeHtml(ride.displayName)}</h3>
+                    <div class="ride-card-body">
+                        <h3 class="ride-name">${escapeHtml(ride.displayName)}</h3>
+                    </div>
                     <div class="wait-time-display">
                         <span class="wait-time-number">
                             ${ride.is_open ? ride.wait_time : '-'}
                         </span>
                         <span class="wait-time-unit">分</span>
                     </div>
-                    ${chance ? `
+                    ${(() => {
+                        const chanceHtml = chance ? `
                         <div class="chance-badge">
                             今がチャンス！
                             <span>平均より${Math.round(chance.diff)}分短い</span>
                         </div>
-                    ` : ''}
-                    ${formatBestTimeBadge(ride.id)}
+                    ` : '';
+                        const bestTimeHtml = formatBestTimeBadge(ride.id);
+                        return (chanceHtml || bestTimeHtml) ? `<div class="ride-card-badges">${chanceHtml}${bestTimeHtml}</div>` : '';
+                    })()}
                 </div>
             `;
         }
@@ -3223,34 +3259,48 @@
             }
 
             // おすすめ時間帯（上位3つ）を計算
-            // 朝一番は待ち時間が短くなりがちなので、
-            // 「そのアトラクションで一番早い時間帯から一定時間（例: 2時間）は候補から除外」
-            // することで、朝一バイアスを弱める。
+            // 朝一バイアス: 朝一番は待ち時間が短くなりがちなので、
+            // そのアトラクションで一番早い時間帯から一定時間は候補から除外する。
+            // ラストバイアス: 閉園前も待ち時間が短くなりがちなので、
+            // 一番遅い時間帯から一定時間（閉園前1時間）も候補から除外する。
             const TOP_N_HOURS = 3;
             const MORNING_EXCLUDE_HOURS = 1; // その日の最初の時間帯から何時間分を除外するか
+            const LAST_EXCLUDE_HOURS = 1;   // 閉園前何時間分を除外するか（ラストバイアス）
 
             rideHourAggregates.forEach((hourMap, rideId) => {
                 const entries = [];
                 let minHour = null;
+                let maxHour = null;
 
-                // まずは各時間帯の平均待ち時間と、そのアトラクションの最も早い時間帯を求める
+                // まずは各時間帯の平均待ち時間と、そのアトラクションの最も早い・遅い時間帯を求める
                 hourMap.forEach((slot, hour) => {
                     if (slot.count >= 1) {
                         entries.push({ hour, avg: slot.sum / slot.count });
                         if (minHour === null || hour < minHour) {
                             minHour = hour;
                         }
+                        if (maxHour === null || hour > maxHour) {
+                            maxHour = hour;
+                        }
                     }
                 });
 
                 if (entries.length === 0) return;
 
-                // 一番早い時間帯から一定時間（MORNING_EXCLUDE_HOURS）を「朝」とみなし、候補から外す
+                // 朝一バイアス: 一番早い時間帯から一定時間（MORNING_EXCLUDE_HOURS）を「朝」とみなし、候補から外す
                 let candidateEntries = entries;
                 if (minHour !== null) {
                     const morningThreshold = minHour + MORNING_EXCLUDE_HOURS;
-                    const filtered = entries.filter(e => e.hour >= morningThreshold);
-                    // もし朝を除外しすぎて何も残らない場合は、従来どおり全時間帯から選ぶ
+                    const filtered = candidateEntries.filter(e => e.hour >= morningThreshold);
+                    if (filtered.length > 0) {
+                        candidateEntries = filtered;
+                    }
+                }
+
+                // ラストバイアス: 一番遅い時間帯から一定時間（閉園前 LAST_EXCLUDE_HOURS）を候補から外す
+                if (maxHour !== null) {
+                    const lastThreshold = maxHour - LAST_EXCLUDE_HOURS;
+                    const filtered = candidateEntries.filter(e => e.hour <= lastThreshold);
                     if (filtered.length > 0) {
                         candidateEntries = filtered;
                     }
@@ -4348,6 +4398,32 @@
                     this.classList.add('active');
                 });
             });
+            // 今が狙い目！今日のベスト3：未ログイン時は履歴へ遷移せずログインモーダルを表示
+            const best3List = document.getElementById('best3List');
+            if (best3List) {
+                best3List.addEventListener('click', async function (e) {
+                    const link = e.target.closest('a.best3-item');
+                    if (!link) return;
+                    e.preventDefault();
+                    const client = typeof getIndexSupabaseClient === 'function' ? getIndexSupabaseClient() : null;
+                    if (!client) {
+                        window.location.href = link.href;
+                        return;
+                    }
+                    try {
+                        const { data } = await client.auth.getUser();
+                        const user = data && data.user;
+                        if (!user) {
+                            showFavLoginModal('今日のベスト3のアトラクション詳細（履歴）を見るにはログインが必要です。<br>「ログイン」ボタンからログインしてください。');
+                            return;
+                        }
+                    } catch (err) {
+                        window.location.href = link.href;
+                        return;
+                    }
+                    window.location.href = link.href;
+                });
+            }
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>

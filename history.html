@@ -46,6 +46,47 @@
             display: none;
         }
 
+        /* 期間選択〜下のコンテンツ用ローディング（データ取得中のみ表示） */
+        #historyContentWrap {
+            position: relative;
+        }
+        /* 期間選択より下の「非表示にする部分」をまとめ、そのサイズにオーバーレイを合わせる */
+        #historyContentArea {
+            position: relative;
+            min-height: calc(100vh - 320px);
+        }
+        #contentLoadingOverlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.06), transparent),
+                        linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: #fff;
+        }
+        #contentLoadingOverlay.hidden {
+            display: none;
+        }
+        #contentLoadingOverlay .loading-overlay-content {
+            text-align: center;
+        }
+        #contentLoadingOverlay .loading-overlay-image {
+            width: 120px;
+            max-width: 50vw;
+            height: auto;
+            display: block;
+            margin: 0 auto 12px;
+            animation: loading-bounce 1.2s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+        #contentLoadingOverlay .loading-overlay-text {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.05em;
+        }
+
         .loading-overlay-content {
             text-align: center;
         }
@@ -717,43 +758,6 @@
             font-size: 0.9rem;
             margin-top: 10px;
             text-align: center;
-        }
-
-        /* 過去○週間スパークライン（一覧カード・詳細） */
-        .sparkline-wrap {
-            margin-top: 10px;
-            padding: 8px 0;
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        .sparkline-wrap .sparkline-title {
-            font-size: 0.7rem;
-            color: #a0a0a0;
-            margin-bottom: 4px;
-        }
-        .sparkline-wrap .sparkline-canvas-wrap {
-            position: relative;
-            width: 100%;
-            height: 36px;
-        }
-        .sparkline-wrap .sparkline-canvas-wrap canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border-radius: 4px;
-        }
-        .sparkline-detail {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .sparkline-detail .sparkline-title {
-            font-size: 0.95rem;
-            color: #4ecdc4;
-            margin-bottom: 12px;
-        }
-        .sparkline-detail .sparkline-canvas-wrap {
-            height: 80px;
         }
 
         /* エリアセクション */
@@ -2367,25 +2371,35 @@
             <p class="park-name" id="parkName">読み込み中...</p>
         </header>
 
-        <div class="controls">
-            <div class="day-view-event-wrap" id="dayViewEventWrap" style="display:none;"></div>
-            <div class="controls-row">
-                <button type="button" class="controls-back-btn" id="headerBackToListBtn" onclick="backToList()" style="display:none;">⬅️ 一覧</button>
-                <div class="controls-center">
-                    <div class="period-tabs">
-                        <button class="period-tab active" data-period="day">日</button>
-                        <button class="period-tab" data-period="week">週</button>
-                        <button class="period-tab" data-period="month">月</button>
-                        <button class="period-tab" data-period="year">年</button>
+        <div id="historyContentWrap">
+            <div class="controls">
+                <div class="day-view-event-wrap" id="dayViewEventWrap" style="display:none;"></div>
+                <div class="controls-row">
+                    <button type="button" class="controls-back-btn" id="headerBackToListBtn" onclick="backToList()" style="display:none;">⬅️ 一覧</button>
+                    <div class="controls-center">
+                        <div class="period-tabs">
+                            <button class="period-tab active" data-period="day">日</button>
+                            <button class="period-tab" data-period="week">週</button>
+                            <button class="period-tab" data-period="month">月</button>
+                            <button class="period-tab" data-period="year">年</button>
+                        </div>
+                        <select id="dateSelect">
+                            <option value="">日付を選択...</option>
+                        </select>
                     </div>
-                    <select id="dateSelect">
-                        <option value="">日付を選択...</option>
-                    </select>
                 </div>
             </div>
-        </div>
 
-        <div id="content"></div>
+            <div id="historyContentArea">
+                <div id="contentLoadingOverlay" class="content-loading-overlay hidden">
+                    <div class="loading-overlay-content">
+                        <img src="loading.jpg" alt="読み込み中" class="loading-overlay-image">
+                        <p class="loading-overlay-text">読み込み中です...</p>
+                    </div>
+                </div>
+                <div id="content"></div>
+            </div>
+        </div>
     </div>
 
     <!-- 前回の来園日と比較モーダル（回り順プランナーと同様） -->
@@ -2487,6 +2501,17 @@
 
         function hideLoadingOverlay() {
             const el = document.getElementById('loadingOverlay');
+            if (el) el.classList.add('hidden');
+        }
+
+        /** 期間選択〜下のコンテンツ用ローディング表示（データ取得・表示完了まで） */
+        function showContentLoadingOverlay() {
+            const el = document.getElementById('contentLoadingOverlay');
+            if (el) el.classList.remove('hidden');
+        }
+
+        function hideContentLoadingOverlay() {
+            const el = document.getElementById('contentLoadingOverlay');
             if (el) el.classList.add('hidden');
         }
 
@@ -3071,9 +3096,6 @@
 
             // スマホ表示時、ヒートマップの横スクロールを現在時刻の位置に
             setTimeout(() => scrollHeatmapToCurrentTime(content), 0);
-
-            // 同じ時間帯の過去○週間スパークラインを非同期で取得・描画
-            loadAndDrawListSparklines();
 
             // お気に入りトグルボタンのイベントリスナー（ログイン必須）
             const favToggleBtn = document.getElementById('favToggleBtn');
@@ -4414,10 +4436,6 @@
                     ` : `
                         <div class="ride-card-no-data">データなし</div>
                     `}
-                    <div class="sparkline-wrap" data-ride-id="${ride.id}" aria-hidden="true">
-                        <div class="sparkline-title">同じ時間帯の過去${SPARKLINE_WEEKS}週間</div>
-                        <div class="sparkline-canvas-wrap"></div>
-                    </div>
                 </div>
             `;
         }
@@ -4532,10 +4550,6 @@
                     ${bestTimeSlotsHtml}
                     <div id="correlationSection"></div>
                 </div>
-                <div class="sparkline-detail" id="detailSparklineSection" style="display:none;">
-                    <div class="sparkline-title">📈 同じ時間帯の過去${SPARKLINE_WEEKS}週間の推移</div>
-                    <div class="sparkline-canvas-wrap" id="detailSparklineCanvas"></div>
-                </div>
                 <div class="compare-toolbar">
                     <div class="compare-toolbar-header">
                         <div class="compare-toolbar-title">📌 比較モード</div>
@@ -4579,8 +4593,6 @@
             renderTable(rideData);
             // スマホ表示時、ヒートマップの横スクロールを現在時刻の位置に
             setTimeout(() => scrollHeatmapToCurrentTime(content), 0);
-            // 同じ時間帯の過去○週間スパークラインを非同期で描画
-            loadDetailSparkline(rideId);
             // 相関分析を非同期で計算・表示
             computeRideCorrelations(rideId, currentPark).then(correlations => {
                 const section = document.getElementById('correlationSection');
@@ -5164,193 +5176,6 @@
             return d.getUTCDay();
         }
 
-        /** 現在の JST 時刻の「時」（0〜23）を返す */
-        function getJstHour() {
-            const formatter = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: 'numeric', hour12: false });
-            return parseInt(formatter.format(new Date()), 10) || 0;
-        }
-
-        /** 基準日と同じ曜日の日付を、利用可能な日付から過去向きに最大 maxWeeks 件返す（古い順） */
-        function getSameWeekdayDates(refDateStr, maxWeeks) {
-            if (!refDateStr || !availableDates.length) return [];
-            const refDow = getDayOfWeekJst(refDateStr);
-            const sameWeekday = availableDates.filter(d => d <= refDateStr && getDayOfWeekJst(d) === refDow);
-            sameWeekday.sort();
-            return sameWeekday.slice(-maxWeeks);
-        }
-
-        const SPARKLINE_WEEKS = 5;
-        const SPARKLINE_TARGET_HOUR = null; // null = 現在時刻で自動
-
-        /**
-         * 指定した各日付について、targetHour 時台のスナップショットから待ち時間を取得し、
-         * rideId -> [wait1, wait2, ...] と labels を返す
-         */
-        async function fetchSparklineData(parkId, targetHour, dateStrings) {
-            const byRide = new Map();
-            const labels = [];
-            const hour = targetHour != null ? targetHour : getJstHour();
-            const timePrefix = String(hour).padStart(2, '0') + ':';
-
-            for (const dateStr of dateStrings) {
-                const data = await fetchSupabaseDataForDate(parkId, dateStr);
-                if (!data || !data.records || data.records.length === 0) {
-                    labels.push(dateStr.slice(5).replace('-', '/'));
-                    continue;
-                }
-                const rec = data.records.find(r => (r.time || '').startsWith(timePrefix)) || data.records.find(r => (r.time || '').startsWith(String(hour)));
-                labels.push(dateStr.slice(5).replace('-', '/'));
-
-                if (rec && rec.rides) {
-                    for (const ride of rec.rides) {
-                        if (!byRide.has(ride.id)) byRide.set(ride.id, []);
-                        const arr = byRide.get(ride.id);
-                        const wait = (ride.is_open && ride.wait_time > 0) ? ride.wait_time : null;
-                        arr.push(wait);
-                    }
-                }
-                for (const [, arr] of byRide) {
-                    while (arr.length < labels.length) arr.push(null);
-                }
-            }
-            return { byRide, labels };
-        }
-
-        /** スパークラインを canvas に描画する。values と labels は同じ長さ */
-        function drawSparkline(container, values, labels, options) {
-            if (!container || !Array.isArray(values)) return;
-            const validValues = values.filter(v => v != null && !isNaN(v));
-            if (validValues.length === 0) return;
-
-            const height = (options && options.height) || 36;
-            const padding = { top: 4, right: 4, bottom: 4, left: 4 };
-            const w = container.offsetWidth || 200;
-            const h = height;
-            const innerW = Math.max(0, w - padding.left - padding.right);
-            const innerH = Math.max(0, h - padding.top - padding.bottom);
-
-            let canvas = container.querySelector('canvas');
-            if (!canvas) {
-                canvas = document.createElement('canvas');
-                canvas.setAttribute('role', 'img');
-                container.appendChild(canvas);
-            }
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            canvas.style.width = w + 'px';
-            canvas.style.height = h + 'px';
-            const ctx = canvas.getContext('2d');
-            ctx.scale(dpr, dpr);
-
-            const minV = Math.min(...validValues);
-            const maxV = Math.max(...validValues);
-            const range = maxV - minV || 1;
-            const n = values.length;
-            const stepX = n > 1 ? innerW / (n - 1) : 0;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.strokeStyle = options && options.strokeStyle ? options.strokeStyle : 'rgba(78, 205, 196, 0.9)';
-            ctx.fillStyle = options && options.fillStyle ? options.fillStyle : 'rgba(78, 205, 196, 0.15)';
-            ctx.lineWidth = 2;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-
-            const points = [];
-            for (let i = 0; i < n; i++) {
-                const x = padding.left + (n > 1 ? i * stepX : innerW / 2);
-                const v = values[i];
-                const y = v != null && !isNaN(v)
-                    ? padding.top + innerH - ((v - minV) / range) * innerH
-                    : null;
-                points.push({ x, y });
-            }
-            const validPoints = points.filter(p => p.y !== null);
-            if (validPoints.length < 2) return;
-
-            ctx.beginPath();
-            ctx.moveTo(validPoints[0].x, validPoints[0].y);
-            for (let i = 1; i < validPoints.length; i++) {
-                ctx.lineTo(validPoints[i].x, validPoints[i].y);
-            }
-            ctx.stroke();
-            ctx.lineTo(validPoints[validPoints.length - 1].x, padding.top + innerH);
-            ctx.lineTo(validPoints[0].x, padding.top + innerH);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        /** 一覧表示後に、各カード用のスパークラインデータを取得して描画する */
-        /** 一覧の各カードに、同じ曜日の過去数週間のスパークラインを非同期で描画する */
-        async function loadAndDrawListSparklines() {
-            const content = document.getElementById('content');
-            if (!content || !loadedData || !USE_SUPABASE || availableDates.length === 0) return;
-
-            let refDateStr = null;
-            if (currentPeriod === 'day' && loadedData && loadedData.selectedValue) {
-                refDateStr = loadedData.selectedValue;
-            } else {
-                const jst = getJstDate();
-                refDateStr = `${jst.year}-${jst.month}-${jst.day}`;
-            }
-            if (!refDateStr || !availableDates.includes(refDateStr)) {
-                if (availableDates.length > 0) refDateStr = availableDates[0];
-            }
-            if (!refDateStr) return;
-
-            const dateStrings = getSameWeekdayDates(refDateStr, SPARKLINE_WEEKS);
-            if (dateStrings.length < 2) return;
-
-            const targetHour = SPARKLINE_TARGET_HOUR != null ? SPARKLINE_TARGET_HOUR : getJstHour();
-            const { byRide, labels } = await fetchSparklineData(currentPark, targetHour, dateStrings);
-
-            const wraps = content.querySelectorAll('.sparkline-wrap[data-ride-id]');
-            wraps.forEach(wrap => {
-                const rideId = parseInt(wrap.dataset.rideId, 10);
-                if (isNaN(rideId)) return;
-                const arr = byRide.get(rideId);
-                if (!arr || arr.every(v => v == null)) return;
-                const canvasWrap = wrap.querySelector('.sparkline-canvas-wrap');
-                if (canvasWrap) drawSparkline(canvasWrap, arr, labels, { height: 36 });
-            });
-        }
-
-        /** 詳細画面用：1アトラクションの「同じ時間帯の過去○週間」を取得して描画 */
-        /** 詳細画面のスパークライン（同じ曜日・同時間帯の過去推移）を取得・描画する */
-        async function loadDetailSparkline(rideId) {
-            const section = document.getElementById('detailSparklineSection');
-            const canvasWrap = document.getElementById('detailSparklineCanvas');
-            if (!section || !canvasWrap || !USE_SUPABASE || availableDates.length === 0) return;
-
-            let refDateStr = null;
-            if (currentPeriod === 'day' && loadedData && loadedData.selectedValue) {
-                refDateStr = loadedData.selectedValue;
-            } else {
-                const jst = getJstDate();
-                refDateStr = `${jst.year}-${jst.month}-${jst.day}`;
-            }
-            if (!refDateStr && availableDates.length > 0) refDateStr = availableDates[0];
-            if (!refDateStr) return;
-
-            const dateStrings = getSameWeekdayDates(refDateStr, SPARKLINE_WEEKS);
-            if (dateStrings.length < 2) {
-                section.style.display = 'none';
-                return;
-            }
-
-            const targetHour = SPARKLINE_TARGET_HOUR != null ? SPARKLINE_TARGET_HOUR : getJstHour();
-            const { byRide, labels } = await fetchSparklineData(currentPark, targetHour, dateStrings);
-            const arr = byRide.get(rideId);
-            if (!arr || arr.every(v => v == null)) {
-                section.style.display = 'none';
-                return;
-            }
-            section.style.display = 'block';
-            const titleEl = section.querySelector('.sparkline-title');
-            if (titleEl) titleEl.textContent = `📈 ${targetHour}時台の過去${dateStrings.length}週間の推移（同じ曜日）`;
-            drawSparkline(canvasWrap, arr, labels, { height: 80 });
-        }
-
         function closeWeekendWeekdayOverlay(event) {
             const overlay = document.getElementById('weekendWeekdayOverlay');
             if (!overlay) return;
@@ -5878,6 +5703,7 @@
             const content = document.getElementById('content');
             
             content.innerHTML = '';
+            showContentLoadingOverlay();
 
             if (currentPeriod === 'day') {
                 // 日単位: 利用可能な日付リスト
@@ -5891,6 +5717,8 @@
                 if (availableDates.length > 0) {
                     dateSelect.value = availableDates[0];
                     await loadPeriodData(availableDates[0]);
+                } else {
+                    hideContentLoadingOverlay();
                 }
             } else if (currentPeriod === 'week') {
                 // 週単位: 週の開始日リスト
@@ -5905,6 +5733,8 @@
                 if (weeks.length > 0) {
                     dateSelect.value = weeks[0].start;
                     await loadPeriodData(weeks[0].start);
+                } else {
+                    hideContentLoadingOverlay();
                 }
             } else if (currentPeriod === 'month') {
                 // 月単位
@@ -5919,6 +5749,8 @@
                 if (months.length > 0) {
                     dateSelect.value = months[0].value;
                     await loadPeriodData(months[0].value);
+                } else {
+                    hideContentLoadingOverlay();
                 }
             } else if (currentPeriod === 'year') {
                 // 年単位
@@ -5933,6 +5765,8 @@
                 if (years.length > 0) {
                     dateSelect.value = years[0];
                     await loadPeriodData(years[0]);
+                } else {
+                    hideContentLoadingOverlay();
                 }
             }
 
@@ -6460,6 +6294,7 @@
             const content = document.getElementById('content');
             
             content.innerHTML = '';
+            showContentLoadingOverlay();
 
             try {
                 let datesToLoad = [];
@@ -6497,6 +6332,7 @@
                             <p>選択した期間のデータが見つかりませんでした。</p>
                         </div>
                     `;
+                    hideContentLoadingOverlay();
                     return;
                 }
 
@@ -6540,6 +6376,7 @@
                     }
                 }
 
+                hideContentLoadingOverlay();
             } catch (error) {
                 console.error('Error:', error);
                 content.innerHTML = `
@@ -6548,6 +6385,7 @@
                         <p>${error.message}</p>
                     </div>
                 `;
+                hideContentLoadingOverlay();
             }
         }
     </script>
